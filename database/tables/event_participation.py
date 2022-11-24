@@ -11,7 +11,7 @@ class EventParticipation(database.base):
   dt_guild_id = Column(BigIntegerType, ForeignKey("dt_guilds.id", ondelete="CASCADE"), primary_key=True)
   dt_user_id = Column(BigIntegerType, ForeignKey("dt_users.id", ondelete="CASCADE"), primary_key=True)
 
-  user = relationship("DTUser", uselist=False)
+  dt_user = relationship("DTUser", uselist=False)
   dt_guild = relationship("DTGuild", uselist=False)
 
   amount = Column(BigIntegerType, default=0)

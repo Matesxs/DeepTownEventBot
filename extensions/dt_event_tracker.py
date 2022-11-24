@@ -4,6 +4,7 @@ from typing import Optional, List, Union
 import math
 import datetime
 import asyncio
+import humanize
 
 from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
@@ -15,12 +16,25 @@ from features.paginator import EmbedView
 logger = setup_custom_logger(__name__)
 
 
-def generate_announce_report(participations: List[event_participation_repo.EventParticipation]) -> List[str]:
-  participation_strings = [f"{ participations[0].dt_guild.name} - ID: {participations[0].dt_guild.id} - Level: {participations[0].dt_guild.level}\nYear: {participations[0].year} Week: {participations[0].event_week}\n\nName                        Level       Donate"]
-  for participation in participations:
-    padding_name = " " * max((28 - len(participation.user.username)), 1)
-    padding_level = " " * max((12 - len(str(participation.user.level))), 1)
-    participation_strings.append(f"{participation.user.username}{padding_name}{participation.user.level}{padding_level}{participation.amount}")
+def generate_announce_report(guild_data: dt_helpers.DTGuildData, event_year: int, event_week: int, detailed: bool=False) -> List[str]:
+  guild_data.players.sort(key=lambda x: x.last_event_contribution, reverse=True)
+
+  if detailed:
+    participation_strings = [f"{guild_data.name} - ID: {guild_data.id} - Level: {guild_data.level}\nYear: {event_year} Week: {event_week}\n\nName                        ID        Level     Depth     Online             Donate"]
+  else:
+    participation_strings = [f"{guild_data.name} - ID: {guild_data.id} - Level: {guild_data.level}\nYear: {event_year} Week: {event_week}\n\nName                        Level     Donate"]
+
+  for participant in guild_data.players:
+    padding_name = " " * max((28 - len(participant.name)), 1)
+    padding_level = " " * max((10 - len(str(participant.level))), 1)
+    if detailed:
+      padding_id = " " * max((10 - len(str(participant.id))), 1)
+      padding_depth = " " * max((10 - len(str(participant.depth))), 1)
+      current_time = datetime.datetime.utcnow()
+      padding_last_online = " " * max((15 - len(humanize.naturaldelta(current_time - participant.last_online))), 1)
+      participation_strings.append(f"{participant.name}{padding_name}{participant.id}{padding_id}{participant.level}{padding_level}{participant.depth}{padding_depth}{humanize.naturaltime(current_time - participant.last_online)}{padding_last_online}{participant.last_event_contribution}")
+    else:
+      participation_strings.append(f"{participant.name}{padding_name}{participant.level}{padding_level}{participant.last_event_contribution}")
 
   announce_strings = []
   while participation_strings:
@@ -29,11 +43,8 @@ def generate_announce_report(participations: List[event_participation_repo.Event
 
   return announce_strings
 
-async def send_guild_report(report_channel: Union[disnake.TextChannel, disnake.Thread, disnake.VoiceChannel, disnake.PartialMessageable, disnake.CommandInteraction, commands.Context], dt_guild_id: int):
-  participations = event_participation_repo.get_recent_event_participation(dt_guild_id)
-  if not participations: return
-
-  strings = generate_announce_report(participations)
+async def send_guild_report(report_channel: Union[disnake.TextChannel, disnake.Thread, disnake.VoiceChannel, disnake.PartialMessageable, disnake.CommandInteraction, commands.Context], guild_data: dt_helpers.DTGuildData, event_year: int, event_week: int, detailed: bool=False):
+  strings = generate_announce_report(guild_data, event_year, event_week, detailed)
   for string in strings:
     await report_channel.send(string)
 
@@ -121,12 +132,22 @@ class DTEventTracker(Base_Cog):
 
   @reporter.sub_command(description=Strings.event_data_tracker_search_guilds_description)
   @cooldowns.long_cooldown
-  async def search_guilds(self, inter: disnake.CommandInteraction, guild_name:Optional[str]=commands.Param(default=None, description="Guild name to search")):
+  async def search_guilds(self, inter: disnake.CommandInteraction,
+                          guild_name:Optional[str]=commands.Param(default=None, description="Guild name to search"),
+                          sort_by:str=commands.Param(description="Attribute to sort guilds by", choices=["ID", "Level", "Name"]),
+                          order:str=commands.Param(description="Order method of attribute", choices=["Ascending", "Descending"])):
     await inter.response.defer(with_message=True, ephemeral=True)
 
     found_guilds = await dt_helpers.get_guild_info(self.bot, guild_name)
     if found_guilds is None or not found_guilds:
       return await message_utils.generate_error_message(inter, Strings.event_data_tracker_search_guilds_no_guild_found)
+
+    if sort_by == "ID":
+      found_guilds.sort(key=lambda x: x[0], reverse=order=="Descending")
+    elif sort_by == "Level":
+      found_guilds.sort(key=lambda x: x[2], reverse=order=="Descending")
+    elif sort_by == "Name":
+      found_guilds.sort(key=lambda x: x[1], reverse=order=="Descending")
 
     number_of_guilds = len(found_guilds)
 
@@ -175,22 +196,27 @@ class DTEventTracker(Base_Cog):
 
   @reporter.sub_command(description=Strings.event_data_tracker_generate_announcements_description)
   @cooldowns.long_cooldown
-  async def guild_report(self, inter: disnake.CommandInteraction, guild_id: int=commands.Param(description="Deep Town Guild ID")):
+  async def guild_report(self, inter: disnake.CommandInteraction,
+                         guild_id: int=commands.Param(description="Deep Town Guild ID"),
+                         detailed: bool=commands.Param(description="Detailed report selector")):
     await inter.response.defer(with_message=True)
 
     data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
     if data is None:
       return await message_utils.generate_error_message(inter, Strings.event_data_tracker_guild_report_no_data)
 
-    event_participation_repo.generate_or_update_event_participations(data)
-
-    await send_guild_report(inter, guild_id)
+    event_year, event_week = dt_helpers.get_event_index(datetime.datetime.utcnow())
+    await send_guild_report(inter, data, event_year, event_week, detailed)
 
   async def announce(self, tracker: tracking_settings_repo.TrackingSettings):
     announce_channel = await tracker.get_announce_channel(self.bot)
     if announce_channel is None: return
 
-    await send_guild_report(announce_channel, tracker.dt_guild_id)
+    participations = event_participation_repo.get_recent_event_participation(tracker.dt_guild_id)
+    participation_data = event_participation_repo.event_list_participation_to_dt_guild_data(participations)
+    if participation_data is None: return
+
+    await send_guild_report(announce_channel, participation_data[0], participation_data[1], participation_data[2])
 
   @tasks.loop(hours=24*7)
   async def result_announce_task(self):

@@ -59,7 +59,7 @@ async def get_dt_guild_data(bot: BaseAutoshardedBot, guild_id:int) -> Optional[D
 
     players = []
     for player_data in json_data["players"]["data"]:
-      players.append(DTUserData(player_data[1], player_data[0], player_data[3], player_data[4], player_data[2], player_data[-1]))
+      players.append(DTUserData(player_data[1], player_data[0], player_data[3], player_data[4], datetime.datetime.strptime(player_data[2], '%a, %d %b %Y %H:%M:%S GMT'), player_data[-1]))
 
     return DTGuildData(json_data["name"], json_data["id"], json_data["level"], players)
 

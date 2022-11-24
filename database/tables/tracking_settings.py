@@ -19,6 +19,7 @@ class TrackingSettings(database.base):
   dt_guild = relationship("DTGuild", uselist=False)
 
   async def get_announce_channel(self, bot: BaseAutoshardedBot) -> Optional[disnake.TextChannel]:
+    if self.announce_channel_id is None: return None
     guild = await self.guild.to_object(bot)
     if guild is None: return None
     channel = await object_getters.get_or_fetch_channel(guild, int(self.announce_channel_id))

@@ -73,7 +73,7 @@ class EmbedView(disnake.ui.View):
             style=disnake.ButtonStyle.primary
           )
         )
-      if not perma_lock:
+      if not perma_lock and not invisible:
         # if permanent lock is applied, dynamic lock is removed from buttons
         self.lock_button = disnake.ui.Button(
           emoji="🔓",

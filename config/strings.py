@@ -52,3 +52,19 @@ class Strings(metaclass=Formatable):
   event_data_collector_fetch_data_description = "Fetch current guild data and save them to database"
   event_data_collector_fetch_data_get_failed = "Failed to get guild data"
   event_data_collector_fetch_data_success = "Data for guild `{guild}` fetched and updated"
+
+  event_data_collector_update_data_description = "Update data of tracked guilds"
+  event_data_collector_update_data_success = "Updated data of `{guild_num}` guilds"
+
+  # Event Data Collector Settings
+  event_data_collector_settings_add_or_modify_tracker_description = "Add guild for tracking or modify existing announcement channel"
+  event_data_collector_settings_add_or_modify_tracker_failed_to_get_data = "Failed to get guild data"
+  event_data_collector_settings_add_or_modify_tracker_success_with_channel = "Set tracking for guild `{guild}` and announcement to channel `{channel}`"
+  event_data_collector_settings_add_or_modify_tracker_success_without_channel = "Set tracking for guild `{guild}`"
+
+  event_data_collector_settings_remove_tracker_description = "Remove event tracker and its announcement settings"
+  event_data_collector_settings_remove_tracker_success = "Removed tracking for guild `{guild}`"
+  event_data_collector_settings_remove_tracker_failed = "Can't find tracking settings for guild with id `{guild_id}`"
+
+  event_data_collector_settings_list_trackers_description = "List all active trackers for guild"
+  event_data_collector_settings_list_trackers_no_trackers = "No trackers found"

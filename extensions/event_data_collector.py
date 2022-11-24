@@ -1,5 +1,6 @@
 import disnake
 from disnake.ext import commands, tasks
+import asyncio
 
 from features.base_cog import Base_Cog
 from utils import dt_helpers, message_utils
@@ -37,6 +38,19 @@ class EventDataCollector(Base_Cog):
 
     await message_utils.generate_success_message(inter, Strings.event_data_collector_fetch_data_success(guild=data.name))
 
+  @data_collector.sub_command(description=Strings.event_data_collector_update_data_description)
+  @cooldowns.default_cooldown
+  async def update_data(self, inter: disnake.CommandInteraction):
+    await inter.response.defer(with_message=True, ephemeral=True)
+
+    guild_ids = tracking_settings_repo.get_tracked_guild_ids()
+    for guild_id in guild_ids:
+      data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
+      event_participation_repo.generate_or_update_event_participations(data)
+      await asyncio.sleep(0.25)
+
+    await message_utils.generate_success_message(inter, Strings.event_data_collector_update_data_success(guild_num=len(guild_ids)))
+
   @tasks.loop(hours=config.event_data_collector.pull_rate_hours)
   async def update_data_task(self):
     logger.info("Starting pulling")
@@ -44,6 +58,7 @@ class EventDataCollector(Base_Cog):
     for guild_id in guild_ids:
       data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
       event_participation_repo.generate_or_update_event_participations(data)
+      await asyncio.sleep(0.25)
     logger.info("Pulling done")
 
 def setup(bot):

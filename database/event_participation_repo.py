@@ -1,5 +1,6 @@
 import datetime
 from typing import Optional, List
+from sqlalchemy import func
 
 from database import session
 from database.tables.event_participation import EventParticipation
@@ -29,3 +30,8 @@ def generate_or_update_event_participations(guild_data: dt_helpers.DTGuildData) 
     participations.append(__get_and_update_event_participation(player_data.id, guild_data.id, player_data.last_event_contribution))
   session.commit()
   return participations
+
+def get_recent_event_participation(dt_guild_id: int) -> List[EventParticipation]:
+  recent_week = session.query(func.max(EventParticipation.event_week)).first()[0]
+  recent_year = session.query(func.max(EventParticipation.year)).first()[0]
+  return session.query(EventParticipation).filter(EventParticipation.year==recent_year,EventParticipation.event_week==recent_week, EventParticipation.dt_guild_id==dt_guild_id).order_by(EventParticipation.amount.desc()).all()

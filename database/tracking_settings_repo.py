@@ -33,3 +33,6 @@ def get_tracked_guild_ids() -> List[int]:
 
 def get_all_guild_trackers(guild_id: int) -> List[TrackingSettings]:
   return session.query(TrackingSettings).filter(TrackingSettings.guild_id == str(guild_id)).all()
+
+def get_all_trackers() -> List[TrackingSettings]:
+  return session.query(TrackingSettings).all()

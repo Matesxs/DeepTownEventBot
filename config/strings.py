@@ -71,3 +71,7 @@ class Strings(metaclass=Formatable):
 
   event_data_collector_interface_search_guilds_description = "List guilds"
   event_data_collector_interface_search_guilds_no_guild_found = "No guilds found"
+
+  event_data_collector_interface_generate_announcements_description = "Generate announcements"
+  event_data_collector_interface_generate_announcements_no_data = "No data found"
+  event_data_collector_interface_generate_announcements_success = "Announcements generated"

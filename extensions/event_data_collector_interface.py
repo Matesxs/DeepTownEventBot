@@ -1,13 +1,15 @@
 import disnake
-from disnake.ext import commands
+from disnake.ext import commands, tasks
 from typing import Optional
 import math
+import datetime
+import asyncio
 
 from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
-from utils import dt_helpers, message_utils, permission_helper
+from utils import dt_helpers, message_utils, permission_helper, string_manipulation
 from database import event_participation_repo, tracking_settings_repo
-from config import Strings, cooldowns
+from config import Strings, cooldowns, config
 from features.paginator import EmbedView
 
 logger = setup_custom_logger(__name__)
@@ -15,6 +17,12 @@ logger = setup_custom_logger(__name__)
 class EventDataCollectorInterface(Base_Cog):
   def __init__(self, bot):
     super(EventDataCollectorInterface, self).__init__(bot, __file__)
+    if not self.result_announce_task.is_running():
+      self.result_announce_task.start()
+
+  def cog_unload(self) -> None:
+    if self.result_announce_task.is_running():
+      self.result_announce_task.cancel()
 
   @commands.slash_command()
   async def tracker(self, inter: disnake.CommandInteraction):
@@ -117,6 +125,72 @@ class EventDataCollectorInterface(Base_Cog):
 
     embed_view = EmbedView(inter.author, pages, invisible=True)
     await embed_view.run(inter)
+
+  @tracker.sub_command(description=Strings.event_data_collector_interface_generate_announcements_description)
+  @commands.check(permission_helper.is_administrator)
+  @cooldowns.huge_cooldown
+  @commands.guild_only()
+  async def generate_announcements(self, inter: disnake.CommandInteraction):
+    await inter.response.defer(with_message=True, ephemeral=True)
+
+    trackers = tracking_settings_repo.get_all_guild_trackers(inter.guild.id)
+    if not trackers:
+      return await message_utils.generate_error_message(inter, Strings.event_data_collector_interface_generate_announcements_no_data)
+
+    for tracker in trackers:
+      await self.announce(tracker)
+      await asyncio.sleep(0.5)
+
+    await message_utils.generate_success_message(inter, Strings.event_data_collector_interface_generate_announcements_success)
+
+  async def announce(self, tracker: tracking_settings_repo.TrackingSettings):
+    announce_channel = await tracker.get_announce_channel(self.bot)
+    if announce_channel is None: return
+
+    participations = event_participation_repo.get_recent_event_participation(tracker.dt_guild_id)
+    if not participations: return
+
+    participation_strings = [f"{tracker.dt_guild.name} - {tracker.dt_guild.level}\nName                        Level       Donate"]
+    for participation in participations:
+      padding_name = " " * min((28 - len(participation.user.username)), 1)
+      padding_level = " " * min((12 - len(str(participation.user.level))), 1)
+      participation_strings.append(f"{participation.user.username}{padding_name}{participation.user.level}{padding_level}{participation.amount}")
+
+    while participation_strings:
+      final_string, participation_strings = string_manipulation.add_string_until_length(participation_strings, 1800, "\n")
+      await announce_channel.send(f"```py\n{final_string}\n```")
+
+  @tasks.loop(hours=24*7)
+  async def result_announce_task(self):
+    logger.info("Update before announcement starting")
+    if not config.event_data_collector.monitor_all_guilds:
+      guild_ids = tracking_settings_repo.get_tracked_guild_ids()
+    else:
+      guild_ids = await dt_helpers.get_ids_of_all_guilds(self.bot)
+
+    if guild_ids is not None:
+      for guild_id in guild_ids:
+        data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
+        if data is None: continue
+
+        event_participation_repo.generate_or_update_event_participations(data)
+        await asyncio.sleep(1)
+    logger.info("Update before announcement finished")
+
+    logger.info("Starting Announcement")
+    trackers = tracking_settings_repo.get_all_trackers()
+    for tracker in trackers:
+      await self.announce(tracker)
+      await asyncio.sleep(0.5)
+
+  @result_announce_task.before_loop
+  async def result_announce_wait_pretask(self):
+    today = datetime.datetime.utcnow().replace(hour=8, minute=10, second=0, microsecond=0)
+    next_monday = today + datetime.timedelta(days=today.weekday() % 7)
+    if next_monday < datetime.datetime.utcnow():
+      next_monday += datetime.timedelta(days=7)
+    delta_to_next_monday = next_monday - datetime.datetime.utcnow()
+    await asyncio.sleep(delta_to_next_monday.total_seconds())
 
 def setup(bot):
   bot.add_cog(EventDataCollectorInterface(bot))

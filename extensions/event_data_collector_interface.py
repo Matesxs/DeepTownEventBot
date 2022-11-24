@@ -150,7 +150,7 @@ class EventDataCollectorInterface(Base_Cog):
     participations = event_participation_repo.get_recent_event_participation(tracker.dt_guild_id)
     if not participations: return
 
-    participation_strings = [f"{tracker.dt_guild.name} - {tracker.dt_guild.level}\nName                        Level       Donate"]
+    participation_strings = [f"{tracker.dt_guild.name} - Level: {tracker.dt_guild.level}\nName                        Level       Donate"]
     for participation in participations:
       padding_name = " " * min((28 - len(participation.user.username)), 1)
       padding_level = " " * min((12 - len(str(participation.user.level))), 1)
@@ -159,6 +159,8 @@ class EventDataCollectorInterface(Base_Cog):
     while participation_strings:
       final_string, participation_strings = string_manipulation.add_string_until_length(participation_strings, 1800, "\n")
       await announce_channel.send(f"```py\n{final_string}\n```")
+
+    await announce_channel.send(f"{participation.year} - Week: {participation.event_week}")
 
   @tasks.loop(hours=24*7)
   async def result_announce_task(self):

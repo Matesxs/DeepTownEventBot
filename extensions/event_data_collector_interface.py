@@ -152,8 +152,8 @@ class EventDataCollectorInterface(Base_Cog):
 
     participation_strings = [f"{tracker.dt_guild.name} - Level: {tracker.dt_guild.level}\nName                        Level       Donate"]
     for participation in participations:
-      padding_name = " " * min((28 - len(participation.user.username)), 1)
-      padding_level = " " * min((12 - len(str(participation.user.level))), 1)
+      padding_name = " " * max((28 - len(participation.user.username)), 1)
+      padding_level = " " * max((12 - len(str(participation.user.level))), 1)
       participation_strings.append(f"{participation.user.username}{padding_name}{participation.user.level}{padding_level}{participation.amount}")
 
     while participation_strings:

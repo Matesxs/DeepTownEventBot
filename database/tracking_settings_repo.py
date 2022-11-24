@@ -31,6 +31,9 @@ def remove_tracking_settings(guild_id: int, dt_guild_id: int) -> bool:
 def get_tracked_guild_ids() -> List[int]:
   return [d[0] for d in session.query(TrackingSettings.dt_guild_id).distinct().all()]
 
+def get_guild_tracked_guild_ids(guild_id: int) -> List[int]:
+  return [d[0] for d in session.query(TrackingSettings.dt_guild_id).filter(TrackingSettings.guild_id == str(guild_id)).distinct().all()]
+
 def get_all_guild_trackers(guild_id: int) -> List[TrackingSettings]:
   return session.query(TrackingSettings).filter(TrackingSettings.guild_id == str(guild_id)).all()
 

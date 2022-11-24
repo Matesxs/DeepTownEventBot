@@ -1,7 +1,7 @@
 import disnake
 from sqlalchemy import Column, String, ForeignKey
 from sqlalchemy.orm import relationship
-from typing import Optional
+from typing import Optional, Union
 
 from database import database, BigIntegerType
 from features.base_bot import BaseAutoshardedBot
@@ -18,10 +18,10 @@ class TrackingSettings(database.base):
   guild = relationship("Guild", uselist=False, back_populates="tracking_settings")
   dt_guild = relationship("DTGuild", uselist=False)
 
-  async def get_announce_channel(self, bot: BaseAutoshardedBot) -> Optional[disnake.TextChannel]:
+  async def get_announce_channel(self, bot: BaseAutoshardedBot) -> Optional[Union[disnake.TextChannel, disnake.Thread, disnake.VoiceChannel, disnake.PartialMessageable]]:
     if self.announce_channel_id is None: return None
     guild = await self.guild.to_object(bot)
     if guild is None: return None
     channel = await object_getters.get_or_fetch_channel(guild, int(self.announce_channel_id))
-    if not isinstance(channel, disnake.TextChannel): return None
+    if not isinstance(channel, (disnake.TextChannel, disnake.Thread, disnake.VoiceChannel, disnake.PartialMessageable)): return None
     return channel

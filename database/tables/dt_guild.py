@@ -11,4 +11,3 @@ class DTGuild(database.base):
   level = Column(Integer)
 
   members = relationship("DTGuildMember", uselist=True, back_populates="guild")
-  event_participations = relationship("EventParticipation", uselist=True)

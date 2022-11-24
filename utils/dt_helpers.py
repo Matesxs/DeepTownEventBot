@@ -1,6 +1,6 @@
 import datetime
 import dataclasses
-from typing import List, Optional
+from typing import List, Optional, Tuple
 import traceback
 
 from features.base_bot import BaseAutoshardedBot
@@ -62,3 +62,35 @@ async def get_dt_guild_data(bot: BaseAutoshardedBot, guild_id:int) -> Optional[D
       players.append(DTUserData(player_data[1], player_data[0], player_data[3], player_data[4], player_data[2], player_data[-1]))
 
     return DTGuildData(json_data["name"], json_data["id"], json_data["level"], players)
+
+async def get_ids_of_all_guilds(bot: BaseAutoshardedBot) -> Optional[List[int]]:
+  async with bot.http_session.get("http://dtat.hampl.space/data/guild/name") as response:
+    if response.status != 200:
+      return None
+
+    try:
+      json_data = await response.json(content_type="text/html")
+    except Exception:
+      logger.error(traceback.format_exc())
+      return None
+
+    ids = []
+    for guild_data in json_data["data"]:
+      ids.append(guild_data[0])
+    return ids
+
+async def get_guild_info(bot: BaseAutoshardedBot, guild_name: Optional[str]=None) -> Optional[List[Tuple[int, str, int]]]:
+  async with bot.http_session.get("http://dtat.hampl.space/data/guild/name" + "" if guild_name is None else f"/{guild_name}") as response:
+    if response.status != 200:
+      return None
+
+    try:
+      json_data = await response.json(content_type="text/html")
+    except Exception:
+      logger.error(traceback.format_exc())
+      return None
+
+    data = []
+    for guild_data in json_data["data"]:
+      data.append(tuple(guild_data))
+    return data

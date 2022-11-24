@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 
 from database import session
 from database.tables.dt_guild import DTGuild
@@ -17,3 +17,8 @@ def get_and_update_dt_guild(guild_data: DTGuildData) -> DTGuild:
     item.level = guild_data.level
   session.commit()
   return item
+
+def remove_deleted_guilds(guild_id_list: List[int]) -> int:
+  deleted_guilds = session.query(DTGuild).filter(DTGuild.id.not_in(guild_id_list)).delete()
+  session.commit()
+  return deleted_guilds

@@ -57,14 +57,17 @@ class Strings(metaclass=Formatable):
   event_data_collector_update_data_success = "Updated data of `{guild_num}` guilds"
 
   # Event Data Collector Settings
-  event_data_collector_settings_add_or_modify_tracker_description = "Add guild for tracking or modify existing announcement channel"
-  event_data_collector_settings_add_or_modify_tracker_failed_to_get_data = "Failed to get guild data"
-  event_data_collector_settings_add_or_modify_tracker_success_with_channel = "Set tracking for guild `{guild}` and announcement to channel `{channel}`"
-  event_data_collector_settings_add_or_modify_tracker_success_without_channel = "Set tracking for guild `{guild}`"
+  event_data_collector_interface_add_or_modify_tracker_description = "Add guild for tracking or modify existing announcement channel"
+  event_data_collector_interface_add_or_modify_tracker_failed_to_get_data = "Failed to get guild data"
+  event_data_collector_interface_add_or_modify_tracker_success_with_channel = "Set tracking for guild `{guild}` and announcement to channel `{channel}`"
+  event_data_collector_interface_add_or_modify_tracker_success_without_channel = "Set tracking for guild `{guild}`"
 
-  event_data_collector_settings_remove_tracker_description = "Remove event tracker and its announcement settings"
-  event_data_collector_settings_remove_tracker_success = "Removed tracking for guild `{guild}`"
-  event_data_collector_settings_remove_tracker_failed = "Can't find tracking settings for guild with id `{guild_id}`"
+  event_data_collector_interface_remove_tracker_description = "Remove event tracker and its announcement settings"
+  event_data_collector_interface_remove_tracker_success = "Removed tracking for guild `{guild}`"
+  event_data_collector_interface_remove_tracker_failed = "Can't find tracking settings for guild with id `{guild_id}`"
 
-  event_data_collector_settings_list_trackers_description = "List all active trackers for guild"
-  event_data_collector_settings_list_trackers_no_trackers = "No trackers found"
+  event_data_collector_interface_list_trackers_description = "List all active trackers for guild"
+  event_data_collector_interface_list_trackers_no_trackers = "No trackers found"
+
+  event_data_collector_interface_search_guilds_description = "List guilds"
+  event_data_collector_interface_search_guilds_no_guild_found = "No guilds found"

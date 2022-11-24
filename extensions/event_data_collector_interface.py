@@ -17,10 +17,10 @@ class EventDataCollectorInterface(Base_Cog):
     super(EventDataCollectorInterface, self).__init__(bot, __file__)
 
   @commands.slash_command()
-  async def tracker_settings(self, inter: disnake.CommandInteraction):
+  async def tracker(self, inter: disnake.CommandInteraction):
     pass
 
-  @tracker_settings.sub_command(description=Strings.event_data_collector_settings_add_or_modify_tracker_description)
+  @tracker.sub_command(description=Strings.event_data_collector_interface_add_or_modify_tracker_description)
   @commands.check(permission_helper.is_administrator)
   @cooldowns.default_cooldown
   @commands.guild_only()
@@ -31,17 +31,17 @@ class EventDataCollectorInterface(Base_Cog):
 
     data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
     if data is None:
-      return await message_utils.generate_error_message(inter, Strings.event_data_collector_settings_add_or_modify_tracker_failed_to_get_data)
+      return await message_utils.generate_error_message(inter, Strings.event_data_collector_interface_add_or_modify_tracker_failed_to_get_data)
 
     event_participation_repo.generate_or_update_event_participations(data)
     tracking_settings_repo.get_or_create_tracking_settings(inter.guild, data, announce_channel.id if announce_channel is not None else None)
 
     if announce_channel is None:
-      await message_utils.generate_success_message(inter, Strings.event_data_collector_settings_add_or_modify_tracker_success_without_channel(guild=data.name))
+      await message_utils.generate_success_message(inter, Strings.event_data_collector_interface_add_or_modify_tracker_success_without_channel(guild=data.name))
     else:
-      await message_utils.generate_success_message(inter, Strings.event_data_collector_settings_add_or_modify_tracker_success_with_channel(guild=data.name, channel=announce_channel.name))
+      await message_utils.generate_success_message(inter, Strings.event_data_collector_interface_add_or_modify_tracker_success_with_channel(guild=data.name, channel=announce_channel.name))
 
-  @tracker_settings.sub_command(description=Strings.event_data_collector_settings_remove_tracker_description)
+  @tracker.sub_command(description=Strings.event_data_collector_interface_remove_tracker_description)
   @commands.check(permission_helper.is_administrator)
   @cooldowns.default_cooldown
   @commands.guild_only()
@@ -53,14 +53,13 @@ class EventDataCollectorInterface(Base_Cog):
     guild_name = settings.dt_guild.name
 
     if tracking_settings_repo.remove_tracking_settings(inter.guild.id, guild_id):
-      await message_utils.generate_success_message(inter, Strings.event_data_collector_settings_remove_tracker_success(guild=guild_name))
+      await message_utils.generate_success_message(inter, Strings.event_data_collector_interface_remove_tracker_success(guild=guild_name))
     else:
-      await message_utils.generate_error_message(inter, Strings.event_data_collector_settings_remove_tracker_failed(guild_id=guild_id))
+      await message_utils.generate_error_message(inter, Strings.event_data_collector_interface_remove_tracker_failed(guild_id=guild_id))
 
-  @tracker_settings.sub_command(description=Strings.event_data_collector_settings_list_trackers_description)
+  @tracker.sub_command(description=Strings.event_data_collector_interface_list_trackers_description)
   @commands.check(permission_helper.is_administrator)
   @cooldowns.default_cooldown
-  @commands.guild_only()
   async def list_guild_trackers(self, inter: disnake.CommandInteraction):
     await inter.response.defer(with_message=True, ephemeral=True)
 
@@ -68,7 +67,7 @@ class EventDataCollectorInterface(Base_Cog):
     number_of_trackers = len(guild_trackers)
 
     if number_of_trackers == 0:
-      return await message_utils.generate_error_message(inter, Strings.event_data_collector_settings_list_trackers_no_trackers)
+      return await message_utils.generate_error_message(inter, Strings.event_data_collector_interface_list_trackers_no_trackers)
 
     num_of_batches = math.ceil(number_of_trackers / 12)
     batches = [guild_trackers[i * 12:i * 12 + 12] for i in range(num_of_batches)]
@@ -84,6 +83,36 @@ class EventDataCollectorInterface(Base_Cog):
         announce_channel = await setting.get_announce_channel(self.bot)
 
         page.add_field(name=f"{guild_name}({guild_level})", value="No reporting" if announce_channel is None else announce_channel.name)
+      pages.append(page)
+
+    embed_view = EmbedView(inter.author, pages, invisible=True)
+    await embed_view.run(inter)
+
+  @tracker.sub_command(description=Strings.event_data_collector_interface_search_guilds_description)
+  @cooldowns.long_cooldown
+  async def search_guilds(self, inter: disnake.CommandInteraction, guild_name:Optional[str]=commands.Param(default=None, description="Guild name to search")):
+    await inter.response.defer(with_message=True, ephemeral=True)
+
+    found_guilds = await dt_helpers.get_guild_info(self.bot, guild_name)
+    if found_guilds is None or not found_guilds:
+      return await message_utils.generate_error_message(inter, Strings.event_data_collector_interface_search_guilds_no_guild_found)
+
+    number_of_guilds = len(found_guilds)
+
+    num_of_batches = math.ceil(number_of_guilds / 12)
+    batches = [found_guilds[i * 12:i * 12 + 12] for i in range(num_of_batches)]
+
+    pages = []
+    for batch in batches:
+      page = disnake.Embed(title="Guild list", color=disnake.Color.dark_blue())
+      message_utils.add_author_footer(page, inter.author)
+
+      for guild in batch:
+        guild_id = guild[0]
+        guild_name = guild[1]
+        guild_level = guild[2]
+
+        page.add_field(name=f"{guild_name}({guild_level})", value=f"ID: {guild_id}")
       pages.append(page)
 
     embed_view = EmbedView(inter.author, pages, invisible=True)

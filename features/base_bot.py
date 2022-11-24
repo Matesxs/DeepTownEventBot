@@ -31,8 +31,7 @@ class BaseAutoshardedBot(commands.AutoShardedBot):
       help_command=None,
       case_insensitive=True,
       allowed_mentions=disnake.AllowedMentions(roles=False, everyone=False, users=True),
-      intents=intents,
-      sync_commands=True
+      intents=intents
     )
     self.initialized = False
 

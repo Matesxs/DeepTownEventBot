@@ -1,5 +1,5 @@
-from sqlalchemy import Column, ForeignKey, Integer
-from sqlalchemy.orm import relationship
+import datetime
+from sqlalchemy import Column, ForeignKey, Integer, DateTime
 
 from database import database, BigIntegerType
 
@@ -11,7 +11,5 @@ class EventParticipation(database.base):
   dt_guild_id = Column(BigIntegerType, ForeignKey("dt_guilds.id", ondelete="CASCADE"), primary_key=True)
   dt_user_id = Column(BigIntegerType, ForeignKey("dt_users.id", ondelete="CASCADE"), primary_key=True)
 
-  ammount = Column(BigIntegerType, default=0)
-
-  user = relationship("DTUser", uselist=False)
-  member = relationship("DTGuildMember", primaryjoin="and_(EventParticipation.dt_user_id==DTGuildMember.dt_user_id, EventParticipation.dt_guild_id==DTGuildMember.dt_guild_id)", uselist=False, back_populates="event_participations")
+  updated = Column(DateTime, index=True, nullable=False, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+  amount = Column(BigIntegerType, default=0)

@@ -47,3 +47,8 @@ class Strings(metaclass=Formatable):
   common_ping_brief = "Ping a bot and get his reponse times"
 
   common_uptime_brief = "Show uptime of bot"
+
+  # Event Data Collector
+  event_data_collector_fetch_data_description = "Fetch current guild data and save them to database"
+  event_data_collector_fetch_data_get_failed = "Failed to get guild data"
+  event_data_collector_fetch_data_success = "Data for guild `{guild}` fetched and updated"

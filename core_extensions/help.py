@@ -124,27 +124,5 @@ class Help(Base_Cog):
       emb = disnake.Embed(title="Help", description="*No help available*", colour=disnake.Color.orange())
       await ctx.send(embed=emb)
 
-  @commands.slash_command(name="command_list", description=Strings.help_commands_list_description)
-  @cooldowns.short_cooldown
-  async def command_list(self, inter: disnake.CommandInteraction):
-    await message_utils.delete_message(self.bot, inter)
-
-    all_commands = await get_all_commands(self.bot, inter)
-    command_strings = [f"{config.base.command_prefix}{command_utils.get_command_signature(com)}" for com in all_commands]
-
-    pages = []
-    while command_strings:
-      output, command_strings = string_manipulation.add_string_until_length(command_strings, 4000, "\n")
-      embed = disnake.Embed(title="Commands list", description=output, colour=disnake.Color.dark_blue())
-      message_utils.add_author_footer(embed, inter.author)
-      pages.append(embed)
-
-    if pages:
-      await EmbedView(inter.author, embeds=pages, perma_lock=True).run(inter)
-    else:
-      emb = disnake.Embed(title="Commands list", description="*No commands available*", colour=disnake.Color.orange())
-      message_utils.add_author_footer(emb, inter.author)
-      await inter.send(embed=emb, ephemeral=True)
-
 def setup(bot):
   bot.add_cog(Help(bot))

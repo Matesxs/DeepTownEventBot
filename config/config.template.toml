@@ -27,3 +27,6 @@ clean_none_existing_guilds = true
 cleanup_rate_days = 7
 pull_data_on_startup = true
 pull_data_on_startup_delay_seconds = 60
+
+[event_data_tracker]
+tracker_limit_per_guild = 10

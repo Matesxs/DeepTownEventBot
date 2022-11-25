@@ -27,7 +27,7 @@ class DTDataManager(Base_Cog):
 
   @manager.sub_command(description=Strings.event_data_manager_update_guild_data_description)
   @cooldowns.long_cooldown
-  async def update_guild_data(self, inter: disnake.CommandInteraction, guild_id: int=commands.Param(description="Deep Town Guild ID")):
+  async def update_guild(self, inter: disnake.CommandInteraction, guild_id: int=commands.Param(description="Deep Town Guild ID")):
     await inter.response.defer(with_message=True, ephemeral=True)
 
     data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
@@ -40,7 +40,7 @@ class DTDataManager(Base_Cog):
 
   @manager.sub_command(description=Strings.event_data_manager_update_all_guilds_data_description)
   @cooldowns.long_cooldown
-  async def update_all_guilds_data(self, inter: disnake.CommandInteraction):
+  async def update_all_guilds(self, inter: disnake.CommandInteraction):
     await inter.response.defer(with_message=True, ephemeral=True)
 
     guild_ids = await dt_helpers.get_ids_of_all_guilds(self.bot)
@@ -61,7 +61,7 @@ class DTDataManager(Base_Cog):
 
   @manager.sub_command(description=Strings.event_data_manager_update_data_description)
   @cooldowns.long_cooldown
-  async def update_data(self, inter: disnake.CommandInteraction):
+  async def update_tracked_guilds(self, inter: disnake.CommandInteraction):
     await inter.response.defer(with_message=True, ephemeral=True)
 
     if not config.event_data_manager.monitor_all_guilds:

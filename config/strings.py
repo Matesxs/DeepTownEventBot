@@ -57,9 +57,9 @@ class Strings(metaclass=Formatable):
 
   event_data_manager_update_all_guilds_data_description = "Update data of all guilds in database"
   event_data_manager_update_all_guilds_data_success = "Updated data of `{guild_num}` guilds"
-  event_data_manager_update_all_guilds_data_failed = "Faild to get ids of all guilds from server"
+  event_data_manager_update_all_guilds_data_failed = "No guilds ids for update from server"
 
-  event_data_manager_update_data_description = "Update data of tracked guilds"
+  event_data_manager_update_data_description = "Update data of tracked guilds in database"
   event_data_manager_update_data_success = "Updated data of `{guild_num}` guilds"
   event_data_manager_update_data_failed = "No guilds ids for update from database or server"
 

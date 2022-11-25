@@ -51,17 +51,17 @@ class Strings(metaclass=Formatable):
   common_invite_brief = "Send invite link of the bot"
 
   # Data manager
-  event_data_manager_update_guild_data_description = "Update data of selected guild in database"
-  event_data_manager_update_guild_data_get_failed = "Failed to get guild data"
-  event_data_manager_update_guild_data_success = "Data for guild `{guild}` fetched and updated"
+  event_data_manager_update_guild_description = "Update data of selected guild in database"
+  event_data_manager_update_guild_get_failed = "Failed to get guild data"
+  event_data_manager_update_guild_success = "Data for guild `{guild}` fetched and updated"
 
-  event_data_manager_update_all_guilds_data_description = "Update data of all guilds in database"
-  event_data_manager_update_all_guilds_data_success = "Updated data of `{guild_num}` guilds"
-  event_data_manager_update_all_guilds_data_failed = "No guilds ids for update from server"
+  event_data_manager_update_all_guilds_description = "Update data of all guilds in database"
+  event_data_manager_update_all_guilds_success = "Updated data of `{guild_num}` guilds"
+  event_data_manager_update_all_guilds_failed = "No guilds ids for update from server"
 
-  event_data_manager_update_data_description = "Update data of tracked guilds in database"
-  event_data_manager_update_data_success = "Updated data of `{guild_num}` guilds"
-  event_data_manager_update_data_failed = "No guilds ids for update from database or server"
+  event_data_manager_update_tracked_guilds_description = "Update data of tracked guilds in database"
+  event_data_manager_update_tracked_guilds_success = "Updated data of `{guild_num}` guilds"
+  event_data_manager_update_tracked_guilds_failed = "No guilds ids for update from database"
 
   # Event Tracker
   event_data_tracker_add_or_modify_tracker_description = "Add guild for tracking or modify existing announcement channel"

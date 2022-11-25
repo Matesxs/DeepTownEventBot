@@ -91,6 +91,18 @@ class DTDataManager(Base_Cog):
       return await message_utils.generate_success_message(inter, Strings.event_data_manager_update_tracked_guilds_success(guild_num=pulled_data))
     await message_utils.generate_error_message(inter, Strings.event_data_manager_update_tracked_guilds_failed)
 
+  @manager.sub_command(description=Strings.event_data_manager_cancel_startup_update_description)
+  @cooldowns.default_cooldown
+  async def cancel_startup_update(self, inter: disnake.CommandInteraction):
+    await inter.response.defer(with_message=True, ephemeral=True)
+
+    if self.startup_data_update_task.is_running():
+      self.startup_data_update_task.cancel()
+
+      await message_utils.generate_success_message(inter, Strings.event_data_manager_cancel_startup_update_success)
+    else:
+      await message_utils.generate_error_message(inter, Strings.event_data_manager_cancel_startup_update_failed)
+
   @tasks.loop(hours=config.event_data_manager.cleanup_rate_days * 24)
   async def cleanup_task(self):
     logger.info("Starting cleanup")

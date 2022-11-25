@@ -63,6 +63,10 @@ class Strings(metaclass=Formatable):
   event_data_manager_update_tracked_guilds_success = "Updated data of `{guild_num}` guilds"
   event_data_manager_update_tracked_guilds_failed = "No guilds ids for update from database"
 
+  event_data_manager_cancel_startup_update_description = "Terminate initial pull of guilds data"
+  event_data_manager_cancel_startup_update_success = "Initial pull of data terminated"
+  event_data_manager_cancel_startup_update_failed = "Initial pull is no longer running"
+
   # Event Tracker
   event_data_tracker_add_or_modify_tracker_description = "Add guild for tracking or modify existing announcement channel"
   event_data_tracker_add_or_modify_tracker_failed_to_get_data = "Failed to get guild data"

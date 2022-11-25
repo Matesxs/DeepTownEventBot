@@ -184,14 +184,14 @@ class DTEventTracker(Base_Cog):
     guild_ids = tracking_settings_repo.get_guild_tracked_guild_ids(inter.guild.id)
     for guild_id in guild_ids:
       data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
+      await asyncio.sleep(0.5)
       if data is None: continue
 
       event_participation_repo.generate_or_update_event_participations(data)
-      await asyncio.sleep(1)
 
     for tracker in trackers:
       await self.announce(tracker)
-      await asyncio.sleep(0.5)
+      await asyncio.sleep(0.25)
 
     await message_utils.generate_success_message(inter, Strings.event_data_tracker_generate_announcements_success)
 
@@ -230,17 +230,17 @@ class DTEventTracker(Base_Cog):
     if guild_ids is not None:
       for guild_id in guild_ids:
         data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
+        await asyncio.sleep(0.5)
         if data is None: continue
 
         event_participation_repo.generate_or_update_event_participations(data)
-        await asyncio.sleep(1)
     logger.info("Update before announcement finished")
 
     logger.info("Starting Announcement")
     trackers = tracking_settings_repo.get_all_trackers()
     for tracker in trackers:
       await self.announce(tracker)
-      await asyncio.sleep(0.5)
+      await asyncio.sleep(0.25)
 
   @result_announce_task.before_loop
   async def result_announce_wait_pretask(self):

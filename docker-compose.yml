@@ -4,8 +4,6 @@ services:
     db:
         image: postgres:latest
         container_name: deep-town-event-bot-db
-        ports:
-            - "5432:5432"
         environment:
             POSTGRES_HOST_AUTH_METHOD: "trust"
         volumes:

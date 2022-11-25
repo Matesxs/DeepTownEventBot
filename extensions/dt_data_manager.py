@@ -17,16 +17,13 @@ class DTDataManager(Base_Cog):
       if not self.cleanup_task.is_running():
         self.cleanup_task.start()
 
-    if config.event_data_manager.pull_data_on_startup:
-      if not self.startup_data_update_task.is_running():
-        self.startup_data_update_task.start()
+    self.cance_initial_pull = False
+    loop = asyncio.get_running_loop()
+    asyncio.ensure_future(self.startup_data_update_task(), loop=loop)
 
   def cog_unload(self):
     if self.cleanup_task.is_running():
       self.cleanup_task.cancel()
-
-    if self.startup_data_update_task.is_running():
-      self.startup_data_update_task.cancel()
 
   @commands.slash_command()
   @commands.is_owner()
@@ -96,8 +93,8 @@ class DTDataManager(Base_Cog):
   async def cancel_startup_update(self, inter: disnake.CommandInteraction):
     await inter.response.defer(with_message=True, ephemeral=True)
 
-    if self.startup_data_update_task.is_running():
-      self.startup_data_update_task.cancel()
+    if not self.cance_initial_pull:
+      self.cance_initial_pull = True
 
       await message_utils.generate_success_message(inter, Strings.event_data_manager_cancel_startup_update_success)
     else:
@@ -114,7 +111,6 @@ class DTDataManager(Base_Cog):
       logger.info(f"Remove {removed_guilds} deleted guilds from database")
     logger.info("Cleanup finished")
 
-  @tasks.loop(count=1)
   async def startup_data_update_task(self):
     await asyncio.sleep(config.event_data_manager.pull_data_on_startup_delay_seconds)
 
@@ -124,10 +120,12 @@ class DTDataManager(Base_Cog):
     else:
       guild_ids = await dt_helpers.get_ids_of_all_guilds(self.bot)
 
-    if guild_ids is not None or not guild_ids:
+    if guild_ids is not None or not guild_ids and not self.cance_initial_pull:
       pulled_data = 0
 
       for guild_id in guild_ids:
+        if self.cance_initial_pull: break
+
         data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
         await asyncio.sleep(0.5)
         if data is None: continue

@@ -4,6 +4,7 @@
 discord_api_key = "<env>" # "<env>" means that this setting will be loaded from environmental variable with key "base_discord_api_key"
 command_prefix = "!"
 status_message = "Deep Town Event Participation"
+required_permissions = 431644732480
 
 # If true warning and error logs will also be logged in file discord.log
 log_to_file = false

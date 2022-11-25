@@ -48,6 +48,8 @@ class Strings(metaclass=Formatable):
 
   common_uptime_brief = "Show uptime of bot"
 
+  common_invite_brief = "Send invite link of the bot"
+
   # Data manager
   event_data_manager_fetch_data_description = "Fetch current guild data and save them to database"
   event_data_manager_fetch_data_get_failed = "Failed to get guild data"

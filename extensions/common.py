@@ -4,7 +4,7 @@ import datetime
 import time
 import humanize
 
-from config import cooldowns, Strings
+from config import cooldowns, Strings, config
 from features.base_cog import Base_Cog
 from utils import message_utils
 
@@ -35,6 +35,19 @@ class Common(Base_Cog):
 
     em.description = em.description = f'Bot: {round(self.bot.latency * 1000)} ms\nAPI: {round((end_time - start_time) * 1000)}ms'
     await message.edit(embed=em)
+
+  @commands.command(brief=Strings.common_invite_brief)
+  @cooldowns.default_cooldown
+  async def invite_link(self, ctx: commands.Context):
+    await message_utils.delete_message(self.bot, ctx)
+
+    link = f"https://discord.com/oauth2/authorize?client_id={self.bot.user.id}&scope=bot&permissions={config.base.required_permissions}"
+    embed = disnake.Embed(title=self.bot.user.display_name, description=f"[Invite link]({link})", color=disnake.Color.dark_blue())
+    embed.set_thumbnail(self.bot.user.avatar.url)
+    message_utils.add_author_footer(embed, ctx.author)
+
+    await ctx.send(embed=embed)
+
 
 def setup(bot):
   bot.add_cog(Common(bot))

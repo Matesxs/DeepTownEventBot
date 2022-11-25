@@ -43,7 +43,11 @@ class DTDataManager(Base_Cog):
   async def update_data(self, inter: disnake.CommandInteraction):
     await inter.response.defer(with_message=True, ephemeral=True)
 
-    guild_ids = tracking_settings_repo.get_tracked_guild_ids()
+    if not config.event_data_manager.monitor_all_guilds:
+      guild_ids = tracking_settings_repo.get_tracked_guild_ids()
+    else:
+      guild_ids = await dt_helpers.get_ids_of_all_guilds(self.bot)
+
     for guild_id in guild_ids:
       data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
       if data is None: continue

@@ -54,8 +54,6 @@ class DTEventTracker(Base_Cog):
     if not self.result_announce_task.is_running():
       self.result_announce_task.start()
 
-    self.startup_data_update_task.start()
-
   def cog_unload(self) -> None:
     if self.result_announce_task.is_running():
       self.result_announce_task.cancel()
@@ -252,29 +250,6 @@ class DTEventTracker(Base_Cog):
       next_monday += datetime.timedelta(days=7)
     delta_to_next_monday = next_monday - datetime.datetime.utcnow()
     await asyncio.sleep(delta_to_next_monday.total_seconds())
-
-  @tasks.loop(count=1)
-  async def startup_data_update_task(self):
-    await asyncio.sleep(60)
-
-    logger.info("Startup guild data pull starting")
-    if not config.event_data_manager.monitor_all_guilds:
-      guild_ids = tracking_settings_repo.get_tracked_guild_ids()
-    else:
-      guild_ids = await dt_helpers.get_ids_of_all_guilds(self.bot)
-
-    if guild_ids is not None or not guild_ids:
-      pulled_data = 0
-
-      for guild_id in guild_ids:
-        data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
-        if data is None: continue
-
-        event_participation_repo.generate_or_update_event_participations(data)
-        pulled_data += 1
-        await asyncio.sleep(1)
-      logger.info(f"Pulled data of {pulled_data} guilds")
-    logger.info("Startup guild data pull finished")
 
 def setup(bot):
   bot.add_cog(DTEventTracker(bot))

@@ -23,4 +23,7 @@ default_loaded_extensions = ["common", "dt_data_manager", "dt_event_tracker"]
 
 [event_data_manager]
 monitor_all_guilds = false
+clean_none_existing_guilds = true
 cleanup_rate_days = 7
+pull_data_on_startup = true
+pull_data_on_startup_delay_seconds = 60

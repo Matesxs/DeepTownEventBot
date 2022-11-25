@@ -57,6 +57,7 @@ class Strings(metaclass=Formatable):
 
   event_data_manager_update_data_description = "Update data of tracked guilds"
   event_data_manager_update_data_success = "Updated data of `{guild_num}` guilds"
+  event_data_manager_update_data_failed = "No data for update loaded"
 
   # Event Tracker
   event_data_tracker_add_or_modify_tracker_description = "Add guild for tracking or modify existing announcement channel"

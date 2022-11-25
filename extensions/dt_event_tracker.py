@@ -187,8 +187,9 @@ class DTEventTracker(Base_Cog):
     for guild_id in guild_ids:
       data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
       if data is None: continue
+
       event_participation_repo.generate_or_update_event_participations(data)
-      await asyncio.sleep(0.5)
+      await asyncio.sleep(1)
 
     for tracker in trackers:
       await self.announce(tracker)
@@ -254,19 +255,25 @@ class DTEventTracker(Base_Cog):
 
   @tasks.loop(count=1)
   async def startup_data_update_task(self):
+    await asyncio.sleep(60)
+
     logger.info("Startup guild data pull starting")
     if not config.event_data_manager.monitor_all_guilds:
       guild_ids = tracking_settings_repo.get_tracked_guild_ids()
     else:
       guild_ids = await dt_helpers.get_ids_of_all_guilds(self.bot)
 
-    if guild_ids is not None:
+    if guild_ids is not None or not guild_ids:
+      pulled_data = 0
+
       for guild_id in guild_ids:
         data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
         if data is None: continue
 
         event_participation_repo.generate_or_update_event_participations(data)
+        pulled_data += 1
         await asyncio.sleep(1)
+      logger.info(f"Pulled data of {pulled_data} guilds")
     logger.info("Startup guild data pull finished")
 
 def setup(bot):

@@ -48,13 +48,19 @@ class DTDataManager(Base_Cog):
     else:
       guild_ids = await dt_helpers.get_ids_of_all_guilds(self.bot)
 
-    for guild_id in guild_ids:
-      data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
-      if data is None: continue
-      event_participation_repo.generate_or_update_event_participations(data)
-      await asyncio.sleep(0.5)
+    if guild_ids is not None or not guild_ids:
+      pulled_data = 0
 
-    await message_utils.generate_success_message(inter, Strings.event_data_manager_update_data_success(guild_num=len(guild_ids)))
+      for guild_id in guild_ids:
+        data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
+        if data is None: continue
+
+        event_participation_repo.generate_or_update_event_participations(data)
+        pulled_data += 1
+        await asyncio.sleep(1)
+
+      return await message_utils.generate_success_message(inter, Strings.event_data_manager_update_data_success(guild_num=pulled_data))
+    await message_utils.generate_error_message(inter, Strings.event_data_manager_update_data_failed)
 
   @tasks.loop(hours=config.event_data_manager.cleanup_rate_days * 24)
   async def cleanup_task(self):

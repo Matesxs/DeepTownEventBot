@@ -54,6 +54,8 @@ class DTEventTracker(Base_Cog):
     if not self.result_announce_task.is_running():
       self.result_announce_task.start()
 
+    self.startup_data_update_task.start()
+
   def cog_unload(self) -> None:
     if self.result_announce_task.is_running():
       self.result_announce_task.cancel()
@@ -243,6 +245,15 @@ class DTEventTracker(Base_Cog):
 
   @result_announce_task.before_loop
   async def result_announce_wait_pretask(self):
+    today = datetime.datetime.utcnow().replace(hour=8, minute=10, second=0, microsecond=0)
+    next_monday = today + datetime.timedelta(days=today.weekday() % 7)
+    if next_monday < datetime.datetime.utcnow():
+      next_monday += datetime.timedelta(days=7)
+    delta_to_next_monday = next_monday - datetime.datetime.utcnow()
+    await asyncio.sleep(delta_to_next_monday.total_seconds())
+
+  @tasks.loop(count=1)
+  async def startup_data_update_task(self):
     logger.info("Startup guild data pull starting")
     if not config.event_data_manager.monitor_all_guilds:
       guild_ids = tracking_settings_repo.get_tracked_guild_ids()
@@ -257,13 +268,6 @@ class DTEventTracker(Base_Cog):
         event_participation_repo.generate_or_update_event_participations(data)
         await asyncio.sleep(1)
     logger.info("Startup guild data pull finished")
-
-    today = datetime.datetime.utcnow().replace(hour=8, minute=10, second=0, microsecond=0)
-    next_monday = today + datetime.timedelta(days=today.weekday() % 7)
-    if next_monday < datetime.datetime.utcnow():
-      next_monday += datetime.timedelta(days=7)
-    delta_to_next_monday = next_monday - datetime.datetime.utcnow()
-    await asyncio.sleep(delta_to_next_monday.total_seconds())
 
 def setup(bot):
   bot.add_cog(DTEventTracker(bot))

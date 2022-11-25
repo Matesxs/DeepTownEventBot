@@ -18,8 +18,9 @@ class DTDataManager(Base_Cog):
         self.cleanup_task.start()
 
     self.cance_initial_pull = False
-    loop = asyncio.get_running_loop()
-    asyncio.ensure_future(self.startup_data_update_task(), loop=loop)
+    if config.event_data_manager.pull_data_on_startup:
+      loop = asyncio.get_event_loop()
+      asyncio.ensure_future(self.startup_data_update_task(), loop=loop)
 
   def cog_unload(self):
     if self.cleanup_task.is_running():
@@ -58,7 +59,7 @@ class DTDataManager(Base_Cog):
 
       for guild_id in guild_ids:
         data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(0.1)
         if data is None: continue
 
         event_participation_repo.generate_or_update_event_participations(data)
@@ -79,7 +80,7 @@ class DTDataManager(Base_Cog):
 
       for guild_id in guild_ids:
         data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(0.1)
         if data is None: continue
 
         event_participation_repo.generate_or_update_event_participations(data)
@@ -127,7 +128,7 @@ class DTDataManager(Base_Cog):
         if self.cance_initial_pull: break
 
         data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(1)
         if data is None: continue
 
         event_participation_repo.generate_or_update_event_participations(data)

@@ -26,7 +26,6 @@ def __get_and_update_event_participation(user_id: int, guild_id: int, participat
     event_year, event_week = dt_helpers.get_event_index(datetime.datetime.utcnow())
     item = EventParticipation(year=event_year, event_week=event_week, dt_guild_id=guild_id, dt_user_id=user_id, amount=participation_amount)
     session.add(item)
-    session.commit()
   else:
     item.amount = participation_amount
   return item

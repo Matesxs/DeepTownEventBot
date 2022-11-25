@@ -5,6 +5,7 @@ import math
 import datetime
 import asyncio
 import humanize
+from tabulate import tabulate
 
 from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
@@ -19,26 +20,22 @@ logger = setup_custom_logger(__name__)
 def generate_announce_report(guild_data: dt_helpers.DTGuildData, event_year: int, event_week: int, detailed: bool=False) -> List[str]:
   guild_data.players.sort(key=lambda x: x.last_event_contribution, reverse=True)
 
-  if detailed:
-    participation_strings = [f"{guild_data.name} - ID: {guild_data.id} - Level: {guild_data.level}\nYear: {event_year} Week: {event_week}\n\nName                        ID        Level     Depth     Online             Donate"]
-  else:
-    participation_strings = [f"{guild_data.name} - ID: {guild_data.id} - Level: {guild_data.level}\nYear: {event_year} Week: {event_week}\n\nName                        Level     Donate"]
+  description = f"{guild_data.name} - ID: {guild_data.id} - Level: {guild_data.level}\nYear: {event_year} Week: {event_week}\n\n"
+  headers = ["Name", "ID", "Level", "Depth", "Online", "Donate"] if detailed else ["Name", "Level", "Donate"]
+  data_list = []
 
+  current_time = datetime.datetime.utcnow()
   for participant in guild_data.players:
-    padding_name = " " * max((28 - len(participant.name)), 1)
-    padding_level = " " * max((10 - len(str(participant.level))), 1)
     if detailed:
-      padding_id = " " * max((10 - len(str(participant.id))), 1)
-      padding_depth = " " * max((10 - len(str(participant.depth))), 1)
-      current_time = datetime.datetime.utcnow()
-      padding_last_online = " " * max((15 - len(humanize.naturaldelta(current_time - participant.last_online))), 1)
-      participation_strings.append(f"{participant.name}{padding_name}{participant.id}{padding_id}{participant.level}{padding_level}{participant.depth}{padding_depth}{humanize.naturaltime(current_time - participant.last_online)}{padding_last_online}{participant.last_event_contribution}")
+      data_list.append((participant.name, participant.id, participant.level, participant.depth, humanize.naturaltime(current_time - participant.last_online), participant.last_event_contribution))
     else:
-      participation_strings.append(f"{participant.name}{padding_name}{participant.level}{padding_level}{participant.last_event_contribution}")
+      data_list.append((participant.name, participant.level, participant.last_event_contribution))
+
+  table_strings = (description + tabulate(data_list, headers, tablefmt="github")).split("\n")
 
   announce_strings = []
-  while participation_strings:
-    final_string, participation_strings = string_manipulation.add_string_until_length(participation_strings, 2000, "\n")
+  while table_strings:
+    final_string, table_strings = string_manipulation.add_string_until_length(table_strings, 1900, "\n")
     announce_strings.append(f"```py\n{final_string}\n```")
 
   return announce_strings
@@ -71,17 +68,30 @@ class DTEventTracker(Base_Cog):
                                   announce_channel:Optional[disnake.TextChannel]=commands.Param(default=None, description="Channel for announcing results at the end of event")):
     await inter.response.defer(with_message=True, ephemeral=True)
 
-    data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
-    if data is None:
-      return await message_utils.generate_error_message(inter, Strings.event_data_tracker_add_or_modify_tracker_failed_to_get_data)
+    existing_tracker = tracking_settings_repo.get_tracking_settings(inter.guild.id, guild_id)
+    if not existing_tracker:
+      all_trackers = tracking_settings_repo.get_all_guild_trackers(inter.guild.id)
+      if self.bot.owner is None or inter.author.id != self.bot.owner.id:
+        if len(all_trackers) >= config.event_data_tracker.tracker_limit_per_guild:
+          return await message_utils.generate_error_message(inter, Strings.event_data_tracker_add_or_modify_tracker_tracker_limit_reached(limit=config.event_data_tracker.tracker_limit_per_guild))
 
-    event_participation_repo.generate_or_update_event_participations(data)
-    tracking_settings_repo.get_or_create_tracking_settings(inter.guild, data, announce_channel.id if announce_channel is not None else None)
+      data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
+      if data is None:
+        return await message_utils.generate_error_message(inter, Strings.event_data_tracker_add_or_modify_tracker_failed_to_get_data)
+
+      guild_name = data.name
+
+      event_participation_repo.generate_or_update_event_participations(data)
+      tracking_settings_repo.get_or_create_tracking_settings(inter.guild, data, announce_channel.id if announce_channel is not None else None)
+    else:
+      guild_name = existing_tracker.dt_guild.name
+      existing_tracker.announce_channel_id = str(announce_channel.id)
+      tracking_settings_repo.session.commit()
 
     if announce_channel is None:
-      await message_utils.generate_success_message(inter, Strings.event_data_tracker_add_or_modify_tracker_success_without_channel(guild=data.name))
+      await message_utils.generate_success_message(inter, Strings.event_data_tracker_add_or_modify_tracker_success_without_channel(guild=guild_name))
     else:
-      await message_utils.generate_success_message(inter, Strings.event_data_tracker_add_or_modify_tracker_success_with_channel(guild=data.name, channel=announce_channel.name))
+      await message_utils.generate_success_message(inter, Strings.event_data_tracker_add_or_modify_tracker_success_with_channel(guild=guild_name, channel=announce_channel.name))
 
   @reporter.sub_command(description=Strings.event_data_tracker_remove_tracker_description)
   @commands.check(permission_helper.is_administrator)
@@ -184,7 +194,7 @@ class DTEventTracker(Base_Cog):
     guild_ids = tracking_settings_repo.get_guild_tracked_guild_ids(inter.guild.id)
     for guild_id in guild_ids:
       data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
-      await asyncio.sleep(0.5)
+      await asyncio.sleep(0.1)
       if data is None: continue
 
       event_participation_repo.generate_or_update_event_participations(data)

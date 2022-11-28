@@ -22,11 +22,14 @@ log_channel_id = -1
 default_loaded_extensions = ["common", "dt_data_manager", "dt_event_tracker"]
 
 [event_data_manager]
-monitor_all_guilds = false
+monitor_all_guilds = true
+
 clean_none_existing_guilds = true
 cleanup_rate_days = 7
-pull_data_on_startup = true
-pull_data_on_startup_delay_seconds = 60
+
+periodically_pull_data = true
+data_pull_rate_hours = 6
+pull_data_startup_delay_seconds = 60
 
 [event_data_tracker]
 tracker_limit_per_guild = 10

@@ -6,6 +6,7 @@ import datetime
 import asyncio
 import humanize
 from tabulate import tabulate
+from tqdm import tqdm
 
 from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
@@ -21,15 +22,15 @@ def generate_announce_report(guild_data: dt_helpers.DTGuildData, event_year: int
   guild_data.players.sort(key=lambda x: x.last_event_contribution, reverse=True)
 
   description = f"{guild_data.name} - ID: {guild_data.id} - Level: {guild_data.level}\nYear: {event_year} Week: {event_week}\n\n"
-  headers = ["Name", "ID", "Level", "Depth", "Online", "Donate"] if detailed else ["Name", "Level", "Donate"]
+  headers = ["No°", "Name", "ID", "Level", "Depth", "Online", "Donate"] if detailed else ["No°", "Name", "Level", "Donate"]
   data_list = []
 
   current_time = datetime.datetime.utcnow()
-  for participant in guild_data.players:
+  for idx, participant in enumerate(guild_data.players):
     if detailed:
-      data_list.append((participant.name, participant.id, participant.level, participant.depth, humanize.naturaltime(current_time - participant.last_online), participant.last_event_contribution))
+      data_list.append((idx + 1, participant.name, participant.id, participant.level, participant.depth, humanize.naturaltime(current_time - participant.last_online), participant.last_event_contribution))
     else:
-      data_list.append((participant.name, participant.level, participant.last_event_contribution))
+      data_list.append((idx + 1, participant.name, participant.level, participant.last_event_contribution))
 
   table_strings = (description + tabulate(data_list, headers, tablefmt="github")).split("\n")
 
@@ -238,9 +239,13 @@ class DTEventTracker(Base_Cog):
       guild_ids = await dt_helpers.get_ids_of_all_guilds(self.bot)
 
     if guild_ids is not None:
-      for guild_id in guild_ids:
+      iterator = tqdm(guild_ids, unit="guild")
+      for guild_id in iterator:
+        iterator.set_description(f"GID: {guild_id}")
+
         data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
-        await asyncio.sleep(0.5)
+
+        await asyncio.sleep(1)
         if data is None: continue
 
         event_participation_repo.generate_or_update_event_participations(data)
@@ -259,6 +264,8 @@ class DTEventTracker(Base_Cog):
     if next_monday < datetime.datetime.utcnow():
       next_monday += datetime.timedelta(days=7)
     delta_to_next_monday = next_monday - datetime.datetime.utcnow()
+
+    logger.info(f"Next announcement in {humanize.naturaldelta(delta_to_next_monday)}({humanize.naturaldate(next_monday)})")
     await asyncio.sleep(delta_to_next_monday.total_seconds())
 
 def setup(bot):

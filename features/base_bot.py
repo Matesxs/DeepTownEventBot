@@ -4,7 +4,7 @@ import datetime
 import disnake
 from disnake.ext import commands
 import traceback
-from aiohttp import ClientSession, ClientTimeout
+from aiohttp import ClientSession
 
 from utils import message_utils, object_getters, command_utils
 from config import config
@@ -38,7 +38,7 @@ class BaseAutoshardedBot(commands.AutoShardedBot):
     self.last_error = None
     self.start_time = datetime.datetime.utcnow()
 
-    self.http_session = ClientSession(timeout=ClientTimeout(total=15))
+    self.http_session = ClientSession()
 
     self.event(self.on_ready)
     init_tables()

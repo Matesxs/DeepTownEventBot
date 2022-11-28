@@ -15,7 +15,7 @@ def get_event_index(date:datetime.datetime):
   if date.month == 1 and week_number > 5:
     event_year -= 1
 
-  if date.weekday() == 0 and date.hour < 8:
+  if date.weekday() < 3 or (date.weekday() == 3 and date.hour < 8):
     week_number -= 1
 
   if week_number <= 0:

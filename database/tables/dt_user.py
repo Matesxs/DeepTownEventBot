@@ -10,6 +10,6 @@ class DTUser(database.base):
   username = Column(String, index=True)
   level = Column(Integer)
   depth = Column(Integer)
-  last_online = Column(DateTime)
+  last_online = Column(DateTime, nullable=True)
 
   members = relationship("DTGuildMember", back_populates="user")

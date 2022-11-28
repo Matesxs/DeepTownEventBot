@@ -28,7 +28,7 @@ def generate_announce_report(guild_data: dt_helpers.DTGuildData, event_year: int
   current_time = datetime.datetime.utcnow()
   for idx, participant in enumerate(guild_data.players):
     if detailed:
-      data_list.append((idx + 1, participant.name, participant.id, participant.level, participant.depth, humanize.naturaltime(current_time - participant.last_online), participant.last_event_contribution))
+      data_list.append((idx + 1, participant.name, participant.id, participant.level, participant.depth, humanize.naturaltime(current_time - participant.last_online) if participant.last_online is not None else "Never", participant.last_event_contribution))
     else:
       data_list.append((idx + 1, participant.name, participant.level, participant.last_event_contribution))
 
@@ -57,10 +57,10 @@ class DTEventTracker(Base_Cog):
       self.result_announce_task.cancel()
 
   @commands.slash_command()
-  async def reporter(self, inter: disnake.CommandInteraction):
+  async def tracker(self, inter: disnake.CommandInteraction):
     pass
 
-  @reporter.sub_command(description=Strings.event_data_tracker_add_or_modify_tracker_description)
+  @tracker.sub_command(name="add_or_modify", description=Strings.event_data_tracker_add_or_modify_tracker_description)
   @commands.check(permission_helper.is_administrator)
   @cooldowns.default_cooldown
   @commands.guild_only()
@@ -94,7 +94,7 @@ class DTEventTracker(Base_Cog):
     else:
       await message_utils.generate_success_message(inter, Strings.event_data_tracker_add_or_modify_tracker_success_with_channel(guild=guild_name, channel=announce_channel.name))
 
-  @reporter.sub_command(description=Strings.event_data_tracker_remove_tracker_description)
+  @tracker.sub_command(name="remove", description=Strings.event_data_tracker_remove_tracker_description)
   @commands.check(permission_helper.is_administrator)
   @cooldowns.default_cooldown
   @commands.guild_only()
@@ -110,7 +110,7 @@ class DTEventTracker(Base_Cog):
     else:
       await message_utils.generate_error_message(inter, Strings.event_data_tracker_remove_tracker_failed(guild_id=guild_id))
 
-  @reporter.sub_command(description=Strings.event_data_tracker_list_trackers_description)
+  @tracker.sub_command(name="list", description=Strings.event_data_tracker_list_trackers_description)
   @commands.check(permission_helper.is_administrator)
   @cooldowns.default_cooldown
   async def list_guild_trackers(self, inter: disnake.CommandInteraction):
@@ -141,7 +141,36 @@ class DTEventTracker(Base_Cog):
     embed_view = EmbedView(inter.author, pages, invisible=True)
     await embed_view.run(inter)
 
-  @reporter.sub_command(description=Strings.event_data_tracker_search_guilds_description)
+  @tracker.sub_command(description=Strings.event_data_tracker_generate_announcements_description)
+  @commands.check(permission_helper.is_administrator)
+  @cooldowns.huge_cooldown
+  @commands.guild_only()
+  async def generate_announcements(self, inter: disnake.CommandInteraction):
+    await inter.response.defer(with_message=True, ephemeral=True)
+
+    trackers = tracking_settings_repo.get_all_guild_trackers(inter.guild.id)
+    if not trackers:
+      return await message_utils.generate_error_message(inter, Strings.event_data_tracker_generate_announcements_no_data)
+
+    guild_ids = tracking_settings_repo.get_guild_tracked_guild_ids(inter.guild.id)
+    for guild_id in guild_ids:
+      data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
+      await asyncio.sleep(0.1)
+      if data is None: continue
+
+      event_participation_repo.generate_or_update_event_participations(data)
+
+    for tracker in trackers:
+      await self.announce(tracker)
+      await asyncio.sleep(0.25)
+
+    await message_utils.generate_success_message(inter, Strings.event_data_tracker_generate_announcements_success)
+
+  @commands.slash_command(name="guild")
+  async def guild_commands(self, inter: disnake.CommandInteraction):
+    pass
+
+  @guild_commands.sub_command(name="search", description=Strings.event_data_tracker_search_guilds_description)
   @cooldowns.long_cooldown
   async def search_guilds(self, inter: disnake.CommandInteraction,
                           guild_name:Optional[str]=commands.Param(default=None, description="Guild name to search"),
@@ -181,44 +210,22 @@ class DTEventTracker(Base_Cog):
     embed_view = EmbedView(inter.author, pages, invisible=True)
     await embed_view.run(inter)
 
-  @reporter.sub_command(description=Strings.event_data_tracker_generate_announcements_description)
-  @commands.check(permission_helper.is_administrator)
-  @cooldowns.huge_cooldown
-  @commands.guild_only()
-  async def generate_announcements(self, inter: disnake.CommandInteraction):
-    await inter.response.defer(with_message=True, ephemeral=True)
-
-    trackers = tracking_settings_repo.get_all_guild_trackers(inter.guild.id)
-    if not trackers:
-      return await message_utils.generate_error_message(inter, Strings.event_data_tracker_generate_announcements_no_data)
-
-    guild_ids = tracking_settings_repo.get_guild_tracked_guild_ids(inter.guild.id)
-    for guild_id in guild_ids:
-      data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
-      await asyncio.sleep(0.1)
-      if data is None: continue
-
-      event_participation_repo.generate_or_update_event_participations(data)
-
-    for tracker in trackers:
-      await self.announce(tracker)
-      await asyncio.sleep(0.25)
-
-    await message_utils.generate_success_message(inter, Strings.event_data_tracker_generate_announcements_success)
-
-  @reporter.sub_command(description=Strings.event_data_tracker_generate_announcements_description)
+  @guild_commands.sub_command(name="report", description=Strings.event_data_tracker_generate_announcements_description)
   @cooldowns.long_cooldown
   async def guild_report(self, inter: disnake.CommandInteraction,
                          guild_id: int=commands.Param(description="Deep Town Guild ID"),
                          detailed: bool=commands.Param(description="Detailed report selector")):
     await inter.response.defer(with_message=True)
 
-    data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
-    if data is None:
+    guild_data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
+    if guild_data is None:
       return await message_utils.generate_error_message(inter, Strings.event_data_tracker_guild_report_no_data)
 
+    if config.event_data_manager.monitor_all_guilds or guild_id in tracking_settings_repo.get_tracked_guild_ids():
+      event_participation_repo.generate_or_update_event_participations(guild_data)
+
     event_year, event_week = dt_helpers.get_event_index(datetime.datetime.utcnow())
-    await send_guild_report(inter, data, event_year, event_week, detailed)
+    await send_guild_report(inter, guild_data, event_year, event_week, detailed)
 
   async def announce(self, tracker: tracking_settings_repo.TrackingSettings):
     announce_channel = await tracker.get_announce_channel(self.bot)
@@ -233,10 +240,8 @@ class DTEventTracker(Base_Cog):
   @tasks.loop(hours=24*7)
   async def result_announce_task(self):
     logger.info("Update before announcement starting")
-    if not config.event_data_manager.monitor_all_guilds:
-      guild_ids = tracking_settings_repo.get_tracked_guild_ids()
-    else:
-      guild_ids = await dt_helpers.get_ids_of_all_guilds(self.bot)
+
+    guild_ids = tracking_settings_repo.get_tracked_guild_ids()
 
     if guild_ids is not None:
       iterator = tqdm(guild_ids, unit="guild")

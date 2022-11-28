@@ -16,14 +16,12 @@ def event_list_participation_to_dt_guild_data(participations: List[EventParticip
 
   return dt_helpers.DTGuildData(participations[0].dt_guild.name, participations[0].dt_guild.id, participations[0].dt_guild.level, players), participation.year, participation.event_week
 
-def get_current_event_participation(user_id: int, guild_id: int) -> Optional[EventParticipation]:
-  event_year, event_week = dt_helpers.get_event_index(datetime.datetime.utcnow())
+def get_event_participation(user_id: int, guild_id: int, event_year: int, event_week: int) -> Optional[EventParticipation]:
   return session.query(EventParticipation).filter(EventParticipation.year == event_year, EventParticipation.event_week == event_week, EventParticipation.dt_user_id == user_id, EventParticipation.dt_guild_id == guild_id).one_or_none()
 
-def __get_and_update_event_participation(user_id: int, guild_id: int, participation_amount: int):
-  item = get_current_event_participation(user_id, guild_id)
+def get_and_update_event_participation(user_id: int, guild_id: int, event_year: int, event_week: int, participation_amount: int):
+  item = get_event_participation(user_id, guild_id, event_year, event_week)
   if item is None:
-    event_year, event_week = dt_helpers.get_event_index(datetime.datetime.utcnow())
     item = EventParticipation(year=event_year, event_week=event_week, dt_guild_id=guild_id, dt_user_id=user_id, amount=participation_amount)
     session.add(item)
   else:
@@ -33,9 +31,11 @@ def __get_and_update_event_participation(user_id: int, guild_id: int, participat
 def generate_or_update_event_participations(guild_data: dt_helpers.DTGuildData) -> List[EventParticipation]:
   get_and_update_dt_guild_members(guild_data)
 
+  event_year, event_week = dt_helpers.get_event_index(datetime.datetime.utcnow())
+
   participations = []
   for player_data in guild_data.players:
-    participations.append(__get_and_update_event_participation(player_data.id, guild_data.id, player_data.last_event_contribution))
+    participations.append(get_and_update_event_participation(player_data.id, guild_data.id, event_year, event_week, player_data.last_event_contribution))
   session.commit()
   return participations
 

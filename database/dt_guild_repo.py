@@ -7,6 +7,14 @@ from utils.dt_helpers import DTGuildData
 def get_dt_guild(guild_id:int) -> Optional[DTGuild]:
   return session.query(DTGuild).filter(DTGuild.id == guild_id).one_or_none()
 
+def create_dummy_dt_guild(id: int) -> DTGuild:
+  item = get_dt_guild(id)
+  if item is None:
+    item = DTGuild(id=id, name="Unknown", level=-1)
+    session.add(item)
+    session.commit()
+  return item
+
 def get_and_update_dt_guild(guild_data: DTGuildData) -> DTGuild:
   item = get_dt_guild(guild_data.id)
   if item is None:

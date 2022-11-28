@@ -2,12 +2,15 @@ import disnake
 from disnake.ext import commands, tasks
 import asyncio
 from tqdm import tqdm
+import pandas as pd
+import io
+import traceback
 
 from features.base_cog import Base_Cog
 from utils import dt_helpers, message_utils
 from utils.logger import setup_custom_logger
 from config import cooldowns, Strings, config
-from database import event_participation_repo, tracking_settings_repo, dt_guild_repo
+from database import event_participation_repo, tracking_settings_repo, dt_guild_repo, dt_guild_member_repo
 
 logger = setup_custom_logger(__name__)
 
@@ -18,6 +21,7 @@ class DTDataManager(Base_Cog):
       if not self.cleanup_task.is_running():
         self.cleanup_task.start()
 
+    self.skip_periodic_data_update = True
     if config.event_data_manager.periodically_pull_data:
       if not self.data_update_task.is_running():
         self.data_update_task.start()
@@ -31,10 +35,10 @@ class DTDataManager(Base_Cog):
 
   @commands.slash_command()
   @commands.is_owner()
-  async def manager(self, inter: disnake.CommandInteraction):
+  async def event_data_manager(self, inter: disnake.CommandInteraction):
     pass
 
-  @manager.sub_command(description=Strings.event_data_manager_update_guild_description)
+  @event_data_manager.sub_command(description=Strings.event_data_manager_update_guild_description)
   @cooldowns.long_cooldown
   async def update_guild(self, inter: disnake.CommandInteraction, guild_id: int=commands.Param(description="Deep Town Guild ID")):
     await inter.response.defer(with_message=True, ephemeral=True)
@@ -50,7 +54,7 @@ class DTDataManager(Base_Cog):
 
     await message_utils.generate_success_message(inter, Strings.event_data_manager_update_guild_success(guild=data.name))
 
-  @manager.sub_command(description=Strings.event_data_manager_update_all_guilds_description)
+  @event_data_manager.sub_command(description=Strings.event_data_manager_update_all_guilds_description)
   @cooldowns.long_cooldown
   async def update_all_guilds(self, inter: disnake.CommandInteraction):
     await inter.response.defer(with_message=True, ephemeral=True)
@@ -71,7 +75,7 @@ class DTDataManager(Base_Cog):
       return await message_utils.generate_success_message(inter, Strings.event_data_manager_update_all_guilds_success(guild_num=pulled_data))
     await message_utils.generate_error_message(inter, Strings.event_data_manager_update_all_guilds_failed)
 
-  @manager.sub_command(description=Strings.event_data_manager_update_tracked_guilds_description)
+  @event_data_manager.sub_command(description=Strings.event_data_manager_update_tracked_guilds_description)
   @cooldowns.long_cooldown
   async def update_tracked_guilds(self, inter: disnake.CommandInteraction):
     await inter.response.defer(with_message=True, ephemeral=True)
@@ -92,6 +96,53 @@ class DTDataManager(Base_Cog):
       return await message_utils.generate_success_message(inter, Strings.event_data_manager_update_tracked_guilds_success(guild_num=pulled_data))
     await message_utils.generate_error_message(inter, Strings.event_data_manager_update_tracked_guilds_failed)
 
+  @event_data_manager.sub_command(description=Strings.event_data_manager_skip_data_update_description)
+  @cooldowns.long_cooldown
+  async def skip_data_update(self, inter: disnake.CommandInteraction):
+    await inter.response.defer(with_message=True, ephemeral=True)
+
+    if not self.skip_periodic_data_update:
+      self.skip_periodic_data_update = True
+      await message_utils.generate_success_message(inter, Strings.event_data_manager_skip_data_update_success)
+    else:
+      await message_utils.generate_error_message(inter, Strings.event_data_manager_skip_data_update_failed)
+
+  @commands.message_command(name="Load Event Data")
+  @cooldowns.long_cooldown
+  @commands.is_owner()
+  async def load_data(self, inter: disnake.MessageCommandInteraction):
+    await inter.response.defer(with_message=True, ephemeral=True)
+
+    attachments = inter.target.attachments
+
+    csv_files = []
+    for attachment in attachments:
+      if attachment.filename.lower().endswith(".csv"):
+        csv_files.append(attachment)
+
+    updated_rows = 0
+    for file in csv_files:
+      data = io.BytesIO(await file.read())
+      dataframe = pd.read_csv(data, sep=";")
+
+      for index, row in dataframe.iterrows():
+        user_id = int(row["user_id"])
+        guild_id = int(row["guild_id"])
+        ammount = int(row["ammount"])
+        week = int(row["week"])
+        year = int(row["year"])
+
+        try:
+          dt_guild_member_repo.create_dummy_dt_guild_member(user_id, guild_id)
+          event_participation_repo.get_and_update_event_participation(user_id, guild_id, year, week, ammount)
+          updated_rows += 1
+        except Exception:
+          logger.warning(traceback.format_exc())
+
+    event_participation_repo.session.commit()
+
+    await message_utils.generate_success_message(inter, Strings.event_data_manager_load_data_loaded(count=updated_rows))
+
   @tasks.loop(hours=config.event_data_manager.cleanup_rate_days * 24)
   async def cleanup_task(self):
     logger.info("Starting cleanup")
@@ -105,7 +156,12 @@ class DTDataManager(Base_Cog):
 
   @tasks.loop(hours=config.event_data_manager.data_pull_rate_hours)
   async def data_update_task(self):
+    self.skip_periodic_data_update = False
     await asyncio.sleep(config.event_data_manager.pull_data_startup_delay_seconds)
+
+    if self.skip_periodic_data_update:
+      logger.info("Data pull interrupted")
+      return
 
     logger.info("Guild data pull starting")
     if not config.event_data_manager.monitor_all_guilds:
@@ -121,6 +177,10 @@ class DTDataManager(Base_Cog):
       for guild_id in iterator:
         iterator.set_description(f"GID: {guild_id}")
 
+        if self.skip_periodic_data_update:
+          logger.info("Data pull interrupted")
+          break
+
         data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
 
         await asyncio.sleep(1)
@@ -130,7 +190,9 @@ class DTDataManager(Base_Cog):
 
         event_participation_repo.generate_or_update_event_participations(data)
         pulled_data += 1
+
       logger.info(f"Pulled data of {pulled_data} guilds\nGuilds {not_updated} not updated")
+      self.skip_periodic_data_update = True
     logger.info("Guild data pull finished")
 
 def setup(bot):

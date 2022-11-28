@@ -63,6 +63,13 @@ class Strings(metaclass=Formatable):
   event_data_manager_update_tracked_guilds_success = "Updated data of `{guild_num}` guilds"
   event_data_manager_update_tracked_guilds_failed = "No guilds ids for update from database"
 
+  event_data_manager_skip_data_update_description = "Skip periodic data update"
+  event_data_manager_skip_data_update_success = "Skipping periodic data update"
+  event_data_manager_skip_data_update_failed = "Periodic data update not running or already marked for skipping"
+
+  event_data_manager_load_data_description = "Load manually event data"
+  event_data_manager_load_data_loaded = "New data loaded, `{count}` rows\nIf some data are missing then file was in invalid format or data keys were missing"
+
   # Event Tracker
   event_data_tracker_add_or_modify_tracker_description = "Add guild for tracking or modify existing announcement channel"
   event_data_tracker_add_or_modify_tracker_failed_to_get_data = "Failed to get guild data"

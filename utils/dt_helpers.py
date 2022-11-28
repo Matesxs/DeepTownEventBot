@@ -30,11 +30,11 @@ class DTUserData:
   id: int
   level: int
   depth: int
-  last_online: datetime.datetime
+  last_online: Optional[datetime.datetime]
   last_event_contribution: int
 
   def __repr__(self):
-    return f"<{self.name}({self.id}),{self.level},{self.depth},'{self.last_online}',{self.last_event_contribution}>"
+    return f"<{self.name}({self.id}),{self.level},{self.depth},'{self.last_online if self.last_online is not None else 'Never'}',{self.last_event_contribution}>"
 
 @dataclasses.dataclass
 class DTGuildData:

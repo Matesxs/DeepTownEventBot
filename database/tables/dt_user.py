@@ -13,3 +13,4 @@ class DTUser(database.base):
   last_online = Column(DateTime, nullable=True)
 
   members = relationship("DTGuildMember", back_populates="user")
+  event_participations = relationship("EventParticipation", back_populates="dt_user")

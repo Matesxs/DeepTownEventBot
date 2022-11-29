@@ -1,50 +1,19 @@
 import disnake
 from disnake.ext import commands, tasks
-from typing import Optional, List, Union
+from typing import Optional
 import math
 import datetime
 import asyncio
 import humanize
-from tabulate import tabulate
 
 from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
-from utils import dt_helpers, message_utils, permission_helper, string_manipulation
+from utils import dt_helpers, dt_report_generators, message_utils, permission_helper
 from database import event_participation_repo, tracking_settings_repo
 from config import Strings, cooldowns, config
 from features.paginator import EmbedView
 
 logger = setup_custom_logger(__name__)
-
-
-def generate_announce_report(guild_data: dt_helpers.DTGuildData, event_year: int, event_week: int, detailed: bool=False) -> List[str]:
-  guild_data.players.sort(key=lambda x: x.last_event_contribution, reverse=True)
-
-  part_stats = event_participation_repo.get_participation_stats_for_guild_and_event(guild_data.id, event_year, event_week)
-  description = f"{guild_data.name} - ID: {guild_data.id} - Level: {guild_data.level}\nYear: {event_year} Week: {event_week}\nAverage participation: {part_stats[0]:.2f}, Total participation: {int(part_stats[1])}\n\n"
-  headers = ["No°", "Name", "ID", "Level", "Depth", "Online", "Donate"] if detailed else ["No°", "Name", "Level", "Donate"]
-  data_list = []
-
-  current_time = datetime.datetime.utcnow()
-  for idx, participant in enumerate(guild_data.players):
-    if detailed:
-      data_list.append((idx + 1, participant.name, participant.id, participant.level, participant.depth, humanize.naturaltime(current_time - participant.last_online) if participant.last_online is not None else "Never", participant.last_event_contribution))
-    else:
-      data_list.append((idx + 1, participant.name, participant.level, participant.last_event_contribution))
-
-  table_strings = (description + tabulate(data_list, headers, tablefmt="github")).split("\n")
-
-  announce_strings = []
-  while table_strings:
-    final_string, table_strings = string_manipulation.add_string_until_length(table_strings, 1900, "\n")
-    announce_strings.append(f"```py\n{final_string}\n```")
-
-  return announce_strings
-
-async def send_guild_report(report_channel: Union[disnake.TextChannel, disnake.Thread, disnake.VoiceChannel, disnake.PartialMessageable, disnake.CommandInteraction, commands.Context], guild_data: dt_helpers.DTGuildData, event_year: int, event_week: int, detailed: bool=False):
-  strings = generate_announce_report(guild_data, event_year, event_week, detailed)
-  for string in strings:
-    await report_channel.send(string)
 
 class DTEventTracker(Base_Cog):
   def __init__(self, bot):
@@ -156,73 +125,12 @@ class DTEventTracker(Base_Cog):
       event_participation_repo.generate_or_update_event_participations(data)
 
     for tracker in trackers:
-      await self.send_tracker_announcement(tracker)
+      await self.send_tracker_text_announcement(tracker)
       await asyncio.sleep(0.1)
 
     await message_utils.generate_success_message(inter, Strings.event_data_tracker_generate_announcements_success)
 
-  @commands.slash_command(name="guild")
-  async def guild_commands(self, inter: disnake.CommandInteraction):
-    pass
-
-  @guild_commands.sub_command(name="search", description=Strings.event_data_tracker_search_guilds_description)
-  @cooldowns.long_cooldown
-  async def search_guilds(self, inter: disnake.CommandInteraction,
-                          guild_name:Optional[str]=commands.Param(default=None, description="Guild name to search"),
-                          sort_by:str=commands.Param(description="Attribute to sort guilds by", choices=["ID", "Level", "Name"]),
-                          order:str=commands.Param(description="Order method of attribute", choices=["Ascending", "Descending"])):
-    await inter.response.defer(with_message=True, ephemeral=True)
-
-    found_guilds = await dt_helpers.get_guild_info(self.bot, guild_name)
-    if found_guilds is None or not found_guilds:
-      return await message_utils.generate_error_message(inter, Strings.event_data_tracker_search_guilds_no_guild_found)
-
-    if sort_by == "ID":
-      found_guilds.sort(key=lambda x: x[0], reverse=order=="Descending")
-    elif sort_by == "Level":
-      found_guilds.sort(key=lambda x: x[2], reverse=order=="Descending")
-    elif sort_by == "Name":
-      found_guilds.sort(key=lambda x: x[1], reverse=order=="Descending")
-
-    number_of_guilds = len(found_guilds)
-
-    num_of_batches = math.ceil(number_of_guilds / 12)
-    batches = [found_guilds[i * 12:i * 12 + 12] for i in range(num_of_batches)]
-
-    pages = []
-    for batch in batches:
-      page = disnake.Embed(title="Guild list", color=disnake.Color.dark_blue())
-      message_utils.add_author_footer(page, inter.author)
-
-      for guild in batch:
-        guild_id = guild[0]
-        guild_name = guild[1]
-        guild_level = guild[2]
-
-        page.add_field(name=f"{guild_name}({guild_level})", value=f"ID: {guild_id}")
-      pages.append(page)
-
-    embed_view = EmbedView(inter.author, pages, invisible=True)
-    await embed_view.run(inter)
-
-  @guild_commands.sub_command(name="report", description=Strings.event_data_tracker_generate_announcements_description)
-  @cooldowns.long_cooldown
-  async def guild_report(self, inter: disnake.CommandInteraction,
-                         guild_id: int=commands.Param(description="Deep Town Guild ID"),
-                         detailed: bool=commands.Param(description="Detailed report selector")):
-    await inter.response.defer(with_message=True)
-
-    guild_data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
-    if guild_data is None:
-      return await message_utils.generate_error_message(inter, Strings.event_data_tracker_guild_report_no_data)
-
-    if config.event_data_manager.monitor_all_guilds or guild_id in tracking_settings_repo.get_tracked_guild_ids():
-      event_participation_repo.generate_or_update_event_participations(guild_data)
-
-    event_year, event_week = dt_helpers.get_event_index(datetime.datetime.utcnow())
-    await send_guild_report(inter, guild_data, event_year, event_week, detailed)
-
-  async def send_tracker_announcement(self, tracker: tracking_settings_repo.TrackingSettings):
+  async def send_tracker_text_announcement(self, tracker: tracking_settings_repo.TrackingSettings):
     announce_channel = await tracker.get_announce_channel(self.bot)
     if announce_channel is None: return
 
@@ -230,7 +138,7 @@ class DTEventTracker(Base_Cog):
     participation_data = event_participation_repo.event_list_participation_to_dt_guild_data(participations)
     if participation_data is None: return
 
-    await send_guild_report(announce_channel, participation_data[0], participation_data[1], participation_data[2])
+    await dt_report_generators.send_text_guild_report(announce_channel, participation_data[0], participation_data[1], participation_data[2])
 
   @tasks.loop(hours=24*7)
   async def result_announce_task(self):
@@ -251,7 +159,7 @@ class DTEventTracker(Base_Cog):
     logger.info("Starting Announcement")
     trackers = tracking_settings_repo.get_all_trackers()
     for tracker in trackers:
-      await self.send_tracker_announcement(tracker)
+      await self.send_tracker_text_announcement(tracker)
       await asyncio.sleep(0.25)
 
   @result_announce_task.before_loop

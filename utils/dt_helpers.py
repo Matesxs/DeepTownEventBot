@@ -8,22 +8,6 @@ from utils.logger import setup_custom_logger
 
 logger = setup_custom_logger(__name__)
 
-def get_event_index(date:datetime.datetime):
-  event_year = date.year
-  week_number = date.isocalendar()[1]
-
-  if date.month == 1 and week_number > 5:
-    event_year -= 1
-
-  if date.weekday() < 3 or (date.weekday() == 3 and date.hour < 8):
-    week_number -= 1
-
-  if week_number <= 0:
-    event_year -= 1
-    week_number = datetime.date(event_year, 12, 28).isocalendar()[1]
-
-  return event_year, week_number
-
 @dataclasses.dataclass
 class DTUserData:
   name: str
@@ -45,6 +29,22 @@ class DTGuildData:
 
   def __repr__(self):
     return f"<{self.name}({self.id}),{self.level}(\n\t" + "\n\t".join([str(p) for p in self.players]) + "\n)>"
+
+def get_event_index(date:datetime.datetime):
+  event_year = date.year
+  week_number = date.isocalendar()[1]
+
+  if date.month == 1 and week_number > 5:
+    event_year -= 1
+
+  if date.weekday() < 3 or (date.weekday() == 3 and date.hour < 8):
+    week_number -= 1
+
+  if week_number <= 0:
+    event_year -= 1
+    week_number = datetime.date(event_year, 12, 28).isocalendar()[1]
+
+  return event_year, week_number
 
 async def get_dt_guild_data(bot: BaseAutoshardedBot, guild_id:int) -> Optional[DTGuildData]:
   async with bot.http_session.get(f"http://dtat.hampl.space/data/guild/id/{guild_id}/data") as response:

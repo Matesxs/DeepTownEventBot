@@ -88,6 +88,7 @@ class PublicInterface(Base_Cog):
 
   @commands.slash_command(name="user")
   @cooldowns.default_cooldown
+  @commands.is_owner() # TODO: Remove - only because in progress
   async def user_command(self, inter: disnake.CommandInteraction):
     pass
 

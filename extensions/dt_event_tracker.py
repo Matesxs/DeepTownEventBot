@@ -266,13 +266,15 @@ class DTEventTracker(Base_Cog):
   async def result_announce_wait_pretask(self):
     logger.info(f"Current date: {datetime.datetime.utcnow()}")
 
-    today = datetime.datetime.utcnow().replace(hour=8, minute=10, second=0, microsecond=0)
-    next_monday = today + datetime.timedelta(days=today.weekday() % 7)
-    if next_monday < datetime.datetime.utcnow():
-      next_monday += datetime.timedelta(days=7)
+    today = datetime.datetime.utcnow()
+    today_announce_time = datetime.datetime.utcnow().replace(hour=8, minute=10, second=0, microsecond=0)
+    next_monday = today_announce_time + datetime.timedelta(days=7 - (today.weekday() % 7))
+    if today.weekday() == 0 and (today.hour < 8 or (today.hour == 8 and today.minute < 10)):
+      next_monday -= datetime.timedelta(days=7)
     delta_to_next_monday = next_monday - datetime.datetime.utcnow()
 
-    logger.info(f"Next announcement in {humanize.naturaldelta(delta_to_next_monday)}({humanize.naturaldate(next_monday)})")
+    logger.info(f"Next announce date: {next_monday}")
+    logger.info(f"Next announcement in {humanize.naturaldelta(delta_to_next_monday)}")
     await asyncio.sleep(delta_to_next_monday.total_seconds())
 
 def setup(bot):

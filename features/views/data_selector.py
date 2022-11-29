@@ -4,12 +4,13 @@ from typing import List
 from utils import message_utils
 
 class DataSelector(disnake.ui.View):
-  def __init__(self, author: disnake.User, available_colms: List[str], default_enabled_colms: List[str]):
+  def __init__(self, author: disnake.User, available_colms: List[str], default_enabled_colms: List[str], invisible: bool=False):
     super(DataSelector, self).__init__()
 
     self.author = author
     self.message = None
     self.available_colms = available_colms
+    self.invisible = invisible
 
     self.result = default_enabled_colms
 
@@ -20,6 +21,13 @@ class DataSelector(disnake.ui.View):
     self.selector = disnake.ui.StringSelect(min_values=1, max_values=len(available_colms), options=options, custom_id="data_selector")
     self.add_item(self.selector)
     self.add_item(disnake.ui.Button(style=disnake.ButtonStyle.green, label="Generate", custom_id="data_selector_generate_button"))
+
+  async def run(self, ctx):
+    if isinstance(ctx, (disnake.ApplicationCommandInteraction, disnake.ModalInteraction, disnake.MessageCommandInteraction, disnake.CommandInteraction)):
+      await ctx.send(view=self, ephemeral=self.invisible)
+      self.message = await ctx.original_message()
+    else:
+      self.message = await ctx.send(view=self)
 
   def get_results(self):
     return [colm for colm in self.available_colms if colm in self.result]

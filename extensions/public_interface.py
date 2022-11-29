@@ -66,7 +66,7 @@ class PublicInterface(Base_Cog):
   @guild_commands.sub_command(name="report", description=Strings.event_data_tracker_generate_announcements_description)
   async def guild_report(self, inter: disnake.CommandInteraction,
                          guild_id: int = commands.Param(description="Deep Town Guild ID")):
-    await inter.response.defer(with_message=True)
+    await inter.response.defer(with_message=True, ephemeral=True)
 
     guild_data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
     if guild_data is None:
@@ -78,10 +78,8 @@ class PublicInterface(Base_Cog):
     event_year, event_week = dt_helpers.get_event_index(datetime.datetime.utcnow())
     send_report_function = partial(dt_report_generators.send_text_guild_report, inter, guild_data, event_year, event_week)
 
-    reporter_settings = DataSelector(inter.author, ["No°", "Name", "ID", "Level", "Depth", "Online", "Donate"], ["No°", "Name", "Level", "Donate"])
-    await inter.send(view=reporter_settings)
-    message = await inter.original_message()
-    reporter_settings.message = message
+    reporter_settings = DataSelector(inter.author, ["No°", "Name", "ID", "Level", "Depth", "Online", "Donate"], ["No°", "Name", "Level", "Donate"], invisible=True)
+    await reporter_settings.run(inter)
     await reporter_settings.wait()
 
     await send_report_function(reporter_settings.get_results())

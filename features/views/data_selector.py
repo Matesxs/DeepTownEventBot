@@ -27,14 +27,23 @@ class DataSelector(disnake.ui.View):
   async def interaction_check(self, interaction: disnake.MessageInteraction) -> bool:
     if interaction.author.id == self.author.id:
       if interaction.data.custom_id == "data_selector_generate_button":
-        if self.selector.values:
+        if self.selector.values is not None and self.selector.values:
           self.result = self.selector.values
         self.stop()
-        await self.message.delete()
+
+        if self.message is not None:
+          await self.message.delete()
       else:
+        self.selector.refresh_state(interaction)
         await interaction.send("`Selected data updated`", ephemeral=True, delete_after=5)
       return True
 
     await message_utils.generate_error_message(interaction, "You are not author of this settings")
     return False
+
+  async def on_timeout(self) -> None:
+    try:
+      await self.message.delete()
+    except:
+      pass
   

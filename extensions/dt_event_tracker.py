@@ -57,13 +57,13 @@ class DTEventTracker(Base_Cog):
       self.result_announce_task.cancel()
 
   @commands.slash_command()
+  @commands.check(permission_helper.is_administrator)
+  @commands.guild_only()
   async def tracker(self, inter: disnake.CommandInteraction):
     pass
 
   @tracker.sub_command(name="add_or_modify", description=Strings.event_data_tracker_add_or_modify_tracker_description)
-  @commands.check(permission_helper.is_administrator)
   @cooldowns.default_cooldown
-  @commands.guild_only()
   async def add_or_modify_tracker(self, inter: disnake.CommandInteraction,
                                   guild_id: int=commands.Param(description="Deep Town Guild ID"),
                                   announce_channel:Optional[disnake.TextChannel]=commands.Param(default=None, description="Channel for announcing results at the end of event")):
@@ -95,9 +95,7 @@ class DTEventTracker(Base_Cog):
       await message_utils.generate_success_message(inter, Strings.event_data_tracker_add_or_modify_tracker_success_with_channel(guild=guild_name, channel=announce_channel.name))
 
   @tracker.sub_command(name="remove", description=Strings.event_data_tracker_remove_tracker_description)
-  @commands.check(permission_helper.is_administrator)
   @cooldowns.default_cooldown
-  @commands.guild_only()
   async def remove_tracker(self, inter: disnake.CommandInteraction,
                                  guild_id: int=commands.Param(description="Deep Town Guild ID")):
     await inter.response.defer(with_message=True, ephemeral=True)
@@ -111,7 +109,6 @@ class DTEventTracker(Base_Cog):
       await message_utils.generate_error_message(inter, Strings.event_data_tracker_remove_tracker_failed(guild_id=guild_id))
 
   @tracker.sub_command(name="list", description=Strings.event_data_tracker_list_trackers_description)
-  @commands.check(permission_helper.is_administrator)
   @cooldowns.default_cooldown
   async def list_guild_trackers(self, inter: disnake.CommandInteraction):
     await inter.response.defer(with_message=True, ephemeral=True)
@@ -142,9 +139,7 @@ class DTEventTracker(Base_Cog):
     await embed_view.run(inter)
 
   @tracker.sub_command(description=Strings.event_data_tracker_generate_announcements_description)
-  @commands.check(permission_helper.is_administrator)
   @cooldowns.huge_cooldown
-  @commands.guild_only()
   async def generate_announcements(self, inter: disnake.CommandInteraction):
     await inter.response.defer(with_message=True, ephemeral=True)
 
@@ -162,7 +157,7 @@ class DTEventTracker(Base_Cog):
 
     for tracker in trackers:
       await self.send_tracker_announcement(tracker)
-      await asyncio.sleep(0.25)
+      await asyncio.sleep(0.1)
 
     await message_utils.generate_success_message(inter, Strings.event_data_tracker_generate_announcements_success)
 
@@ -231,7 +226,7 @@ class DTEventTracker(Base_Cog):
     announce_channel = await tracker.get_announce_channel(self.bot)
     if announce_channel is None: return
 
-    participations = event_participation_repo.get_recent_event_participation(tracker.dt_guild_id)
+    participations = event_participation_repo.get_recent_event_participations(tracker.dt_guild_id)
     participation_data = event_participation_repo.event_list_participation_to_dt_guild_data(participations)
     if participation_data is None: return
 

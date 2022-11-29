@@ -42,7 +42,7 @@ class DTDataManager(Base_Cog):
   async def update_guild(self, inter: disnake.CommandInteraction, guild_id: int=commands.Param(description="Deep Town Guild ID")):
     await inter.response.defer(with_message=True, ephemeral=True)
 
-    data = event_participation_repo.get_recent_event_participation(guild_id)
+    data = event_participation_repo.get_recent_event_participations(guild_id)
 
     if not data:
       data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)

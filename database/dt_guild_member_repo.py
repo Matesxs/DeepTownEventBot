@@ -15,7 +15,7 @@ def create_dummy_dt_guild_member(user_id: int, guild_id: int) -> DTGuildMember:
     create_dummy_dt_guild(guild_id)
     create_dummy_dt_user(user_id)
 
-    item = DTGuildMember(dt_user_id=user_id, dt_guild_id=guild_id)
+    item = DTGuildMember(dt_user_id=user_id, dt_guild_id=guild_id, current_member=False)
     session.add(item)
     session.commit()
   return item

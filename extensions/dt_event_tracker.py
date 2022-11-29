@@ -264,6 +264,8 @@ class DTEventTracker(Base_Cog):
 
   @result_announce_task.before_loop
   async def result_announce_wait_pretask(self):
+    logger.info(f"Current date: {datetime.datetime.utcnow()}")
+
     today = datetime.datetime.utcnow().replace(hour=8, minute=10, second=0, microsecond=0)
     next_monday = today + datetime.timedelta(days=today.weekday() % 7)
     if next_monday < datetime.datetime.utcnow():

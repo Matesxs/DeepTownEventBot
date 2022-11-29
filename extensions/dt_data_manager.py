@@ -1,7 +1,6 @@
 import disnake
 from disnake.ext import commands, tasks
 import asyncio
-from tqdm import tqdm
 import pandas as pd
 import io
 import traceback
@@ -173,10 +172,7 @@ class DTDataManager(Base_Cog):
       pulled_data = 0
       not_updated = []
 
-      iterator = tqdm(guild_ids, unit="guild")
-      for guild_id in iterator:
-        iterator.set_description(f"GID: {guild_id}")
-
+      for guild_id in guild_ids:
         if self.skip_periodic_data_update:
           logger.info("Data pull interrupted")
           break

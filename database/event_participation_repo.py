@@ -4,7 +4,7 @@ from sqlalchemy import func
 
 from database import session
 from database.tables.event_participation import EventParticipation
-from database.dt_guild_member_repo import get_and_update_dt_guild_members
+from database.dt_guild_member_repo import get_and_update_dt_guild_members, create_dummy_dt_guild_member
 from utils import dt_helpers
 
 def event_list_participation_to_dt_guild_data(participations: List[EventParticipation]) -> Optional[Tuple[dt_helpers.DTGuildData, int, int]]:
@@ -19,9 +19,23 @@ def event_list_participation_to_dt_guild_data(participations: List[EventParticip
 def get_event_participation(user_id: int, guild_id: int, event_year: int, event_week: int) -> Optional[EventParticipation]:
   return session.query(EventParticipation).filter(EventParticipation.year == event_year, EventParticipation.event_week == event_week, EventParticipation.dt_user_id == user_id, EventParticipation.dt_guild_id == guild_id).one_or_none()
 
+def get_participation_stats_for_guild_per_event(guild_id: int, year: int) -> List[Tuple[int, float, float]]:
+  data = session.query(EventParticipation.event_week, func.avg(EventParticipation.amount), func.sum(EventParticipation.amount)).filter(EventParticipation.dt_guild_id == guild_id, EventParticipation.year == year).group_by(EventParticipation.event_week).all()
+  output_data = []
+  for d in data:
+    output_data.append((d[0], float(d[1]), float(d[2])))
+  return output_data
+
+def get_participation_stats_for_guild_and_event(guild_id: int, year: int, week: int) -> Tuple[float, float]:
+  result = session.query(func.avg(EventParticipation.amount), func.sum(EventParticipation.amount)).filter(EventParticipation.dt_guild_id == guild_id, EventParticipation.year == year, EventParticipation.event_week == week).one_or_none()
+  if result: return float(result[0]), float(result[1])
+  return 0, 0
+
 def get_and_update_event_participation(user_id: int, guild_id: int, event_year: int, event_week: int, participation_amount: int):
   item = get_event_participation(user_id, guild_id, event_year, event_week)
   if item is None:
+    create_dummy_dt_guild_member(user_id, guild_id)
+
     item = EventParticipation(year=event_year, event_week=event_week, dt_guild_id=guild_id, dt_user_id=user_id, amount=participation_amount)
     session.add(item)
   else:

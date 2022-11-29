@@ -6,7 +6,6 @@ import datetime
 import asyncio
 import humanize
 from tabulate import tabulate
-from tqdm import tqdm
 
 from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
@@ -21,7 +20,8 @@ logger = setup_custom_logger(__name__)
 def generate_announce_report(guild_data: dt_helpers.DTGuildData, event_year: int, event_week: int, detailed: bool=False) -> List[str]:
   guild_data.players.sort(key=lambda x: x.last_event_contribution, reverse=True)
 
-  description = f"{guild_data.name} - ID: {guild_data.id} - Level: {guild_data.level}\nYear: {event_year} Week: {event_week}\n\n"
+  part_stats = event_participation_repo.get_participation_stats_for_guild_and_event(guild_data.id, event_year, event_week)
+  description = f"{guild_data.name} - ID: {guild_data.id} - Level: {guild_data.level}\nYear: {event_year} Week: {event_week}\nAverage participation: {part_stats[0]:.2f}, Total participation: {int(part_stats[1])}\n\n"
   headers = ["No°", "Name", "ID", "Level", "Depth", "Online", "Donate"] if detailed else ["No°", "Name", "Level", "Donate"]
   data_list = []
 
@@ -161,7 +161,7 @@ class DTEventTracker(Base_Cog):
       event_participation_repo.generate_or_update_event_participations(data)
 
     for tracker in trackers:
-      await self.announce(tracker)
+      await self.send_tracker_announcement(tracker)
       await asyncio.sleep(0.25)
 
     await message_utils.generate_success_message(inter, Strings.event_data_tracker_generate_announcements_success)
@@ -227,7 +227,7 @@ class DTEventTracker(Base_Cog):
     event_year, event_week = dt_helpers.get_event_index(datetime.datetime.utcnow())
     await send_guild_report(inter, guild_data, event_year, event_week, detailed)
 
-  async def announce(self, tracker: tracking_settings_repo.TrackingSettings):
+  async def send_tracker_announcement(self, tracker: tracking_settings_repo.TrackingSettings):
     announce_channel = await tracker.get_announce_channel(self.bot)
     if announce_channel is None: return
 
@@ -244,10 +244,7 @@ class DTEventTracker(Base_Cog):
     guild_ids = tracking_settings_repo.get_tracked_guild_ids()
 
     if guild_ids is not None:
-      iterator = tqdm(guild_ids, unit="guild")
-      for guild_id in iterator:
-        iterator.set_description(f"GID: {guild_id}")
-
+      for guild_id in guild_ids:
         data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
 
         await asyncio.sleep(1)
@@ -259,7 +256,7 @@ class DTEventTracker(Base_Cog):
     logger.info("Starting Announcement")
     trackers = tracking_settings_repo.get_all_trackers()
     for tracker in trackers:
-      await self.announce(tracker)
+      await self.send_tracker_announcement(tracker)
       await asyncio.sleep(0.25)
 
   @result_announce_task.before_loop

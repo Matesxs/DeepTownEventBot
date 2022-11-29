@@ -81,15 +81,15 @@ class Strings(metaclass=Formatable):
   event_data_tracker_remove_tracker_success = "Removed tracking for guild `{guild}`"
   event_data_tracker_remove_tracker_failed = "Can't find tracking settings for guild with id `{guild_id}`"
 
-  event_data_tracker_list_trackers_description = "List all active trackers for guild"
+  event_data_tracker_list_trackers_description = "List all active trackers for this discord guild"
   event_data_tracker_list_trackers_no_trackers = "No trackers found"
 
-  event_data_tracker_search_guilds_description = "List guilds"
+  event_data_tracker_search_guilds_description = "List Deep Town guilds or find specific one"
   event_data_tracker_search_guilds_no_guild_found = "No guilds found"
 
-  event_data_tracker_generate_announcements_description = "Generate announcements"
+  event_data_tracker_generate_announcements_description = "Generate announcements for tracked guild by current discord guild"
   event_data_tracker_generate_announcements_no_data = "No data found"
   event_data_tracker_generate_announcements_success = "Announcements generated"
 
-  event_data_tracker_guild_report_description = "Generate guild event report"
+  event_data_tracker_guild_report_description = "Generate Deep Town guild report"
   event_data_tracker_guild_report_no_data = "No data found"

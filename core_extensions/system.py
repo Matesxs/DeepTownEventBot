@@ -9,7 +9,7 @@ from typing import Optional
 from config import Strings
 from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
-from features.paginator import EmbedView
+from features.views.paginator import EmbedView
 from features.base_bot import BaseAutoshardedBot
 from utils import command_utils, message_utils
 

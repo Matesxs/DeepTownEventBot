@@ -16,31 +16,19 @@ def event_list_participation_to_dt_guild_data(participations: List[EventParticip
 
   return dt_helpers.DTGuildData(participations[0].dt_guild.name, participations[0].dt_guild.id, participations[0].dt_guild.level, players), participation.year, participation.event_week
 
-def get_event_participation(user_id: int, guild_id: int, event_year: int, event_week: int) -> Optional[EventParticipation]:
+def get_user_event_participation(user_id: int, guild_id: int, event_year: int, event_week: int) -> Optional[EventParticipation]:
   return session.query(EventParticipation).filter(EventParticipation.year == event_year, EventParticipation.event_week == event_week, EventParticipation.dt_user_id == user_id, EventParticipation.dt_guild_id == guild_id).one_or_none()
 
-def get_event_participations(dt_guild_id: int, year: int, week: int) -> List[EventParticipation]:
+def get_guild_event_participations(dt_guild_id: int, year: int, week: int) -> List[EventParticipation]:
   return session.query(EventParticipation).filter(EventParticipation.year==year,EventParticipation.event_week==week, EventParticipation.dt_guild_id==dt_guild_id).all()
 
 def get_recent_event_participations(dt_guild_id: int) -> List[EventParticipation]:
   recent_week = session.query(func.max(EventParticipation.event_week)).first()[0]
   recent_year = session.query(func.max(EventParticipation.year)).first()[0]
-  return get_event_participations(dt_guild_id, recent_year, recent_week)
-
-def get_participation_stats_for_guild_per_event(guild_id: int, year: int) -> List[Tuple[int, float, float]]:
-  data = session.query(EventParticipation.event_week, func.avg(EventParticipation.amount), func.sum(EventParticipation.amount)).filter(EventParticipation.dt_guild_id == guild_id, EventParticipation.year == year).group_by(EventParticipation.event_week).all()
-  output_data = []
-  for d in data:
-    output_data.append((d[0], float(d[1]), float(d[2])))
-  return output_data
-
-def get_participation_stats_for_guild_and_event(guild_id: int, year: int, week: int) -> Tuple[float, float]:
-  result = session.query(func.avg(EventParticipation.amount), func.sum(EventParticipation.amount)).filter(EventParticipation.dt_guild_id == guild_id, EventParticipation.year == year, EventParticipation.event_week == week).one_or_none()
-  if result: return float(result[0]), float(result[1])
-  return 0, 0
+  return get_guild_event_participations(dt_guild_id, recent_year, recent_week)
 
 def get_and_update_event_participation(user_id: int, guild_id: int, event_year: int, event_week: int, participation_amount: int):
-  item = get_event_participation(user_id, guild_id, event_year, event_week)
+  item = get_user_event_participation(user_id, guild_id, event_year, event_week)
   if item is None:
     create_dummy_dt_guild_member(user_id, guild_id)
 
@@ -58,7 +46,7 @@ def generate_or_update_event_participations(guild_data: dt_helpers.DTGuildData) 
 
   participations = []
   for player_data in guild_data.players:
-    prev_participation = get_event_participation(player_data.id, guild_data.id, prev_event_year, prev_event_week)
+    prev_participation = get_user_event_participation(player_data.id, guild_data.id, prev_event_year, prev_event_week)
 
     contribution = player_data.last_event_contribution if prev_participation is None or prev_participation.amount != player_data.last_event_contribution else 0
     participations.append(get_and_update_event_participation(player_data.id, guild_data.id, event_year, event_week, contribution))

@@ -5,7 +5,7 @@ import disnake
 from disnake.ext import commands
 
 from config import config, cooldowns, Strings
-from features.paginator import EmbedView
+from features.views.paginator import EmbedView
 from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
 from typing import Union, List, Optional

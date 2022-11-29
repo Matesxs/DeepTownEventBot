@@ -11,7 +11,7 @@ from utils.logger import setup_custom_logger
 from utils import dt_helpers, dt_report_generators, message_utils, permission_helper
 from database import event_participation_repo, tracking_settings_repo
 from config import Strings, cooldowns, config
-from features.paginator import EmbedView
+from features.views.paginator import EmbedView
 
 logger = setup_custom_logger(__name__)
 

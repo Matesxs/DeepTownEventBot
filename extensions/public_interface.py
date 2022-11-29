@@ -3,13 +3,15 @@ from disnake.ext import commands
 from typing import Optional
 import math
 import datetime
+from functools import partial
 
 from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
 from config import cooldowns, Strings, config
 from utils import dt_helpers, dt_report_generators, message_utils
-from features.paginator import EmbedView
+from features.views.paginator import EmbedView
 from database import event_participation_repo, tracking_settings_repo
+from features.views.data_selector import DataSelector
 
 logger = setup_custom_logger(__name__)
 
@@ -18,11 +20,11 @@ class PublicInterface(Base_Cog):
     super(PublicInterface, self).__init__(bot, __file__)
 
   @commands.slash_command(name="guild")
+  @cooldowns.default_cooldown
   async def guild_commands(self, inter: disnake.CommandInteraction):
     pass
 
   @guild_commands.sub_command(name="search", description=Strings.event_data_tracker_search_guilds_description)
-  @cooldowns.long_cooldown
   async def search_guilds(self, inter: disnake.CommandInteraction,
                           guild_name: Optional[str] = commands.Param(default=None, description="Guild name to search"),
                           sort_by: str = commands.Param(description="Attribute to sort guilds by", choices=["ID", "Level", "Name"]),
@@ -62,10 +64,8 @@ class PublicInterface(Base_Cog):
     await embed_view.run(inter)
 
   @guild_commands.sub_command(name="report", description=Strings.event_data_tracker_generate_announcements_description)
-  @cooldowns.long_cooldown
   async def guild_report(self, inter: disnake.CommandInteraction,
-                         guild_id: int = commands.Param(description="Deep Town Guild ID"),
-                         detailed: bool = commands.Param(description="Detailed report selector")):
+                         guild_id: int = commands.Param(description="Deep Town Guild ID")):
     await inter.response.defer(with_message=True)
 
     guild_data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
@@ -76,7 +76,24 @@ class PublicInterface(Base_Cog):
       event_participation_repo.generate_or_update_event_participations(guild_data)
 
     event_year, event_week = dt_helpers.get_event_index(datetime.datetime.utcnow())
-    await dt_report_generators.send_text_guild_report(inter, guild_data, event_year, event_week, detailed)
+    send_report_function = partial(dt_report_generators.send_text_guild_report, inter, guild_data, event_year, event_week)
+
+    reporter_settings = DataSelector(inter.author, ["No°", "Name", "ID", "Level", "Depth", "Online", "Donate"], ["No°", "Name", "Level", "Donate"])
+    await inter.send(view=reporter_settings)
+    message = await inter.original_message()
+    reporter_settings.message = message
+    await reporter_settings.wait()
+
+    await send_report_function(reporter_settings.get_results())
+
+  @commands.slash_command(name="user")
+  @cooldowns.default_cooldown
+  async def user_command(self, inter: disnake.CommandInteraction):
+    pass
+
+  @user_command.sub_command(name="profile", description="WIP")
+  async def user_profile(self, inter: disnake.CommandInteraction, username:str=commands.Param(description="Username of Deep Town user")):
+    await inter.response.defer(with_message=True)
 
 def setup(bot):
   bot.add_cog(PublicInterface(bot))

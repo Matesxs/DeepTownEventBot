@@ -39,7 +39,7 @@ def generate_text_guild_report(guild_data: DTGuildData, event_year: int, event_w
     data_list.append(data)
     contributions.append(participant.last_event_contribution)
 
-  description = f"{guild_data.name} - ID: {guild_data.id} - Level: {guild_data.level}\nYear: {event_year} Week: {event_week}\nParticipation - Median: {statistics.median(contributions):.2f} Average: {statistics.mean(contributions):.2f}, Total: {sum(contributions)}\n\n"
+  description = f"{guild_data.name} - ID: {guild_data.id} - Level: {guild_data.level}\nYear: {event_year} Week: {event_week}\nDonate - Median: {statistics.median(contributions):.2f} Average: {statistics.mean(contributions):.2f}, Total: {sum(contributions)}\n\n"
   table_strings = (description + tabulate(data_list, colms, tablefmt="github")).split("\n")
 
   announce_strings = []

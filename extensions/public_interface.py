@@ -91,11 +91,12 @@ class PublicInterface(Base_Cog):
     participations_per_user = []
     for member in guild_data.players:
       if include_all_guilds:
-        participations_per_user.append(event_participation_repo.get_all_user_event_participations(member.id))
+        participations_per_user.append(event_participation_repo.get_user_event_participations(member.id))
       else:
-        participations_per_user.append(event_participation_repo.get_all_user_event_participations_for_guild(member.id, guild_id))
+        participations_per_user.append(event_participation_repo.get_user_event_participations(member.id, guild_id))
 
     current_time = datetime.datetime.utcnow()
+    current_year, _ = dt_helpers.get_event_index(current_time)
 
     users_embeds = []
     for member_participations in participations_per_user:
@@ -113,6 +114,8 @@ class PublicInterface(Base_Cog):
 
       participation_table_lines = tabulate(participation_data, ["Year", "Week", "Donate"] if not include_all_guilds else ["Year", "Week", "Guild", "Donate"], tablefmt="github").split("\n")
 
+      this_year_participations = [p.amount for p in event_participation_repo.get_user_event_participations(dt_user.id, guild_id, current_year)]
+
       member_front_page = disnake.Embed(title=f"{dt_user.username}", color=disnake.Color.dark_blue())
       message_utils.add_author_footer(member_front_page, inter.author)
       member_front_page.add_field(name="ID", value=str(dt_user.id))
@@ -120,8 +123,10 @@ class PublicInterface(Base_Cog):
       member_front_page.add_field(name="Depth", value=str(dt_user.depth))
       member_front_page.add_field(name="Online", value=humanize.naturaltime(current_time - dt_user.last_online) if dt_user.last_online is not None else "Never")
       member_front_page.add_field(name="Current guild", value=f"{member_participations[0].dt_guild.name}({member_participations[0].dt_guild.level})", inline=False)
-      member_front_page.add_field(name="Average participation", value=f"{statistics.mean(participations):.2f}")
-      member_front_page.add_field(name="Median participation", value=f"{statistics.median(participations):.2f}")
+      member_front_page.add_field(name="Average donate", value=f"{statistics.mean(participations):.2f}")
+      member_front_page.add_field(name="Median donate", value=f"{statistics.median(participations):.2f}", inline=False)
+      member_front_page.add_field(name="Average donate last year", value=f"{statistics.mean(this_year_participations):.2f}")
+      member_front_page.add_field(name="Median donate last year", value=f"{statistics.median(this_year_participations):.2f}", inline=False)
 
       member_pages.append(member_front_page)
 

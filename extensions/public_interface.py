@@ -90,7 +90,10 @@ class PublicInterface(Base_Cog):
 
     participations_per_user = []
     for member in guild_data.players:
-      participations_per_user.append(event_participation_repo.get_all_user_event_participations_for_guild(member.id, guild_id))
+      if include_all_guilds:
+        participations_per_user.append(event_participation_repo.get_all_user_event_participations(member.id))
+      else:
+        participations_per_user.append(event_participation_repo.get_all_user_event_participations_for_guild(member.id, guild_id))
 
     current_time = datetime.datetime.utcnow()
 

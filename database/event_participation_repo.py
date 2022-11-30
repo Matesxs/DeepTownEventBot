@@ -22,6 +22,9 @@ def get_user_event_participation(user_id: int, guild_id: int, event_year: int, e
 def get_all_user_event_participations_for_guild(user_id: int, guild_id: int) -> List[EventParticipation]:
   return session.query(EventParticipation).filter(EventParticipation.dt_user_id == user_id, EventParticipation.dt_guild_id == guild_id).order_by(EventParticipation.year.desc(), EventParticipation.event_week.desc()).all()
 
+def get_all_user_event_participations(user_id: int) -> List[EventParticipation]:
+  return session.query(EventParticipation).filter(EventParticipation.dt_user_id == user_id).order_by(EventParticipation.year.desc(), EventParticipation.event_week.desc()).all()
+
 def get_guild_event_participations(dt_guild_id: int, year: int, week: int) -> List[EventParticipation]:
   return session.query(EventParticipation).filter(EventParticipation.year==year,EventParticipation.event_week==week, EventParticipation.dt_guild_id==dt_guild_id).all()
 

@@ -30,7 +30,7 @@ class PublicInterface(Base_Cog):
       await message_utils.generate_error_message(inter, Strings.public_interface_guild_data_not_found)
       return None
 
-    if config.event_data_manager.monitor_all_guilds or guild_id in tracking_settings_repo.get_tracked_guild_ids():
+    if config.data_manager.monitor_all_guilds or guild_id in tracking_settings_repo.get_tracked_guild_ids():
       event_participation_repo.generate_or_update_event_participations(guild_data)
 
     return guild_data
@@ -107,9 +107,9 @@ class PublicInterface(Base_Cog):
       participations = []
       for member_participation in member_participations:
         if include_all_guilds:
-          participation_data.append((member_participation.year, member_participation.event_week, member_participation.dt_guild.name, member_participation.amount))
+          participation_data.append((member_participation.event_year, member_participation.event_week, member_participation.dt_guild.name, member_participation.amount))
         else:
-          participation_data.append((member_participation.year, member_participation.event_week, member_participation.amount))
+          participation_data.append((member_participation.event_year, member_participation.event_week, member_participation.amount))
         participations.append(member_participation.amount)
 
       participation_table_lines = tabulate(participation_data, ["Year", "Week", "Donate"] if not include_all_guilds else ["Year", "Week", "Guild", "Donate"], tablefmt="github").split("\n")

@@ -7,7 +7,7 @@ from utils.dt_helpers import DTUserData
 class EventParticipation(database.base):
   __tablename__ = "event_participations"
 
-  year = Column(Integer, primary_key=True)
+  event_year = Column(Integer, primary_key=True)
   event_week = Column(Integer, primary_key=True)
   dt_guild_id = Column(BigIntegerType, ForeignKey("dt_guilds.id", ondelete="CASCADE"), primary_key=True)
   dt_user_id = Column(BigIntegerType, ForeignKey("dt_users.id", ondelete="CASCADE"), primary_key=True)

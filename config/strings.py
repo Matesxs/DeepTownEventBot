@@ -51,24 +51,28 @@ class Strings(metaclass=Formatable):
   common_invite_brief = "Send invite link of the bot"
 
   # Data manager
-  event_data_manager_update_guild_description = "Update data of selected guild in database"
-  event_data_manager_update_guild_get_failed = "Failed to get guild data"
-  event_data_manager_update_guild_success = "Data for guild `{guild}` fetched and updated"
+  data_manager_update_guild_description = "Update data of selected guild in database"
+  data_manager_update_guild_get_failed = "Failed to get guild data"
+  data_manager_update_guild_success = "Data for guild `{guild}` fetched and updated"
 
-  event_data_manager_update_all_guilds_description = "Update data of all guilds in database"
-  event_data_manager_update_all_guilds_success = "Updated data of `{guild_num}` guilds"
-  event_data_manager_update_all_guilds_failed = "No guilds ids for update from server"
+  data_manager_update_all_guilds_description = "Update data of all guilds in database"
+  data_manager_update_all_guilds_success = "Updated data of `{guild_num}` guilds"
+  data_manager_update_all_guilds_failed = "No guilds ids for update from server"
 
-  event_data_manager_update_tracked_guilds_description = "Update data of tracked guilds in database"
-  event_data_manager_update_tracked_guilds_success = "Updated data of `{guild_num}` guilds"
-  event_data_manager_update_tracked_guilds_failed = "No guilds ids for update from database"
+  data_manager_update_tracked_guilds_description = "Update data of tracked guilds in database"
+  data_manager_update_tracked_guilds_success = "Updated data of `{guild_num}` guilds"
+  data_manager_update_tracked_guilds_failed = "No guilds ids for update from database"
 
-  event_data_manager_skip_data_update_description = "Skip periodic data update"
-  event_data_manager_skip_data_update_success = "Skipping periodic data update"
-  event_data_manager_skip_data_update_failed = "Periodic data update not running or already marked for skipping"
+  data_manager_skip_data_update_description = "Skip periodic data update"
+  data_manager_skip_data_update_success = "Skipping periodic data update"
+  data_manager_skip_data_update_failed = "Periodic data update not running or already marked for skipping"
 
-  event_data_manager_load_data_description = "Load manually event data"
-  event_data_manager_load_data_loaded = "New data loaded, `{count}` rows\nIf some data are missing then file was in invalid format or data keys were missing"
+  data_manager_load_data_description = "Load manually event data"
+  data_manager_load_data_loaded = "New data loaded, `{count}` rows\nIf some data are missing then file was in invalid format or data keys were missing"
+
+  data_manager_dump_guild_participation_data_description = "Dump Deep Town guild event participation data"
+  data_manager_dump_guild_participation_data_no_data = "No data found for guild with id `{guild_id}`"
+  data_manager_dump_guild_participation_data_success = "Dump created"
 
   # Event Tracker
   public_interface_guild_data_not_found = "No data found"

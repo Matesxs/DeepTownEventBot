@@ -71,6 +71,8 @@ class Strings(metaclass=Formatable):
   event_data_manager_load_data_loaded = "New data loaded, `{count}` rows\nIf some data are missing then file was in invalid format or data keys were missing"
 
   # Event Tracker
+  public_interface_guild_data_not_found = "No data found"
+
   event_data_tracker_add_or_modify_tracker_description = "Add guild for tracking or modify existing announcement channel"
   event_data_tracker_add_or_modify_tracker_failed_to_get_data = "Failed to get guild data"
   event_data_tracker_add_or_modify_tracker_tracker_limit_reached = "Tracker limit ({limit} per guild) reached"
@@ -84,12 +86,15 @@ class Strings(metaclass=Formatable):
   event_data_tracker_list_trackers_description = "List all active trackers for this discord guild"
   event_data_tracker_list_trackers_no_trackers = "No trackers found"
 
-  event_data_tracker_search_guilds_description = "List Deep Town guilds or find specific one"
-  event_data_tracker_search_guilds_no_guild_found = "No guilds found"
-
   event_data_tracker_generate_announcements_description = "Generate announcements for tracked guild by current discord guild"
   event_data_tracker_generate_announcements_no_data = "No data found"
   event_data_tracker_generate_announcements_success = "Announcements generated"
 
   event_data_tracker_guild_report_description = "Generate Deep Town guild report"
-  event_data_tracker_guild_report_no_data = "No data found"
+
+  # Public interface
+  public_interface_guild_report_description = "Generate report for specific Deep Town guild"
+
+  public_interface_guild_members_description = "List current members of specific Deep Town guild"
+
+  public_interface_search_guilds_description = "List Deep Town guilds or find specific one"

@@ -8,8 +8,10 @@ from utils import message_utils
 
 def pagination_next(id: str, hor_page: int, vert_page: int, max_hor_page: int, max_vert_page: int, roll_around: bool = True):
   if 'next' in id:
+    hor_page = 1
     next_vert_page = vert_page + 1
   elif 'prev' in id:
+    hor_page = 1
     next_vert_page = vert_page - 1
   else:
     next_vert_page = vert_page
@@ -37,7 +39,7 @@ reaction_ids = ["embed:prev_page", "embed:up_page", "embed:next_page", "embed:do
 
 class EmbedView2D(disnake.ui.View):
 
-  def __init__(self, author: disnake.User, embeds: List[List[disnake.Embed]], perma_lock: bool = False, roll_arroud: bool = True, timeout: Optional[float] = 300, invisible: bool=False):
+  def __init__(self, author: disnake.User, embeds: List[List[disnake.Embed]], perma_lock: bool = False, roll_arroud: bool = True, timeout: Optional[float] = 300, invisible: bool=False, invert_list_dir: bool=False):
     self.message: Optional[Union[disnake.Message, disnake.ApplicationCommandInteraction, disnake.ModalInteraction, disnake.MessageCommandInteraction]] = None
     self.vert_page = 1
     self.hor_page = 1
@@ -63,14 +65,14 @@ class EmbedView2D(disnake.ui.View):
       self.add_item(
         disnake.ui.Button(
           emoji="🔼",
-          custom_id="embed:up_page",
+          custom_id="embed:up_page" if not invert_list_dir else "embed:down_page",
           style=disnake.ButtonStyle.primary
         )
       )
       self.add_item(
         disnake.ui.Button(
           emoji="🔽",
-          custom_id="embed:down_page",
+          custom_id="embed:down_page" if not invert_list_dir else "embed:up_page",
           style=disnake.ButtonStyle.primary
         )
       )
@@ -93,7 +95,7 @@ class EmbedView2D(disnake.ui.View):
 
   def embed(self):
     page = self.embeds[self.vert_page - 1][self.hor_page - 1]
-    page.set_author(name=f"{self.vert_page}/{self.max_vert_page} {self.hor_page}/{len(self.embeds[self.vert_page - 1])}")
+    page.set_author(name=f"Page: {self.vert_page}/{self.max_vert_page} List: {self.hor_page}/{len(self.embeds[self.vert_page - 1])}")
     return page
 
   async def run(self, ctx):

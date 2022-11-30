@@ -1,15 +1,20 @@
+import statistics
+
 import disnake
 from disnake.ext import commands
 from typing import Optional
 import math
 import datetime
 from functools import partial
+import humanize
+from tabulate import tabulate
 
 from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
 from config import cooldowns, Strings, config
-from utils import dt_helpers, dt_report_generators, message_utils
+from utils import dt_helpers, dt_report_generators, message_utils, string_manipulation
 from features.views.paginator import EmbedView
+from features.views.paginator2d import EmbedView2D
 from database import event_participation_repo, tracking_settings_repo
 from features.views.data_selector import DataSelector
 
@@ -19,12 +24,23 @@ class PublicInterface(Base_Cog):
   def __init__(self, bot):
     super(PublicInterface, self).__init__(bot, __file__)
 
+  async def grab_guild_data(self, inter: disnake.CommandInteraction, guild_id: int) -> Optional[dt_helpers.DTGuildData]:
+    guild_data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
+    if guild_data is None:
+      await message_utils.generate_error_message(inter, Strings.public_interface_guild_data_not_found)
+      return None
+
+    if config.event_data_manager.monitor_all_guilds or guild_id in tracking_settings_repo.get_tracked_guild_ids():
+      event_participation_repo.generate_or_update_event_participations(guild_data)
+
+    return guild_data
+
   @commands.slash_command(name="guild")
   @cooldowns.default_cooldown
   async def guild_commands(self, inter: disnake.CommandInteraction):
     pass
 
-  @guild_commands.sub_command(name="search", description=Strings.event_data_tracker_search_guilds_description)
+  @guild_commands.sub_command(name="search", description=Strings.public_interface_search_guilds_description)
   async def search_guilds(self, inter: disnake.CommandInteraction,
                           guild_name: Optional[str] = commands.Param(default=None, description="Guild name to search"),
                           sort_by: str = commands.Param(description="Attribute to sort guilds by", choices=["ID", "Level", "Name"]),
@@ -33,7 +49,7 @@ class PublicInterface(Base_Cog):
 
     found_guilds = await dt_helpers.get_guild_info(self.bot, guild_name)
     if found_guilds is None or not found_guilds:
-      return await message_utils.generate_error_message(inter, Strings.event_data_tracker_search_guilds_no_guild_found)
+      return await message_utils.generate_error_message(inter, Strings.public_interface_guild_data_not_found)
 
     if sort_by == "ID":
       found_guilds.sort(key=lambda x: x[0], reverse=order == "Descending")
@@ -63,17 +79,63 @@ class PublicInterface(Base_Cog):
     embed_view = EmbedView(inter.author, pages, invisible=True)
     await embed_view.run(inter)
 
-  @guild_commands.sub_command(name="report", description=Strings.event_data_tracker_generate_announcements_description)
+  @guild_commands.sub_command(name="members", description=Strings.public_interface_guild_members_description)
+  async def guild_members(self, inter: disnake.CommandInteraction,
+                          guild_id: int = commands.Param(description="Deep Town Guild ID")):
+    await inter.response.defer(with_message=True)
+
+    guild_data = await self.grab_guild_data(inter, guild_id)
+    if guild_data is None: return
+
+    participations_per_user = []
+    for member in guild_data.players:
+      participations_per_user.append(event_participation_repo.get_all_user_event_participations_for_guild(member.id, guild_id))
+
+    current_time = datetime.datetime.utcnow()
+
+    users_embeds = []
+    for member_participations in participations_per_user:
+      member_pages = []
+      dt_user = member_participations[0].dt_user
+
+      participation_data = []
+      participations = []
+      for member_participation in member_participations:
+        participation_data.append((member_participation.year, member_participation.event_week, member_participation.amount))
+        participations.append(member_participation.amount)
+
+      participation_table_lines = tabulate(participation_data, ["Year", "Week", "Donate"], tablefmt="github").split("\n")
+
+      member_front_page = disnake.Embed(title=f"{dt_user.username}", color=disnake.Color.dark_blue())
+      message_utils.add_author_footer(member_front_page, inter.author)
+      member_front_page.add_field(name="ID", value=str(dt_user.id))
+      member_front_page.add_field(name="Level", value=str(dt_user.level))
+      member_front_page.add_field(name="Depth", value=str(dt_user.depth))
+      member_front_page.add_field(name="Online", value=humanize.naturaltime(current_time - dt_user.last_online) if dt_user.last_online is not None else "Never")
+      member_front_page.add_field(name="Current guild", value=f"{member_participations[0].dt_guild.name}({member_participations[0].dt_guild.level})", inline=False)
+      member_front_page.add_field(name="Average participation", value=f"{statistics.mean(participations):.2f}")
+      member_front_page.add_field(name="Median participation", value=f"{statistics.median(participations):.2f}")
+
+      member_pages.append(member_front_page)
+
+      while participation_table_lines:
+        data_string, participation_table_lines = string_manipulation.add_string_until_length(participation_table_lines, 1500, "\n")
+        participation_page = disnake.Embed(title=f"{dt_user.username} event participations", description=f"```py\n{data_string}\n```", color=disnake.Color.dark_blue())
+        message_utils.add_author_footer(participation_page, inter.author)
+        member_pages.append(participation_page)
+
+      users_embeds.append(member_pages)
+
+    embed_view = EmbedView2D(inter.author, users_embeds)
+    await embed_view.run(inter)
+
+  @guild_commands.sub_command(name="report", description=Strings.public_interface_guild_report_description)
   async def guild_report(self, inter: disnake.CommandInteraction,
                          guild_id: int = commands.Param(description="Deep Town Guild ID")):
     await inter.response.defer(with_message=True, ephemeral=True)
 
-    guild_data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
-    if guild_data is None:
-      return await message_utils.generate_error_message(inter, Strings.event_data_tracker_guild_report_no_data)
-
-    if config.event_data_manager.monitor_all_guilds or guild_id in tracking_settings_repo.get_tracked_guild_ids():
-      event_participation_repo.generate_or_update_event_participations(guild_data)
+    guild_data = await self.grab_guild_data(inter, guild_id)
+    if guild_data is None: return
 
     event_year, event_week = dt_helpers.get_event_index(datetime.datetime.utcnow())
     send_report_function = partial(dt_report_generators.send_text_guild_report, inter, guild_data, event_year, event_week)

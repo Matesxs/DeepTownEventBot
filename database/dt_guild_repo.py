@@ -7,6 +7,9 @@ from utils.dt_helpers import DTGuildData
 def get_dt_guild(guild_id:int) -> Optional[DTGuild]:
   return session.query(DTGuild).filter(DTGuild.id == guild_id).one_or_none()
 
+def get_dt_guilds_by_name(guild_name: str) -> List[DTGuild]:
+  return session.query(DTGuild).filter(DTGuild.name == guild_name).all()
+
 def create_dummy_dt_guild(id: int) -> DTGuild:
   item = get_dt_guild(id)
   if item is None:

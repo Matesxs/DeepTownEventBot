@@ -31,18 +31,23 @@ def get_user_event_participations(user_id: int, guild_id: Optional[int]=None, ye
 
   return session.query(EventParticipation).filter(*filters).order_by(EventParticipation.event_year.desc(), EventParticipation.event_week.desc()).limit(500).all()
 
-def get_guild_event_participations(dt_guild_id: int, year: Optional[int]=None, week: Optional[int]=None) -> List[EventParticipation]:
+def get_best_participant(dt_guild_id: int, year: int, week: int) -> Optional[Tuple[str, int]]:
+  data = session.query(dt_user_repo.DTUser.username, EventParticipation.amount).filter(EventParticipation.dt_guild_id == dt_guild_id, EventParticipation.event_year == year, EventParticipation.event_week == week).join(dt_user_repo.DTUser).order_by(EventParticipation.amount).first()
+  if data is None: return None
+  return data[0], data[1]
+
+def get_guild_event_participations(dt_guild_id: int, year: Optional[int]=None, week: Optional[int]=None) -> List[Tuple[int, int, int, float]]:
   filters = [EventParticipation.dt_guild_id == dt_guild_id]
   if year is not None:
     filters.append(EventParticipation.event_year == year)
   if week is not None:
     filters.append(EventParticipation.event_week == week)
-  return session.query(EventParticipation).filter(*filters).limit(2000).all()
+  return session.query(EventParticipation.event_year, EventParticipation.event_week, func.sum(EventParticipation.amount), func.avg(EventParticipation.amount)).filter(*filters).order_by(EventParticipation.event_year.desc(), EventParticipation.event_week.desc()).group_by(EventParticipation.event_year, EventParticipation.event_week).limit(500).all()
 
 def get_recent_event_participations(dt_guild_id: int) -> List[EventParticipation]:
   recent_week = session.query(func.max(EventParticipation.event_week)).first()[0]
   recent_year = session.query(func.max(EventParticipation.event_year)).first()[0]
-  return get_guild_event_participations(dt_guild_id, recent_year, recent_week)
+  return session.query(EventParticipation).filter(EventParticipation.dt_guild_id == dt_guild_id, EventParticipation.event_year == recent_year, EventParticipation.event_week == recent_week).all()
 
 def get_and_update_event_participation(user_id: int, guild_id: int, event_year: int, event_week: int, participation_amount: int):
   item = get_user_event_participation(user_id, guild_id, event_year, event_week)

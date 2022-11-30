@@ -11,4 +11,5 @@ class DTGuild(database.base):
   level = Column(Integer)
 
   members = relationship("DTGuildMember", uselist=True, back_populates="guild")
+  active_members = relationship("DTGuildMember", primaryjoin="and_(DTGuild.id==DTGuildMember.dt_guild_id, DTGuildMember.current_member==True)", uselist=True, viewonly=True)
   event_participations = relationship("EventParticipation", uselist=True, back_populates="dt_guild")

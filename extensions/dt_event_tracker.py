@@ -42,7 +42,7 @@ class DTEventTracker(Base_Cog):
     if not existing_tracker:
       all_trackers = tracking_settings_repo.get_all_guild_trackers(inter.guild.id)
       if self.bot.owner is None or inter.author.id != self.bot.owner.id:
-        if len(all_trackers) >= config.event_data_tracker.tracker_limit_per_guild:
+        if len(all_trackers) >= config.event_tracker.tracker_limit_per_guild:
           return await message_utils.generate_error_message(inter, Strings.event_data_tracker_add_or_modify_tracker_tracker_limit_reached(limit=config.event_data_tracker.tracker_limit_per_guild))
 
       data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)

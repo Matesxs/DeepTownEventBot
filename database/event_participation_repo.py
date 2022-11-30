@@ -29,10 +29,15 @@ def get_user_event_participations(user_id: int, guild_id: Optional[int]=None, ye
   if week is not None:
     filters.append(EventParticipation.event_week == week)
 
-  return session.query(EventParticipation).filter(*filters).order_by(EventParticipation.event_year.desc(), EventParticipation.event_week.desc()).all()
+  return session.query(EventParticipation).filter(*filters).order_by(EventParticipation.event_year.desc(), EventParticipation.event_week.desc()).limit(500).all()
 
-def get_guild_event_participations(dt_guild_id: int, year: int, week: int) -> List[EventParticipation]:
-  return session.query(EventParticipation).filter(EventParticipation.event_year == year, EventParticipation.event_week == week, EventParticipation.dt_guild_id == dt_guild_id).all()
+def get_guild_event_participations(dt_guild_id: int, year: Optional[int]=None, week: Optional[int]=None) -> List[EventParticipation]:
+  filters = [EventParticipation.dt_guild_id == dt_guild_id]
+  if year is not None:
+    filters.append(EventParticipation.event_year == year)
+  if week is not None:
+    filters.append(EventParticipation.event_week == week)
+  return session.query(EventParticipation).filter(*filters).limit(2000).all()
 
 def get_recent_event_participations(dt_guild_id: int) -> List[EventParticipation]:
   recent_week = session.query(func.max(EventParticipation.event_week)).first()[0]

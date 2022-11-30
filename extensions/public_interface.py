@@ -1,7 +1,7 @@
 import statistics
 import disnake
 from disnake.ext import commands
-from typing import Optional
+from typing import Optional, Union
 import math
 import datetime
 from functools import partial
@@ -10,11 +10,11 @@ from tabulate import tabulate
 
 from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
-from config import cooldowns, Strings, config
+from config import cooldowns, Strings
 from utils import dt_helpers, dt_report_generators, message_utils, string_manipulation
 from features.views.paginator import EmbedView
 from features.views.paginator2d import EmbedView2D
-from database import event_participation_repo, tracking_settings_repo, dt_user_repo, dt_guild_repo
+from database import event_participation_repo, dt_user_repo, dt_guild_repo
 from features.views.data_selector import DataSelector
 
 logger = setup_custom_logger(__name__)
@@ -23,14 +23,26 @@ class PublicInterface(Base_Cog):
   def __init__(self, bot):
     super(PublicInterface, self).__init__(bot, __file__)
 
-  async def grab_guild_data(self, inter: disnake.CommandInteraction, guild_id: int) -> Optional[dt_helpers.DTGuildData]:
-    guild_data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
-    if guild_data is None:
-      await message_utils.generate_error_message(inter, Strings.public_interface_guild_data_not_found)
-      return None
+  async def grab_guild_data(self, inter: disnake.CommandInteraction, identifier: Union[int, str]) -> Optional[dt_helpers.DTGuildData]:
+    if isinstance(identifier, str):
+      guilds = dt_guild_repo.get_dt_guilds_by_name(identifier)
+      if guilds:
+        guild_data = await dt_helpers.get_dt_guild_data(self.bot, guilds[0].id)
 
-    if config.data_manager.monitor_all_guilds or guild_id in tracking_settings_repo.get_tracked_guild_ids():
-      event_participation_repo.generate_or_update_event_participations(guild_data)
+        if guild_data is None:
+          await message_utils.generate_error_message(inter, Strings.public_interface_guild_data_not_received)
+          return None
+      else:
+        await message_utils.generate_error_message(inter, Strings.public_interface_guild_data_not_found)
+        return None
+    else:
+      guild_data = await dt_helpers.get_dt_guild_data(self.bot, identifier)
+
+      if guild_data is None:
+        await message_utils.generate_error_message(inter, Strings.public_interface_guild_data_not_received)
+        return None
+
+    event_participation_repo.generate_or_update_event_participations(guild_data)
 
     return guild_data
 
@@ -46,7 +58,7 @@ class PublicInterface(Base_Cog):
                           order: str = commands.Param(description="Order method of attribute", choices=["Ascending", "Descending"])):
     found_guilds = await dt_helpers.get_guild_info(self.bot, guild_name)
     if found_guilds is None or not found_guilds:
-      return await message_utils.generate_error_message(inter, Strings.public_interface_guild_data_not_found)
+      return await message_utils.generate_error_message(inter, Strings.public_interface_guild_data_not_received)
 
     if sort_by == "ID":
       found_guilds.sort(key=lambda x: x[0], reverse=order == "Descending")
@@ -78,9 +90,9 @@ class PublicInterface(Base_Cog):
 
   @guild_commands.sub_command(name="members", description=Strings.public_interface_guild_members_description)
   async def guild_members(self, inter: disnake.CommandInteraction,
-                          guild_id: int = commands.Param(description="Deep Town Guild ID"),
+                          identifier: str = commands.Param(description="Deep Town Guild ID or Name"),
                           include_all_guilds: bool=commands.Param(default=True, description="Include previous guilds in event participation history")):
-    guild_data = await self.grab_guild_data(inter, guild_id)
+    guild_data = await self.grab_guild_data(inter, int(identifier) if identifier.isnumeric() else identifier)
     if guild_data is None: return
 
     participations_per_user = []
@@ -88,7 +100,7 @@ class PublicInterface(Base_Cog):
       if include_all_guilds:
         participations_per_user.append(event_participation_repo.get_user_event_participations(member.id))
       else:
-        participations_per_user.append(event_participation_repo.get_user_event_participations(member.id, guild_id))
+        participations_per_user.append(event_participation_repo.get_user_event_participations(member.id, guild_data.id))
 
     current_time = datetime.datetime.utcnow()
     current_year, _ = dt_helpers.get_event_index(current_time)
@@ -128,8 +140,8 @@ class PublicInterface(Base_Cog):
 
   @guild_commands.sub_command(name="report", description=Strings.public_interface_guild_report_description)
   async def guild_report(self, inter: disnake.CommandInteraction,
-                         guild_id: int = commands.Param(description="Deep Town Guild ID")):
-    guild_data = await self.grab_guild_data(inter, guild_id)
+                         identifier: str = commands.Param(description="Deep Town Guild ID or Name")):
+    guild_data = await self.grab_guild_data(inter, int(identifier) if identifier.isnumeric() else identifier)
     if guild_data is None: return
 
     event_year, event_week = dt_helpers.get_event_index(datetime.datetime.utcnow())
@@ -151,12 +163,10 @@ class PublicInterface(Base_Cog):
     for guild in matched_guilds:
       guild_profile_lists = []
 
-      # If guild is tracked, or we monitor all guild update data and reload guild
-      if guild.id in tracking_settings_repo.get_tracked_guild_ids() or config.data_manager.monitor_all_guilds:
-        guild_data = await dt_helpers.get_dt_guild_data(self.bot, guild.id)
-        if guild_data is not None:
-          event_participation_repo.generate_or_update_event_participations(guild_data)
-          guild = dt_guild_repo.get_dt_guild(guild.id)
+      guild_data = await dt_helpers.get_dt_guild_data(self.bot, guild.id)
+      if guild_data is not None:
+        event_participation_repo.generate_or_update_event_participations(guild_data)
+        guild = dt_guild_repo.get_dt_guild(guild.id)
 
       current_time = datetime.datetime.utcnow()
       current_year, _ = dt_helpers.get_event_index(current_time)
@@ -238,12 +248,10 @@ class PublicInterface(Base_Cog):
     for user in matched_users:
       user_profile_lists = []
 
-      # If user have some active memberships and that guild is tracked, or we monitor all guilds then pull the latest data and update a user
-      if user.active_member is not None and (user.active_member.guild.id in tracking_settings_repo.get_tracked_guild_ids() or config.data_manager.monitor_all_guilds):
-        guild_data = await dt_helpers.get_dt_guild_data(self.bot, user.active_member.guild.id)
-        if guild_data is not None:
-          event_participation_repo.generate_or_update_event_participations(guild_data)
-          user = dt_user_repo.get_dt_user(user.id)
+      guild_data = await dt_helpers.get_dt_guild_data(self.bot, user.active_member.guild.id)
+      if guild_data is not None:
+        event_participation_repo.generate_or_update_event_participations(guild_data)
+        user = dt_user_repo.get_dt_user(user.id)
 
       all_participations = event_participation_repo.get_user_event_participations(user.id)
       all_participations_amounts = [p.amount for p in all_participations]

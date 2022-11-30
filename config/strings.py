@@ -75,7 +75,8 @@ class Strings(metaclass=Formatable):
   data_manager_dump_guild_participation_data_success = "Dump created"
 
   # Event Tracker
-  public_interface_guild_data_not_found = "No data found"
+  public_interface_guild_data_not_received = "No data retrieved from server"
+  public_interface_guild_data_not_found = "No data found in database"
 
   event_data_tracker_add_or_modify_tracker_description = "Add guild for tracking or modify existing announcement channel"
   event_data_tracker_add_or_modify_tracker_failed_to_get_data = "Failed to get guild data"

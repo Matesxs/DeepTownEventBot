@@ -67,8 +67,6 @@ class DTEventTracker(Base_Cog):
   @cooldowns.default_cooldown
   async def remove_tracker(self, inter: disnake.CommandInteraction,
                                  guild_id: int=commands.Param(description="Deep Town Guild ID")):
-    await inter.response.defer(with_message=True, ephemeral=True)
-
     settings = tracking_settings_repo.get_tracking_settings(inter.guild.id, guild_id)
     guild_name = settings.dt_guild.name
 
@@ -80,8 +78,6 @@ class DTEventTracker(Base_Cog):
   @tracker.sub_command(name="list", description=Strings.event_data_tracker_list_trackers_description)
   @cooldowns.default_cooldown
   async def list_guild_trackers(self, inter: disnake.CommandInteraction):
-    await inter.response.defer(with_message=True, ephemeral=True)
-
     guild_trackers = tracking_settings_repo.get_all_guild_trackers(inter.guild.id)
     number_of_trackers = len(guild_trackers)
 
@@ -101,7 +97,7 @@ class DTEventTracker(Base_Cog):
         guild_level = setting.dt_guild.level
         announce_channel = await setting.get_announce_channel(self.bot)
 
-        page.add_field(name=f"{guild_name}({guild_level})", value="No reporting" if announce_channel is None else announce_channel.name)
+        page.add_field(name=f"{guild_name}({guild_level})", value="No reporting" if announce_channel is None else f"[#{announce_channel.name}]({announce_channel.jump_url})")
       pages.append(page)
 
     embed_view = EmbedView(inter.author, pages, invisible=True)

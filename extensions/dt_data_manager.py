@@ -6,7 +6,7 @@ import io
 import traceback
 
 from features.base_cog import Base_Cog
-from utils import dt_helpers, message_utils, permission_helper
+from utils import dt_helpers, message_utils
 from utils.logger import setup_custom_logger
 from config import cooldowns, Strings, config
 from database import event_participation_repo, tracking_settings_repo, dt_guild_repo, dt_guild_member_repo
@@ -101,8 +101,6 @@ class DTDataManager(Base_Cog):
   @cooldowns.long_cooldown
   @commands.is_owner()
   async def skip_data_update(self, inter: disnake.CommandInteraction):
-    await inter.response.defer(with_message=True, ephemeral=True)
-
     if not self.skip_periodic_data_update:
       self.skip_periodic_data_update = True
       await message_utils.generate_success_message(inter, Strings.data_manager_skip_data_update_success)

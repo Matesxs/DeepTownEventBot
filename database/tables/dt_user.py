@@ -22,8 +22,9 @@ class DTUser(database.base):
   chem_stations = Column(Integer, default=0)
   green_houses = Column(Integer, default=0)
 
-  members = relationship("DTGuildMember", back_populates="user")
-  event_participations = relationship("EventParticipation", back_populates="dt_user")
+  active_member = relationship("DTGuildMember", primaryjoin="and_(DTUser.id==DTGuildMember.dt_user_id, DTGuildMember.current_member==True)", uselist=False, viewonly=True)
+  members = relationship("DTGuildMember", back_populates="user", uselist=True)
+  event_participations = relationship("EventParticipation", back_populates="dt_user", uselist=True)
 
   @classmethod
   def from_DTUserData(cls, data: DTUserData):

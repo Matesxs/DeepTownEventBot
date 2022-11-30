@@ -102,3 +102,6 @@ class Strings(metaclass=Formatable):
   public_interface_guild_members_description = "List current members of specific Deep Town guild"
 
   public_interface_search_guilds_description = "List Deep Town guilds or find specific one"
+
+  public_interface_user_profile_description = "Show Deep Town user profile"
+  public_interface_user_profile_no_users = "No users found with username `{username}`"

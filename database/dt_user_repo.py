@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 
 from database import session
 from database.tables.dt_user import DTUser
@@ -6,6 +6,9 @@ from utils.dt_helpers import DTUserData
 
 def get_dt_user(user_id: int) -> Optional[DTUser]:
   return session.query(DTUser).filter(DTUser.id == user_id).one_or_none()
+
+def get_user_by_username(username: str) -> List[DTUser]:
+  return session.query(DTUser).filter(DTUser.username.ilike(username)).all()
 
 def create_dummy_dt_user(id: int) -> DTUser:
   item = get_dt_user(id)

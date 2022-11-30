@@ -8,6 +8,7 @@ import statistics
 
 from utils import string_manipulation
 from utils.dt_helpers import DTGuildData
+from database.event_participation_repo import EventParticipation
 
 def generate_text_guild_report(guild_data: DTGuildData, event_year: int, event_week: int, colms: Optional[List[str]]=None) -> List[str]:
   guild_data.players.sort(key=lambda x: x.last_event_contribution, reverse=True)
@@ -53,3 +54,15 @@ async def send_text_guild_report(report_channel: Union[disnake.TextChannel, disn
   strings = generate_text_guild_report(guild_data, event_year, event_week, colms)
   for string in strings:
     await report_channel.send(string)
+
+
+def generate_participations_page_strings(participations: List[EventParticipation], include_guild: bool=False) -> List[str]:
+  participation_data = [((participation.event_year, participation.event_week, participation.dt_guild.name, participation.amount) if include_guild else (participation.event_year, participation.event_week, participation.amount)) for participation in participations]
+  participation_table_lines = tabulate(participation_data, ["Year", "Week", "Guild", "Donate"] if include_guild else ["Year", "Week", "Donate"], tablefmt="github").split("\n")
+
+  output_pages = []
+  while participation_table_lines:
+    data_string, participation_table_lines = string_manipulation.add_string_until_length(participation_table_lines, 1500, "\n")
+    output_pages.append(data_string)
+
+  return output_pages

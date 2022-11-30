@@ -92,6 +92,31 @@ class EmbedView2D(disnake.ui.View):
           style=disnake.ButtonStyle.success
         )
         self.add_item(self.lock_button)
+    else:
+      if len(embeds[0]) > 0:
+        self.add_item(
+          disnake.ui.Button(
+            emoji="🔼",
+            custom_id="embed:up_page" if not invert_list_dir else "embed:down_page",
+            style=disnake.ButtonStyle.primary
+          )
+        )
+        self.add_item(
+          disnake.ui.Button(
+            emoji="🔽",
+            custom_id="embed:down_page" if not invert_list_dir else "embed:up_page",
+            style=disnake.ButtonStyle.primary
+          )
+        )
+
+        if not perma_lock and not invisible:
+          # if permanent lock is applied, dynamic lock is removed from buttons
+          self.lock_button = disnake.ui.Button(
+            emoji="🔓",
+            custom_id="embed:lock",
+            style=disnake.ButtonStyle.success
+          )
+          self.add_item(self.lock_button)
 
   def embed(self):
     page = self.embeds[self.vert_page - 1][self.hor_page - 1]

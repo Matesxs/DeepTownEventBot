@@ -17,8 +17,24 @@ class DTUserData:
   last_online: Optional[datetime.datetime]
   last_event_contribution: int
 
+  mines: int=0
+  chem_mines: int=0
+  oil_mines: int=0
+  crafters: int=0
+  smelters: int=0
+  jewel_stations: int=0
+  chem_stations: int=0
+  green_houses: int=0
+
+  @classmethod
+  def from_api_data(cls, data: dict):
+    return cls(
+      data[1], data[0], data[3], data[4], datetime.datetime.strptime(data[2], '%a, %d %b %Y %H:%M:%S GMT'), data[-1],
+      data[5], data[6], data[7], data[8], data[9], data[10], data[11], data[12]
+    )
+
   def __repr__(self):
-    return f"<{self.name}({self.id}),{self.level},{self.depth},'{self.last_online if self.last_online is not None else 'Never'}',{self.last_event_contribution}>"
+    return f"<{self.name}({self.id}),{self.level},{self.depth},'{self.last_online if self.last_online is not None else 'Never'}',{self.last_event_contribution}, ({self.mines},{self.chem_mines},{self.oil_mines},{self.crafters},{self.smelters},{self.jewel_stations},{self.chem_stations},{self.green_houses})>"
 
 @dataclasses.dataclass
 class DTGuildData:
@@ -59,7 +75,7 @@ async def get_dt_guild_data(bot: BaseAutoshardedBot, guild_id:int) -> Optional[D
 
     players = []
     for player_data in json_data["players"]["data"]:
-      players.append(DTUserData(player_data[1], player_data[0], player_data[3], player_data[4], datetime.datetime.strptime(player_data[2], '%a, %d %b %Y %H:%M:%S GMT'), player_data[-1]))
+      players.append(DTUserData.from_api_data(player_data))
 
     return DTGuildData(json_data["name"], json_data["id"], json_data["level"], players)
 

@@ -18,13 +18,9 @@ def create_dummy_dt_user(id: int) -> DTUser:
 def get_and_update_dt_user(user_data: DTUserData) -> DTUser:
   item = get_dt_user(user_data.id)
   if item is None:
-    item = DTUser(id=user_data.id, username=user_data.name, level=user_data.level, depth=user_data.depth, last_online=user_data.last_online)
+    item = DTUser.from_DTUserData(user_data)
     session.add(item)
-    session.commit()
   else:
-    item.username = user_data.name
-    item.level = user_data.level
-    item.depth = user_data.depth
-    item.last_online = user_data.last_online
-    session.commit()
+    item.update(user_data)
+  session.commit()
   return item

@@ -12,7 +12,7 @@ def event_list_participation_to_dt_guild_data(participations: List[EventParticip
 
   players = []
   for participation in participations:
-    players.append(dt_helpers.DTUserData(participation.dt_user.username, participation.dt_user.id, participation.dt_user.level, participation.dt_user.depth, participation.dt_user.last_online, participation.amount))
+    players.append(participation.to_DTUserData())
 
   return dt_helpers.DTGuildData(participations[0].dt_guild.name, participations[0].dt_guild.id, participations[0].dt_guild.level, players), participation.year, participation.event_week
 

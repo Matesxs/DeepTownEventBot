@@ -81,7 +81,8 @@ class PublicInterface(Base_Cog):
 
   @guild_commands.sub_command(name="members", description=Strings.public_interface_guild_members_description)
   async def guild_members(self, inter: disnake.CommandInteraction,
-                          guild_id: int = commands.Param(description="Deep Town Guild ID")):
+                          guild_id: int = commands.Param(description="Deep Town Guild ID"),
+                          include_all_guilds: bool=commands.Param(default=True, description="Include previous guilds in event participation history")):
     await inter.response.defer(with_message=True)
 
     guild_data = await self.grab_guild_data(inter, guild_id)
@@ -101,10 +102,13 @@ class PublicInterface(Base_Cog):
       participation_data = []
       participations = []
       for member_participation in member_participations:
-        participation_data.append((member_participation.year, member_participation.event_week, member_participation.amount))
+        if include_all_guilds:
+          participation_data.append((member_participation.year, member_participation.event_week, member_participation.dt_guild.name, member_participation.amount))
+        else:
+          participation_data.append((member_participation.year, member_participation.event_week, member_participation.amount))
         participations.append(member_participation.amount)
 
-      participation_table_lines = tabulate(participation_data, ["Year", "Week", "Donate"], tablefmt="github").split("\n")
+      participation_table_lines = tabulate(participation_data, ["Year", "Week", "Donate"] if not include_all_guilds else ["Year", "Week", "Guild", "Donate"], tablefmt="github").split("\n")
 
       member_front_page = disnake.Embed(title=f"{dt_user.username}", color=disnake.Color.dark_blue())
       message_utils.add_author_footer(member_front_page, inter.author)

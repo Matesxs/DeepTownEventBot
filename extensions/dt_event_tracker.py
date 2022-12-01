@@ -35,7 +35,7 @@ class DTEventTracker(Base_Cog):
   @cooldowns.default_cooldown
   async def add_or_modify_tracker(self, inter: disnake.CommandInteraction,
                                   guild_id: int=commands.Param(description="Deep Town Guild ID"),
-                                  announce_channel:Optional[disnake.TextChannel]=commands.Param(default=None, description="Channel for announcing results at the end of event")):
+                                  announce_channel:disnake.TextChannel=commands.Param(default=None, description="Channel for announcing results at the end of event")):
     await inter.response.defer(with_message=True, ephemeral=True)
 
     existing_tracker = tracking_settings_repo.get_tracking_settings(inter.guild.id, guild_id)
@@ -52,16 +52,13 @@ class DTEventTracker(Base_Cog):
       guild_name = data.name
 
       event_participation_repo.generate_or_update_event_participations(data)
-      tracking_settings_repo.get_or_create_tracking_settings(inter.guild, data, announce_channel.id if announce_channel is not None else None)
+      tracking_settings_repo.get_or_create_tracking_settings(inter.guild, data, announce_channel.id)
     else:
       guild_name = existing_tracker.dt_guild.name
       existing_tracker.announce_channel_id = str(announce_channel.id)
       tracking_settings_repo.session.commit()
 
-    if announce_channel is None:
-      await message_utils.generate_success_message(inter, Strings.event_data_tracker_add_or_modify_tracker_success_without_channel(guild=guild_name))
-    else:
-      await message_utils.generate_success_message(inter, Strings.event_data_tracker_add_or_modify_tracker_success_with_channel(guild=guild_name, channel=announce_channel.name))
+    await message_utils.generate_success_message(inter, Strings.event_data_tracker_add_or_modify_tracker_success_with_channel(guild=guild_name, channel=announce_channel.name))
 
   @tracker.sub_command(name="remove", description=Strings.event_data_tracker_remove_tracker_description)
   @cooldowns.default_cooldown
@@ -111,14 +108,6 @@ class DTEventTracker(Base_Cog):
     trackers = tracking_settings_repo.get_all_guild_trackers(inter.guild.id)
     if not trackers:
       return await message_utils.generate_error_message(inter, Strings.event_data_tracker_generate_announcements_no_data)
-
-    guild_ids = tracking_settings_repo.get_guild_tracked_guild_ids(inter.guild.id)
-    for guild_id in guild_ids:
-      data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
-      await asyncio.sleep(0.1)
-      if data is None: continue
-
-      event_participation_repo.generate_or_update_event_participations(data)
 
     for tracker in trackers:
       await self.send_tracker_text_announcement(tracker)

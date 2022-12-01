@@ -189,10 +189,7 @@ class DTDataManager(Base_Cog):
       return
 
     logger.info("Guild data pull starting")
-    if not config.data_manager.monitor_all_guilds:
-      guild_ids = tracking_settings_repo.get_tracked_guild_ids()
-    else:
-      guild_ids = await dt_helpers.get_ids_of_all_guilds(self.bot)
+    guild_ids = await dt_helpers.get_ids_of_all_guilds(self.bot)
 
     if guild_ids is not None or not guild_ids:
       pulled_data = 0

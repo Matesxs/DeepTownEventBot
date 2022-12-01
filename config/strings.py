@@ -82,7 +82,6 @@ class Strings(metaclass=Formatable):
   event_data_tracker_add_or_modify_tracker_failed_to_get_data = "Failed to get guild data"
   event_data_tracker_add_or_modify_tracker_tracker_limit_reached = "Tracker limit ({limit} per guild) reached"
   event_data_tracker_add_or_modify_tracker_success_with_channel = "Set tracking for guild `{guild}` and announcement to channel `{channel}`"
-  event_data_tracker_add_or_modify_tracker_success_without_channel = "Set tracking for guild `{guild}`"
 
   event_data_tracker_remove_tracker_description = "Remove event tracker and its announcement settings"
   event_data_tracker_remove_tracker_success = "Removed tracking for guild `{guild}`"

@@ -45,8 +45,14 @@ def get_guild_event_participations(dt_guild_id: int, year: Optional[int]=None, w
   return session.query(EventParticipation.event_year, EventParticipation.event_week, func.sum(EventParticipation.amount), func.avg(EventParticipation.amount)).filter(*filters).order_by(EventParticipation.event_year.desc(), EventParticipation.event_week.desc()).group_by(EventParticipation.event_year, EventParticipation.event_week).limit(500).all()
 
 def get_recent_event_participations(dt_guild_id: int) -> List[EventParticipation]:
-  recent_year = session.query(func.max(EventParticipation.event_year)).first()[0]
-  recent_week = session.query(func.max(EventParticipation.event_week)).filter(EventParticipation.event_year == recent_year).first()[0]
+  recent_year_results = session.query(func.max(EventParticipation.event_year)).one_or_none()
+  if recent_year_results is None: return []
+  recent_year = recent_year_results[0]
+
+  recent_week_results = session.query(func.max(EventParticipation.event_week)).filter(EventParticipation.event_year == recent_year).one_or_none()
+  if recent_week_results is None: return []
+  recent_week = recent_week_results[0]
+
   return session.query(EventParticipation).filter(EventParticipation.dt_guild_id == dt_guild_id, EventParticipation.event_year == recent_year, EventParticipation.event_week == recent_week).all()
 
 def get_and_update_event_participation(user_id: int, guild_id: int, event_year: int, event_week: int, participation_amount: int):

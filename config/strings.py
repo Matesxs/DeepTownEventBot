@@ -75,9 +75,6 @@ class Strings(metaclass=Formatable):
   data_manager_dump_guild_participation_data_success = "Dump created"
 
   # Event Tracker
-  public_interface_guild_data_not_received = "No data retrieved from server"
-  public_interface_guild_data_not_found = "No data found in database"
-
   event_data_tracker_add_or_modify_tracker_description = "Add guild for tracking or modify existing announcement channel"
   event_data_tracker_add_or_modify_tracker_failed_to_get_data = "Failed to get guild data"
   event_data_tracker_add_or_modify_tracker_tracker_limit_reached = "Tracker limit ({limit} per guild) reached"
@@ -97,6 +94,9 @@ class Strings(metaclass=Formatable):
   event_data_tracker_guild_report_description = "Generate Deep Town guild report"
 
   # Public interface
+  public_interface_guild_data_not_received = "No data retrieved from server for guild with identifier `{identifier}`"
+  public_interface_guild_data_not_found = "No data found in database for guild with identifier `{identifier}`"
+
   public_interface_guild_report_description = "Generate report for specific Deep Town guild"
 
   public_interface_guild_members_description = "List current members of specific Deep Town guild"

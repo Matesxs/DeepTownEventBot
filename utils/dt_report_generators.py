@@ -3,7 +3,7 @@ from disnake.ext import commands
 import datetime
 import humanize
 from typing import List, Union, Optional
-from tabulate import tabulate
+from table2ascii import table2ascii, Alignment
 import statistics
 
 from utils import string_manipulation
@@ -19,6 +19,22 @@ def generate_text_guild_report(guild_data: DTGuildData, event_year: int, event_w
   current_time = datetime.datetime.utcnow()
   contributions = []
   data_list = []
+  alligments = []
+
+  if "No°" in colms:
+    alligments.append(Alignment.RIGHT)
+  if "Name" in colms:
+    alligments.append(Alignment.LEFT)
+  if "ID" in colms:
+    alligments.append(Alignment.RIGHT)
+  if "Level" in colms:
+    alligments.append(Alignment.RIGHT)
+  if "Depth" in colms:
+    alligments.append(Alignment.RIGHT)
+  if "Online" in colms:
+    alligments.append(Alignment.LEFT)
+  if "Donate" in colms:
+    alligments.append(Alignment.RIGHT)
 
   for idx, participant in enumerate(guild_data.players):
     data = []
@@ -41,7 +57,7 @@ def generate_text_guild_report(guild_data: DTGuildData, event_year: int, event_w
     contributions.append(participant.last_event_contribution)
 
   description = f"{guild_data.name} - ID: {guild_data.id} - Level: {guild_data.level}\nYear: {event_year} Week: {event_week}\nDonate - Median: {statistics.median(contributions):.2f} Average: {statistics.mean(contributions):.2f}, Total: {sum(contributions)}\n\n"
-  table_strings = (description + tabulate(data_list, colms, tablefmt="github")).split("\n")
+  table_strings = (description + table2ascii(body=data_list, header=colms, alignments=alligments, first_col_heading="No°" in colms)).split("\n")
 
   announce_strings = []
   while table_strings:
@@ -58,7 +74,8 @@ async def send_text_guild_report(report_channel: Union[disnake.TextChannel, disn
 
 def generate_participations_page_strings(participations: List[EventParticipation], include_guild: bool=False) -> List[str]:
   participation_data = [((participation.event_year, participation.event_week, participation.dt_guild.name, participation.amount) if include_guild else (participation.event_year, participation.event_week, participation.amount)) for participation in participations]
-  participation_table_lines = tabulate(participation_data, ["Year", "Week", "Guild", "Donate"] if include_guild else ["Year", "Week", "Donate"], tablefmt="github").split("\n")
+  header = ["Year", "Week", "Guild", "Donate"] if include_guild else ["Year", "Week", "Donate"]
+  participation_table_lines = table2ascii(body=participation_data, header=header, alignments=[Alignment.RIGHT for _ in range(len(header))] if not include_guild else [Alignment.RIGHT, Alignment.RIGHT, Alignment.LEFT, Alignment.RIGHT]).split("\n")
 
   output_pages = []
   while participation_table_lines:

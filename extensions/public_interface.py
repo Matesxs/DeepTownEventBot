@@ -6,7 +6,7 @@ import math
 import datetime
 from functools import partial
 import humanize
-from tabulate import tabulate
+from table2ascii import table2ascii, Alignment
 
 from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
@@ -190,7 +190,7 @@ class PublicInterface(Base_Cog):
       for member in guild.active_members:
         member_data.append((member.user.id, member.user.username, member.user.level, member.user.depth))
 
-      member_table_strings = tabulate(member_data, ["ID", "Name", "Level", "Depth"], tablefmt="github").split("\n")
+      member_table_strings = table2ascii(body=member_data, header=["ID", "Name", "Level", "Depth"], alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.RIGHT, Alignment.RIGHT]).split("\n")
       member_page_strings = []
       while member_table_strings:
         data_string, member_table_strings = string_manipulation.add_string_until_length(member_table_strings, 3000, "\n")
@@ -220,7 +220,7 @@ class PublicInterface(Base_Cog):
         best_participant = event_participation_repo.get_best_participant(guild.id, year, week) if total != 0 else None
         event_participations_data.append((year, week, best_participant if best_participant is not None else "Unknown", f"{float(average):.2f}"))
 
-      event_participations_strings = tabulate(event_participations_data, ["Year", "Week", "Top", "Average"], tablefmt="github").split("\n")
+      event_participations_strings = table2ascii(body=event_participations_data, header=["Year", "Week", "Top", "Average"], alignments=[Alignment.RIGHT, Alignment.RIGHT, Alignment.LEFT, Alignment.RIGHT]).split("\n")
       event_participations_page_strings = []
       while event_participations_strings:
         data_string, event_participations_strings = string_manipulation.add_string_until_length(event_participations_strings, 3000, "\n")

@@ -18,9 +18,9 @@ class DataSelector(disnake.ui.View):
     for col in available_colms:
       options.append(disnake.SelectOption(label=col, default=col in default_enabled_colms))
 
-    self.selector = disnake.ui.StringSelect(min_values=1, max_values=len(available_colms), options=options, custom_id="data_selector")
+    self.selector = disnake.ui.StringSelect(min_values=1, max_values=len(available_colms), options=options, custom_id="data_selector:selector")
     self.add_item(self.selector)
-    self.add_item(disnake.ui.Button(style=disnake.ButtonStyle.green, label="Generate", custom_id="data_selector_generate_button"))
+    self.add_item(disnake.ui.Button(style=disnake.ButtonStyle.green, label="Generate", custom_id="data_selector:generate_button"))
 
   async def run(self, ctx):
     if isinstance(ctx, (disnake.ApplicationCommandInteraction, disnake.ModalInteraction, disnake.MessageCommandInteraction, disnake.CommandInteraction)):
@@ -34,7 +34,7 @@ class DataSelector(disnake.ui.View):
 
   async def interaction_check(self, interaction: disnake.MessageInteraction) -> bool:
     if interaction.author.id == self.author.id:
-      if interaction.data.custom_id == "data_selector_generate_button":
+      if interaction.data.custom_id == "data_selector:generate_button":
         if self.selector.values is not None and self.selector.values:
           self.result = self.selector.values
         self.stop()

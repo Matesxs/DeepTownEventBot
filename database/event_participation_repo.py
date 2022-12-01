@@ -76,13 +76,9 @@ def generate_or_update_event_participations(guild_data: dt_helpers.DTGuildData) 
   get_and_update_dt_guild_members(guild_data)
 
   event_year, event_week = dt_helpers.get_event_index(datetime.datetime.utcnow())
-  prev_event_year, prev_event_week = dt_helpers.get_event_index(datetime.datetime.utcnow() - datetime.timedelta(days=7))
 
   participations = []
   for player_data in guild_data.players:
-    prev_participation = get_user_event_participation(player_data.id, guild_data.id, prev_event_year, prev_event_week)
-
-    contribution = player_data.last_event_contribution if prev_participation is None or prev_participation.amount != player_data.last_event_contribution else 0
-    participations.append(get_and_update_event_participation(player_data.id, guild_data.id, event_year, event_week, contribution))
+    participations.append(get_and_update_event_participation(player_data.id, guild_data.id, event_year, event_week, player_data.last_event_contribution))
   session.commit()
   return participations

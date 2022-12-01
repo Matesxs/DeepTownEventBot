@@ -7,6 +7,9 @@ class Strings(metaclass=Formatable):
   help_description = "Show all message commands and help for them"
   help_name_param_description = "Specify name of command or name of extension as parameter to search help only for thing you want"
 
+  help_slash_command_list_description = "List all slash commands"
+  help_slash_command_list_no_slash_commands = "No slash commands registered for this bot"
+
   # System
   system_load_description = "Load unloaded extension"
   system_unable_to_load_cog = "Unable to load `{cog}` extension\n`{e}`"

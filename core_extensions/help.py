@@ -89,6 +89,35 @@ async def generate_help_for_cog(cog: Base_Cog, ctx) -> Union[None, List[disnake.
 
   return pages
 
+def parse_slash_commands(slash_commands: Set[commands.InvokableSlashCommand]):
+  command_strings = []
+
+  def value_options_to_string(option_list: List[disnake.Option]):
+    options_strings = []
+
+    for option in option_list:
+      if option.required:
+        options_strings.append(f"<{option.name}>")
+      else:
+        options_strings.append(f"[{option.name}]")
+
+    return " ".join(options_strings)
+
+  for slash_command in slash_commands:
+    option_types = [op.type for op in slash_command.options]
+    if disnake.OptionType.sub_command not in option_types and disnake.OptionType.sub_command_group not in option_types:
+      command_strings.append((f"{slash_command.name} {value_options_to_string(slash_command.options)}", slash_command.description))
+    else:
+      for sc_option in slash_command.options:
+        if sc_option.type == disnake.OptionType.sub_command_group:
+          for scg_option in sc_option.options:
+            if scg_option.type == disnake.OptionType.sub_command:
+              command_strings.append((f"{slash_command.name} {sc_option.name} {scg_option.name} {value_options_to_string(scg_option.options)}", scg_option.description))
+        elif sc_option.type == disnake.OptionType.sub_command:
+          command_strings.append((f"{slash_command.name} {sc_option.name} {value_options_to_string(sc_option.options)}", sc_option.description))
+
+  return command_strings
+
 class Help(Base_Cog):
   def __init__(self, bot):
     super(Help, self).__init__(bot, __file__)
@@ -96,8 +125,6 @@ class Help(Base_Cog):
   @commands.slash_command(name="help", description=Strings.help_description)
   @cooldowns.short_cooldown
   async def help(self, inter: disnake.CommandInteraction, name: Optional[str]=commands.Param(default=None, description=Strings.help_name_param_description, autocomplete=help_name_autocomplete)):
-    await message_utils.delete_message(self.bot, inter)
-
     pages = []
     if name is not None:
       all_commands = await get_all_commands(self.bot, inter)
@@ -124,6 +151,37 @@ class Help(Base_Cog):
     else:
       emb = disnake.Embed(title="Help", description="*No help available*", colour=disnake.Color.orange())
       await inter.send(embed=emb)
+
+  @commands.slash_command(name="slash_command_list", description=Strings.help_slash_command_list_description)
+  @cooldowns.short_cooldown
+  async def slash_command_list(self, inter: disnake.CommandInteraction):
+    slash_command_strings = parse_slash_commands(self.bot.slash_commands)
+    if not slash_command_strings:
+      return await message_utils.generate_error_message(inter, Strings.help_slash_command_list_no_slash_commands)
+
+    pages = []
+    embed = disnake.Embed(title="Slash command list", color=disnake.Color.green())
+    message_utils.add_author_footer(embed, inter.author)
+
+    while slash_command_strings:
+      signature, description = slash_command_strings.pop(0)
+
+      embed_len = len(embed)
+      added_length = len(signature) + len(description)
+
+      if embed_len + added_length > 2000:
+        pages.append(embed)
+        embed = disnake.Embed(title="Slash command list", colour=disnake.Color.green())
+        message_utils.add_author_footer(embed, inter.author)
+
+      embed.add_field(name=signature, value=description, inline=False)
+
+    pages.append(embed)
+
+    if pages:
+      await EmbedView(inter.author, embeds=pages, perma_lock=True).run(inter)
+    else:
+      await message_utils.generate_error_message(inter, Strings.help_slash_command_list_no_slash_commands)
 
 def setup(bot):
   bot.add_cog(Help(bot))

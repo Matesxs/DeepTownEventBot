@@ -34,7 +34,7 @@ class DTEventTracker(Base_Cog):
   @cooldowns.default_cooldown
   async def add_or_modify_tracker(self, inter: disnake.CommandInteraction,
                                   guild_id: int=commands.Param(description="Deep Town Guild ID"),
-                                  announce_channel:disnake.TextChannel=commands.Param(default=None, description="Channel for announcing results at the end of event")):
+                                  announce_channel: disnake.TextChannel=commands.Param(description="Channel for announcing results at the end of event")):
     await inter.response.defer(with_message=True, ephemeral=True)
 
     existing_tracker = tracking_settings_repo.get_tracking_settings(inter.guild.id, guild_id)

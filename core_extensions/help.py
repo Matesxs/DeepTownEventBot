@@ -106,15 +106,15 @@ def parse_slash_commands(slash_commands: Set[commands.InvokableSlashCommand]):
   for slash_command in slash_commands:
     option_types = [op.type for op in slash_command.options]
     if disnake.OptionType.sub_command not in option_types and disnake.OptionType.sub_command_group not in option_types:
-      command_strings.append((f"{slash_command.name} {value_options_to_string(slash_command.options)}", slash_command.description))
+      command_strings.append((f"/{slash_command.name} {value_options_to_string(slash_command.options)}", slash_command.description))
     else:
       for sc_option in slash_command.options:
         if sc_option.type == disnake.OptionType.sub_command_group:
           for scg_option in sc_option.options:
             if scg_option.type == disnake.OptionType.sub_command:
-              command_strings.append((f"{slash_command.name} {sc_option.name} {scg_option.name} {value_options_to_string(scg_option.options)}", scg_option.description))
+              command_strings.append((f"/{slash_command.name} {sc_option.name} {scg_option.name} {value_options_to_string(scg_option.options)}", scg_option.description))
         elif sc_option.type == disnake.OptionType.sub_command:
-          command_strings.append((f"{slash_command.name} {sc_option.name} {value_options_to_string(sc_option.options)}", sc_option.description))
+          command_strings.append((f"/{slash_command.name} {sc_option.name} {value_options_to_string(sc_option.options)}", sc_option.description))
 
   return command_strings
 

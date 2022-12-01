@@ -154,10 +154,16 @@ class PublicInterface(Base_Cog):
     await send_report_function(reporter_settings.get_results())
 
   @guild_commands.sub_command(name="profile", description=Strings.public_interface_guild_profile_description)
-  async def guild_profile(self, inter: disnake.CommandInteraction, guild_name: str=commands.Param(description="Deep Town Guild Name")):
-    matched_guilds = dt_guild_repo.get_dt_guilds_by_name(guild_name)
+  async def guild_profile(self, inter: disnake.CommandInteraction, identifier: str = commands.Param(description="Deep Town Guild ID or Name")):
+    matched_guilds = []
+    if identifier.isnumeric():
+      guild = dt_guild_repo.get_dt_guild(int(identifier))
+      matched_guilds.append(guild)
+    else:
+      matched_guilds = dt_guild_repo.get_dt_guilds_by_name(identifier)
+
     if not matched_guilds:
-      return await message_utils.generate_error_message(inter, Strings.public_interface_guild_profile_no_guilds(guild_name=guild_name))
+      return await message_utils.generate_error_message(inter, Strings.public_interface_guild_profile_no_guilds(identifier=identifier))
 
     guild_profiles = []
     for guild in matched_guilds:

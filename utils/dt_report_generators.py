@@ -10,7 +10,7 @@ from utils import string_manipulation
 from utils.dt_helpers import DTGuildData
 from database.event_participation_repo import EventParticipation
 
-def generate_text_guild_report(guild_data: DTGuildData, event_year: int, event_week: int, colms: Optional[List[str]]=None) -> List[str]:
+def generate_text_guild_report(guild_data: DTGuildData, event_year: int, event_week: int, colms: Optional[List[str]]=None, colm_padding: int=0) -> List[str]:
   guild_data.players.sort(key=lambda x: x.last_event_contribution, reverse=True)
 
   if colms is None:
@@ -57,7 +57,7 @@ def generate_text_guild_report(guild_data: DTGuildData, event_year: int, event_w
     contributions.append(participant.last_event_contribution)
 
   description = f"{guild_data.name} - ID: {guild_data.id} - Level: {guild_data.level}\nYear: {event_year} Week: {event_week}\nDonate - Median: {statistics.median(contributions):.2f} Average: {statistics.mean(contributions):.2f}, Total: {sum(contributions)}\n\n"
-  table_strings = (description + table2ascii(body=data_list, header=colms, alignments=alligments, first_col_heading="No°" in colms)).split("\n")
+  table_strings = (description + table2ascii(body=data_list, header=colms, alignments=alligments, cell_padding=colm_padding, first_col_heading="No°" in colms)).split("\n")
 
   announce_strings = []
   while table_strings:
@@ -66,11 +66,10 @@ def generate_text_guild_report(guild_data: DTGuildData, event_year: int, event_w
 
   return announce_strings
 
-async def send_text_guild_report(report_channel: Union[disnake.TextChannel, disnake.Thread, disnake.VoiceChannel, disnake.PartialMessageable, disnake.CommandInteraction, commands.Context], guild_data: DTGuildData, event_year: int, event_week: int, colms: Optional[List[str]]=None):
-  strings = generate_text_guild_report(guild_data, event_year, event_week, colms)
+async def send_text_guild_report(report_channel: Union[disnake.TextChannel, disnake.Thread, disnake.VoiceChannel, disnake.PartialMessageable, disnake.CommandInteraction, commands.Context], guild_data: DTGuildData, event_year: int, event_week: int, colms: Optional[List[str]]=None, colm_padding: int=0):
+  strings = generate_text_guild_report(guild_data, event_year, event_week, colms, colm_padding)
   for string in strings:
     await report_channel.send(string)
-
 
 def generate_participations_page_strings(participations: List[EventParticipation], include_guild: bool=False) -> List[str]:
   participation_data = [((participation.event_year, participation.event_week, participation.dt_guild.name, participation.amount) if include_guild else (participation.event_year, participation.event_week, participation.amount)) for participation in participations]

@@ -9,6 +9,7 @@ import humanize
 from table2ascii import table2ascii, Alignment
 
 from features.base_cog import Base_Cog
+from features.base_bot import BaseAutoshardedBot
 from utils.logger import setup_custom_logger
 from config import cooldowns, Strings
 from utils import dt_helpers, dt_report_generators, message_utils, string_manipulation
@@ -19,7 +20,7 @@ from features.views.data_selector import DataSelector
 
 logger = setup_custom_logger(__name__)
 
-async def grab_guild_data(bot, inter: disnake.CommandInteraction, identifier: Union[int, str]) -> Optional[dt_helpers.DTGuildData]:
+async def grab_guild_data(bot: BaseAutoshardedBot, inter: disnake.CommandInteraction, identifier: Union[int, str]) -> Optional[dt_helpers.DTGuildData]:
   if isinstance(identifier, str):
     guilds = dt_guild_repo.get_dt_guilds_by_name(identifier)
     if guilds:
@@ -163,12 +164,13 @@ class PublicInterface(Base_Cog):
 
   @guild_commands.sub_command(name="report", description=Strings.public_interface_guild_report_description)
   async def guild_report(self, inter: disnake.CommandInteraction,
-                         identifier: str = commands.Param(description="Deep Town Guild ID or Name")):
-    guild_data = await grab_guild_data(inter, int(identifier) if identifier.isnumeric() else identifier)
+                         identifier: str = commands.Param(description="Deep Town Guild ID or Name"),
+                         tight_format: bool = commands.Param(default=True, description="Tight format of table")):
+    guild_data = await grab_guild_data(self.bot, inter, int(identifier) if identifier.isnumeric() else identifier)
     if guild_data is None: return
 
     event_year, event_week = dt_helpers.get_event_index(datetime.datetime.utcnow())
-    send_report_function = partial(dt_report_generators.send_text_guild_report, inter, guild_data, event_year, event_week)
+    send_report_function = partial(dt_report_generators.send_text_guild_report, inter, guild_data, event_year, event_week, colm_padding=0 if tight_format else 1)
 
     reporter_settings = DataSelector(inter.author, ["No°", "Name", "ID", "Level", "Depth", "Online", "Donate"], ["No°", "Name", "Level", "Donate"], invisible=True)
     await reporter_settings.run(inter)
@@ -287,6 +289,7 @@ class PublicInterface(Base_Cog):
       all_participations_amounts = [p.amount for p in all_participations]
       this_year_participations_amounts = [p.amount for p in event_participation_repo.get_user_event_participations(user.id, year=current_year)]
 
+      # Front page
       user_front_page = disnake.Embed(title=f"{user.username}", color=disnake.Color.dark_blue())
       message_utils.add_author_footer(user_front_page, inter.author)
       user_front_page.add_field(name="ID", value=str(user.id))
@@ -296,6 +299,7 @@ class PublicInterface(Base_Cog):
       user_front_page.add_field(name="Current guild", value=f"{user.active_member.guild.name}({user.active_member.guild.level})" if user.active_member is not None else "None", inline=False)
       user_profile_lists.append(user_front_page)
 
+      # Buildings page
       user_buildings_page = disnake.Embed(title=f"{user.username} buildings", color=disnake.Color.dark_blue())
       message_utils.add_author_footer(user_buildings_page, inter.author)
       user_buildings_page.add_field(name="Mines", value=str(user.mines))
@@ -308,6 +312,7 @@ class PublicInterface(Base_Cog):
       user_buildings_page.add_field(name="Green houses", value=str(user.green_houses))
       user_profile_lists.append(user_buildings_page)
 
+      # Event participation stats
       user_event_participations_stats_page = disnake.Embed(title=f"{user.username} event participations stats", color=disnake.Color.dark_blue())
       message_utils.add_author_footer(user_event_participations_stats_page, inter.author)
       user_event_participations_stats_page.add_field(name="Average donate", value=f"{statistics.mean(all_participations_amounts):.2f}")
@@ -316,6 +321,7 @@ class PublicInterface(Base_Cog):
       user_event_participations_stats_page.add_field(name="Median donate last year", value=f"{statistics.median(this_year_participations_amounts):.2f}", inline=False)
       user_profile_lists.append(user_event_participations_stats_page)
 
+      # Event participations
       participation_pages_data = dt_report_generators.generate_participations_page_strings(all_participations, include_guild=True)
       for participation_page_data in participation_pages_data:
         participation_page = disnake.Embed(title=f"{user.username} event participations", description=f"```py\n{participation_page_data}\n```", color=disnake.Color.dark_blue())

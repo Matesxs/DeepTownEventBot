@@ -159,7 +159,7 @@ class PublicInterface(Base_Cog):
   @guild_commands.sub_command(name="report", description=Strings.public_interface_guild_report_description)
   async def guild_report(self, inter: disnake.CommandInteraction,
                          identifier: str = commands.Param(description="Deep Town Guild ID or Name"),
-                         tight_format: bool = commands.Param(default=True, description="Tight format of table")):
+                         tight_format: bool = commands.Param(default=False, description="Tight format of table (default: False)")):
     guild_data = await grab_recent_guild_event_participations(self.bot, inter, int(identifier) if identifier.isnumeric() else identifier)
     if guild_data is None: return
 
@@ -167,9 +167,10 @@ class PublicInterface(Base_Cog):
 
     reporter_settings = DataSelector(inter.author, ["No°", "Name", "ID", "Level", "Depth", "Online", "Donate"], ["No°", "Name", "Level", "Donate"], invisible=True)
     await reporter_settings.run(inter)
-    await reporter_settings.wait()
+    ret = await reporter_settings.wait()
 
-    await send_report_function(reporter_settings.get_results())
+    if not ret:
+      await send_report_function(reporter_settings.get_results())
 
   @guild_commands.sub_command(name="profile", description=Strings.public_interface_guild_profile_description)
   async def guild_profile(self, inter: disnake.CommandInteraction, identifier: str = commands.Param(description="Deep Town Guild ID or Name")):

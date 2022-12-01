@@ -1,24 +1,33 @@
 import disnake
-from typing import List
+from typing import List, Optional
 
 from utils import message_utils
 
 class DataSelector(disnake.ui.View):
-  def __init__(self, author: disnake.User, available_colms: List[str], default_enabled_colms: List[str], invisible: bool=False):
-    super(DataSelector, self).__init__()
+  def __init__(self, author: disnake.User, data_options: List[str], default_selected_options: List[str], min_selected: int=1, max_selected: Optional[int]=None, invisible: bool=False):
+    super(DataSelector, self).__init__(timeout=600)
+
+    assert len(data_options) <= 25, "Too much data to select"
+
+    if max_selected is None:
+      max_selected = len(data_options)
+    if min_selected > len(data_options):
+      min_selected = len(data_options)
+    if max_selected < min_selected:
+      max_selected = min_selected
 
     self.author = author
     self.message = None
-    self.available_colms = available_colms
+    self.available_colms = data_options
     self.invisible = invisible
 
-    self.result = default_enabled_colms
+    self.result = default_selected_options
 
     options = []
-    for col in available_colms:
-      options.append(disnake.SelectOption(label=col, default=col in default_enabled_colms))
+    for col in data_options:
+      options.append(disnake.SelectOption(label=col, default=col in default_selected_options))
 
-    self.selector = disnake.ui.StringSelect(min_values=1, max_values=len(available_colms), options=options, custom_id="data_selector:selector")
+    self.selector = disnake.ui.StringSelect(min_values=min_selected, max_values=max_selected, options=options, custom_id="data_selector:selector")
     self.add_item(self.selector)
     self.add_item(disnake.ui.Button(style=disnake.ButtonStyle.green, label="Generate", custom_id="data_selector:generate_button"))
 

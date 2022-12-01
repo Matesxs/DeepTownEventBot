@@ -7,8 +7,6 @@ class Strings(metaclass=Formatable):
   help_description = "Show all message commands and help for them"
   help_name_param_description = "Specify name of command or name of extension as parameter to search help only for thing you want"
 
-  help_commands_list_description = "Show list of all available message commands"
-
   # System
   system_load_description = "Load unloaded extension"
   system_unable_to_load_cog = "Unable to load `{cog}` extension\n`{e}`"

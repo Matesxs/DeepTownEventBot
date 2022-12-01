@@ -3,6 +3,7 @@
 import asyncio
 import disnake
 from disnake.ext import commands
+from typing import Set
 
 from config import config, cooldowns, Strings
 from features.views.paginator import EmbedView
@@ -94,18 +95,18 @@ class Help(Base_Cog):
 
   @commands.slash_command(name="help", description=Strings.help_description)
   @cooldowns.short_cooldown
-  async def help(self, ctx: disnake.CommandInteraction, name: Optional[str]=commands.Param(default=None, description=Strings.help_name_param_description, autocomplete=help_name_autocomplete)):
-    await message_utils.delete_message(self.bot, ctx)
+  async def help(self, inter: disnake.CommandInteraction, name: Optional[str]=commands.Param(default=None, description=Strings.help_name_param_description, autocomplete=help_name_autocomplete)):
+    await message_utils.delete_message(self.bot, inter)
 
     pages = []
     if name is not None:
-      all_commands = await get_all_commands(self.bot, ctx)
+      all_commands = await get_all_commands(self.bot, inter)
       command = disnake.utils.get(all_commands, name=name)
       if command is not None:
         emb = disnake.Embed(title="Help", colour=disnake.Color.green())
-        message_utils.add_author_footer(emb, ctx.author)
+        message_utils.add_author_footer(emb, inter.author)
         add_command_help(emb, command)
-        return await ctx.send(embed=emb)
+        return await inter.send(embed=emb)
 
     for cog in self.bot.cogs.values():
       if name is not None:
@@ -114,15 +115,15 @@ class Help(Base_Cog):
             name.lower() != cog.file.lower().replace("_", " "):
           continue
 
-      cog_pages = await generate_help_for_cog(cog, ctx)
+      cog_pages = await generate_help_for_cog(cog, inter)
       if cog_pages is not None:
         pages.extend(cog_pages)
 
     if pages:
-      await EmbedView(ctx.author, embeds=pages, perma_lock=True).run(ctx)
+      await EmbedView(inter.author, embeds=pages, perma_lock=True).run(inter)
     else:
       emb = disnake.Embed(title="Help", description="*No help available*", colour=disnake.Color.orange())
-      await ctx.send(embed=emb)
+      await inter.send(embed=emb)
 
 def setup(bot):
   bot.add_cog(Help(bot))

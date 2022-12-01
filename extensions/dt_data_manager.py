@@ -1,3 +1,4 @@
+import datetime
 import disnake
 from disnake.ext import commands, tasks
 import asyncio
@@ -192,7 +193,15 @@ class DTDataManager(Base_Cog):
       pulled_data = 0
       not_updated = []
 
-      for guild_id in guild_ids:
+      last_update = datetime.datetime.utcnow()
+      await self.bot.change_presence(activity=disnake.Game(name="Updating data..."), status=disnake.Status.dnd)
+
+      number_of_guilds = len(guild_ids)
+      for idx, guild_id in enumerate(guild_ids):
+        if datetime.datetime.utcnow() - last_update >= datetime.timedelta(minutes=1):
+          progress_percent = (idx / number_of_guilds) * 100
+          await self.bot.change_presence(activity=disnake.Game(name=f"Updating data {progress_percent:.1f}%..."), status=disnake.Status.dnd)
+
         if self.skip_periodic_data_update:
           logger.info("Data pull interrupted")
           break
@@ -210,6 +219,9 @@ class DTDataManager(Base_Cog):
       logger.info(f"Pulled data of {pulled_data} guilds\nGuilds {not_updated} not updated")
       self.skip_periodic_data_update = True
     logger.info("Guild data pull finished")
+
+    await asyncio.sleep(30)
+    await self.bot.change_presence(activity=disnake.Game(name=config.base.status_message), status=disnake.Status.online)
 
 def setup(bot):
   bot.add_cog(DTDataManager(bot))

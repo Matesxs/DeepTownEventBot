@@ -1,7 +1,7 @@
 import statistics
 import disnake
 from disnake.ext import commands
-from typing import Optional, Union
+from typing import Optional, Union, List
 import math
 import datetime
 from functools import partial
@@ -20,17 +20,15 @@ from features.views.data_selector import DataSelector
 
 logger = setup_custom_logger(__name__)
 
-async def grab_guild_data(bot: BaseAutoshardedBot, inter: disnake.CommandInteraction, identifier: Union[int, str]) -> Optional[dt_helpers.DTGuildData]:
+async def grab_recent_guild_event_participations(bot: BaseAutoshardedBot, inter: disnake.CommandInteraction, identifier: Union[int, str]) -> Optional[List[event_participation_repo.EventParticipation]]:
   if isinstance(identifier, str):
     guilds = dt_guild_repo.get_dt_guilds_by_name(identifier)
     if guilds:
-      guild_data = event_participation_repo.event_list_participation_to_dt_guild_data(event_participation_repo.get_recent_event_participations(guilds[0].id))
+      guild_data = event_participation_repo.get_recent_event_participations(guilds[0].id)
 
-      if guild_data is None:
+      if not guild_data:
         await message_utils.generate_error_message(inter, Strings.public_interface_guild_data_not_found(identifier=identifier))
         return None
-
-      guild_data = guild_data[0]
     else:
       # Try to find identifier in guild names on server
       server_guilds = await dt_helpers.get_guild_info(bot, identifier)
@@ -39,21 +37,17 @@ async def grab_guild_data(bot: BaseAutoshardedBot, inter: disnake.CommandInterac
         return None
 
       # Try to retrieve data for first matched guild
-      guild_data = event_participation_repo.event_list_participation_to_dt_guild_data(event_participation_repo.get_recent_event_participations(server_guilds[0][0]))
+      guild_data = event_participation_repo.get_recent_event_participations(server_guilds[0][0])
 
-      if guild_data is None:
+      if not guild_data:
         await message_utils.generate_error_message(inter, Strings.public_interface_guild_data_not_found(identifier=identifier))
         return None
-
-      guild_data = guild_data[0]
   else:
-    guild_data = event_participation_repo.event_list_participation_to_dt_guild_data(event_participation_repo.get_recent_event_participations(identifier))
+    guild_data = event_participation_repo.get_recent_event_participations(identifier)
 
-    if guild_data is None:
+    if not guild_data:
       await message_utils.generate_error_message(inter, Strings.public_interface_guild_data_not_found(identifier=identifier))
       return None
-
-    guild_data = guild_data[0]
 
   return guild_data
 
@@ -166,11 +160,10 @@ class PublicInterface(Base_Cog):
   async def guild_report(self, inter: disnake.CommandInteraction,
                          identifier: str = commands.Param(description="Deep Town Guild ID or Name"),
                          tight_format: bool = commands.Param(default=True, description="Tight format of table")):
-    guild_data = await grab_guild_data(self.bot, inter, int(identifier) if identifier.isnumeric() else identifier)
+    guild_data = await grab_recent_guild_event_participations(self.bot, inter, int(identifier) if identifier.isnumeric() else identifier)
     if guild_data is None: return
 
-    event_year, event_week = dt_helpers.get_event_index(datetime.datetime.utcnow())
-    send_report_function = partial(dt_report_generators.send_text_guild_report, inter, guild_data, event_year, event_week, colm_padding=0 if tight_format else 1)
+    send_report_function = partial(dt_report_generators.send_text_guild_event_participation_report, inter, guild_data[0].dt_guild, guild_data, colm_padding=0 if tight_format else 1)
 
     reporter_settings = DataSelector(inter.author, ["No°", "Name", "ID", "Level", "Depth", "Online", "Donate"], ["No°", "Name", "Level", "Donate"], invisible=True)
     await reporter_settings.run(inter)

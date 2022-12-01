@@ -7,22 +7,22 @@ from table2ascii import table2ascii, Alignment
 import statistics
 
 from utils import string_manipulation
-from utils.dt_helpers import DTGuildData
-from database.event_participation_repo import EventParticipation
+from database.tables.event_participation import EventParticipation
+from database.tables.dt_guild import DTGuild
 
-def generate_text_guild_report(guild_data: DTGuildData, event_year: int, event_week: int, colms: Optional[List[str]]=None, colm_padding: int=0) -> List[str]:
-  guild_data.players.sort(key=lambda x: x.last_event_contribution, reverse=True)
-
-  if colms is None:
-    colms = ["No°", "Name", "Level", "Donate"]
-
+def generate_participation_strings(participations: List[EventParticipation], colms: List[str], colm_padding: int=0) -> List[str]:
   current_time = datetime.datetime.utcnow()
-  contributions = []
   data_list = []
   alligments = []
 
   if "No°" in colms:
     alligments.append(Alignment.RIGHT)
+  if "Year" in colms:
+    alligments.append(Alignment.RIGHT)
+  if "Week" in colms:
+    alligments.append(Alignment.RIGHT)
+  if "Guild" in colms:
+    alligments.append(Alignment.LEFT)
   if "Name" in colms:
     alligments.append(Alignment.LEFT)
   if "ID" in colms:
@@ -36,45 +36,55 @@ def generate_text_guild_report(guild_data: DTGuildData, event_year: int, event_w
   if "Donate" in colms:
     alligments.append(Alignment.RIGHT)
 
-  for idx, participant in enumerate(guild_data.players):
+  for idx, participation in enumerate(participations):
     data = []
     if "No°" in colms:
       data.append(idx + 1)
+    if "Year" in colms:
+      data.append(participation.event_year)
+    if "Week" in colms:
+      data.append(participation.event_week)
+    if "Guild" in colms:
+      data.append(participation.dt_guild.name)
     if "Name" in colms:
-      data.append(participant.name)
+      data.append(participation.dt_user.username)
     if "ID" in colms:
-      data.append(participant.id)
+      data.append(participation.dt_user_id)
     if "Level" in colms:
-      data.append(participant.level)
+      data.append(participation.dt_user.level)
     if "Depth" in colms:
-      data.append(participant.depth)
+      data.append(participation.dt_user.depth)
     if "Online" in colms:
-      data.append(humanize.naturaltime(current_time - participant.last_online) if participant.last_online is not None else "Never")
+      data.append(humanize.naturaltime(current_time - participation.dt_user.last_online) if participation.dt_user.last_online is not None else "Never")
     if "Donate" in colms:
-      data.append(participant.last_event_contribution)
+      data.append(participation.amount)
 
     data_list.append(data)
-    contributions.append(participant.last_event_contribution)
 
-  description = f"{guild_data.name} - ID: {guild_data.id} - Level: {guild_data.level}\nYear: {event_year} Week: {event_week}\nDonate - Median: {statistics.median(contributions):.2f} Average: {statistics.mean(contributions):.2f}, Total: {sum(contributions)}\n\n"
-  table_strings = (description + table2ascii(body=data_list, header=colms, alignments=alligments, cell_padding=colm_padding, first_col_heading="No°" in colms)).split("\n")
+  return table2ascii(body=data_list, header=colms, alignments=alligments, cell_padding=colm_padding, first_col_heading="No°" in colms).split("\n")
+
+async def send_text_guild_event_participation_report(report_channel: Union[disnake.TextChannel, disnake.Thread, disnake.VoiceChannel, disnake.PartialMessageable, disnake.CommandInteraction, commands.Context], guild: DTGuild, participations: List[EventParticipation], colms: Optional[List[str]]=None, colm_padding: int=0):
+  if not participations: return
+  if colms is None:
+    colms = ["No°", "Name", "Level", "Donate"]
+
+  participation_amounts = [p.amount for p in participations]
+  description_strings = f"{guild.name} - ID: {guild.id} - Level: {guild.level}\nYear: {participations[0].event_year} Week: {participations[0].event_week}\nDonate - Median: {statistics.median(participation_amounts):.2f} Average: {statistics.mean(participation_amounts):.2f}, Total: {sum(participation_amounts)}\n".split("\n")
+
+  strings = [*description_strings]
+  strings.extend(generate_participation_strings(participations, colms, colm_padding))
 
   announce_strings = []
-  while table_strings:
-    final_string, table_strings = string_manipulation.add_string_until_length(table_strings, 1900, "\n")
+  while strings:
+    final_string, strings = string_manipulation.add_string_until_length(strings, 1900, "\n")
     announce_strings.append(f"```py\n{final_string}\n```")
 
-  return announce_strings
-
-async def send_text_guild_report(report_channel: Union[disnake.TextChannel, disnake.Thread, disnake.VoiceChannel, disnake.PartialMessageable, disnake.CommandInteraction, commands.Context], guild_data: DTGuildData, event_year: int, event_week: int, colms: Optional[List[str]]=None, colm_padding: int=0):
-  strings = generate_text_guild_report(guild_data, event_year, event_week, colms, colm_padding)
-  for string in strings:
-    await report_channel.send(string)
+  for announce_string in announce_strings:
+    await report_channel.send(announce_string)
 
 def generate_participations_page_strings(participations: List[EventParticipation], include_guild: bool=False) -> List[str]:
-  participation_data = [((participation.event_year, participation.event_week, participation.dt_guild.name, participation.amount) if include_guild else (participation.event_year, participation.event_week, participation.amount)) for participation in participations]
   header = ["Year", "Week", "Guild", "Donate"] if include_guild else ["Year", "Week", "Donate"]
-  participation_table_lines = table2ascii(body=participation_data, header=header, alignments=[Alignment.RIGHT for _ in range(len(header))] if not include_guild else [Alignment.RIGHT, Alignment.RIGHT, Alignment.LEFT, Alignment.RIGHT]).split("\n")
+  participation_table_lines = generate_participation_strings(participations, header, 1)
 
   output_pages = []
   while participation_table_lines:

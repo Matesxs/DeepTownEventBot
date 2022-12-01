@@ -53,7 +53,7 @@ def get_recent_event_participations(dt_guild_id: int) -> List[EventParticipation
   if recent_week_results is None: return []
   recent_week = recent_week_results[0]
 
-  return session.query(EventParticipation).filter(EventParticipation.dt_guild_id == dt_guild_id, EventParticipation.event_year == recent_year, EventParticipation.event_week == recent_week).all()
+  return session.query(EventParticipation).filter(EventParticipation.dt_guild_id == dt_guild_id, EventParticipation.event_year == recent_year, EventParticipation.event_week == recent_week).order_by(EventParticipation.amount.desc()).all()
 
 def get_and_update_event_participation(user_id: int, guild_id: int, event_year: int, event_week: int, participation_amount: int):
   item = get_user_event_participation(user_id, guild_id, event_year, event_week)

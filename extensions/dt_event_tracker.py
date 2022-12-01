@@ -1,6 +1,5 @@
 import disnake
 from disnake.ext import commands, tasks
-from typing import Optional
 import math
 import datetime
 import asyncio
@@ -120,10 +119,9 @@ class DTEventTracker(Base_Cog):
     if announce_channel is None: return
 
     participations = event_participation_repo.get_recent_event_participations(tracker.dt_guild_id)
-    participation_data = event_participation_repo.event_list_participation_to_dt_guild_data(participations)
-    if participation_data is None: return
+    if not participations: return
 
-    await dt_report_generators.send_text_guild_report(announce_channel, participation_data[0], participation_data[1], participation_data[2])
+    await dt_report_generators.send_text_guild_event_participation_report(announce_channel, tracker.dt_guild, participations)
 
   @tasks.loop(hours=24*7)
   async def result_announce_task(self):

@@ -31,10 +31,10 @@ def get_user_event_participations(user_id: int, guild_id: Optional[int]=None, ye
 
   return session.query(EventParticipation).filter(*filters).order_by(EventParticipation.event_year.desc(), EventParticipation.event_week.desc()).limit(500).all()
 
-def get_best_participant(dt_guild_id: int, year: int, week: int) -> Optional[Tuple[str, int]]:
-  data = session.query(dt_user_repo.DTUser.username, EventParticipation.amount).filter(EventParticipation.dt_guild_id == dt_guild_id, EventParticipation.event_year == year, EventParticipation.event_week == week).join(dt_user_repo.DTUser).order_by(EventParticipation.amount).first()
+def get_best_participant(dt_guild_id: int, year: int, week: int) -> Optional[str]:
+  data = session.query(dt_user_repo.DTUser.username).filter(EventParticipation.dt_guild_id == dt_guild_id, EventParticipation.event_year == year, EventParticipation.event_week == week).join(dt_user_repo.DTUser).order_by(EventParticipation.amount.desc()).first()
   if data is None: return None
-  return data[0], data[1]
+  return data[0]
 
 def get_guild_event_participations(dt_guild_id: int, year: Optional[int]=None, week: Optional[int]=None) -> List[Tuple[int, int, int, float]]:
   filters = [EventParticipation.dt_guild_id == dt_guild_id]

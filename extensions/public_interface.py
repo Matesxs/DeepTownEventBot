@@ -217,7 +217,7 @@ class PublicInterface(Base_Cog):
       # Event participations
       event_participations_data = []
       for year, week, total, average in all_guild_participations:
-        best_participant, _ = event_participation_repo.get_best_participant(guild.id, year, week)
+        best_participant = event_participation_repo.get_best_participant(guild.id, year, week) if total != 0 else None
         event_participations_data.append((year, week, best_participant if best_participant is not None else "Unknown", f"{float(average):.2f}"))
 
       event_participations_strings = tabulate(event_participations_data, ["Year", "Week", "Top", "Average"], tablefmt="github").split("\n")

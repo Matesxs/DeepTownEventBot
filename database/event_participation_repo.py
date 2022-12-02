@@ -90,7 +90,7 @@ def generate_or_update_event_participations(guild_data: dt_helpers.DTGuildData) 
 
   participation_amounts = [p.amount for p in participations]
   prev_participation_amounts = [p.amount for p in get_event_participations(guild_id=guild_data.id, year=prev_event_year, week=prev_event_week)]
-  if sum(participation_amounts) == sum(prev_participation_amounts) and statistics.mean(participation_amounts) == statistics.mean(prev_participation_amounts) and statistics.median(participation_amounts) == statistics.median(prev_participation_amounts):
+  if prev_participation_amounts and sum(participation_amounts) == sum(prev_participation_amounts) and statistics.mean(participation_amounts) == statistics.mean(prev_participation_amounts) and statistics.median(participation_amounts) == statistics.median(prev_participation_amounts):
     for participation in participations:
       participation.amount = 0
 

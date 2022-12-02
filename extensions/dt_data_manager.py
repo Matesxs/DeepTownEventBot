@@ -283,6 +283,35 @@ class DTDataManager(Base_Cog):
         event_participation_repo.generate_or_update_event_participations(data)
         pulled_data += 1
 
+      number_of_not_updated_guilds = len(not_updated)
+      if number_of_not_updated_guilds > 0:
+        logger.info(f"{number_of_not_updated_guilds} guild not updated, retrying")
+
+        await asyncio.sleep(30)
+
+        last_update = datetime.datetime.utcnow()
+        await self.bot.change_presence(activity=disnake.Game(name="Updating data..."), status=disnake.Status.dnd)
+
+        for idx, guild_id in enumerate(not_updated):
+          if datetime.datetime.utcnow() - last_update >= datetime.timedelta(minutes=1):
+            progress_percent = (idx / number_of_not_updated_guilds) * 100
+            await self.bot.change_presence(activity=disnake.Game(name=f"Updating data {progress_percent:.1f}%..."), status=disnake.Status.dnd)
+            last_update = datetime.datetime.utcnow()
+
+          if self.skip_periodic_data_update:
+            logger.info("Data pull interrupted")
+            break
+
+          data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
+
+          await asyncio.sleep(1)
+          if data is None:
+            continue
+
+          not_updated.remove(guild_id)
+          event_participation_repo.generate_or_update_event_participations(data)
+          pulled_data += 1
+
       logger.info(f"Pulled data of {pulled_data} guilds\nGuilds {not_updated} not updated")
       self.skip_periodic_data_update = True
     logger.info("Guild data pull finished")

@@ -284,7 +284,7 @@ class DTDataManager(Base_Cog):
         pulled_data += 1
 
       number_of_not_updated_guilds = len(not_updated)
-      if number_of_not_updated_guilds > 0:
+      if number_of_not_updated_guilds > 0 and not self.skip_periodic_data_update:
         logger.info(f"{number_of_not_updated_guilds} guild not updated, retrying")
 
         await asyncio.sleep(30)

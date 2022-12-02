@@ -118,7 +118,7 @@ class DTEventTracker(Base_Cog):
     announce_channel = await tracker.get_announce_channel(self.bot)
     if announce_channel is None: return
 
-    participations = event_participation_repo.get_recent_event_participations(tracker.dt_guild_id)
+    participations = event_participation_repo.get_recent_guild_event_participations(tracker.dt_guild_id)
     if not participations: return
 
     await dt_report_generators.send_text_guild_event_participation_report(announce_channel, tracker.dt_guild, participations)

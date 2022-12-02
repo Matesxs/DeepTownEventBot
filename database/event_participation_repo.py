@@ -1,6 +1,6 @@
 import datetime
 import statistics
-from typing import Optional, List, Tuple
+from typing import Optional, List, Tuple, Any
 from sqlalchemy import func
 
 from database import session
@@ -9,17 +9,11 @@ from database.dt_guild_member_repo import get_and_update_dt_guild_members, creat
 from database import dt_user_repo, dt_guild_repo
 from utils import dt_helpers
 
-def event_list_participation_to_dt_guild_data(participations: List[EventParticipation]) -> Optional[Tuple[dt_helpers.DTGuildData, int, int]]:
-  if not participations: return None
-
-  players = []
-  for participation in participations:
-    players.append(participation.to_DTUserData())
-
-  return dt_helpers.DTGuildData(participations[0].dt_guild.name, participations[0].dt_guild.id, participations[0].dt_guild.level, players), participation.event_year, participation.event_week
-
-def get_event_participations(user_id: Optional[int]=None, guild_id: Optional[int]=None, year: Optional[int]=None, week: Optional[int]=None) -> List[EventParticipation]:
+def get_event_participations(user_id: Optional[int]=None, guild_id: Optional[int]=None, year: Optional[int]=None, week: Optional[int]=None, order_by: Optional[List[Any]]=None, limit: int=500) -> List[EventParticipation]:
   filters = []
+  if order_by is None:
+    order_by = [EventParticipation.event_year.desc(), EventParticipation.event_week.desc()]
+
   if user_id is not None:
     filters.append(EventParticipation.dt_user_id == user_id)
   if guild_id is not None:
@@ -29,20 +23,20 @@ def get_event_participations(user_id: Optional[int]=None, guild_id: Optional[int
   if week is not None:
     filters.append(EventParticipation.event_week == week)
 
-  return session.query(EventParticipation).filter(*filters).order_by(EventParticipation.event_year.desc(), EventParticipation.event_week.desc()).limit(500).all()
+  return session.query(EventParticipation).filter(*filters).order_by(*order_by).limit(limit).all()
 
 def get_best_participant(dt_guild_id: int, year: int, week: int) -> Optional[str]:
   data = session.query(dt_user_repo.DTUser.username).filter(EventParticipation.dt_guild_id == dt_guild_id, EventParticipation.event_year == year, EventParticipation.event_week == week).join(EventParticipation).order_by(EventParticipation.amount.desc()).first()
   if data is None: return None
   return data[0]
 
-def get_guild_event_participations_data(dt_guild_id: int, year: Optional[int]=None, week: Optional[int]=None) -> List[Tuple[int, int, int, float]]:
+def get_guild_event_participations_data(dt_guild_id: int, year: Optional[int]=None, week: Optional[int]=None, limit: int=500) -> List[Tuple[int, int, int, float]]:
   filters = [EventParticipation.dt_guild_id == dt_guild_id]
   if year is not None:
     filters.append(EventParticipation.event_year == year)
   if week is not None:
     filters.append(EventParticipation.event_week == week)
-  return session.query(EventParticipation.event_year, EventParticipation.event_week, func.sum(EventParticipation.amount), func.avg(EventParticipation.amount)).filter(*filters).order_by(EventParticipation.event_year.desc(), EventParticipation.event_week.desc()).group_by(EventParticipation.event_year, EventParticipation.event_week).limit(500).all()
+  return session.query(EventParticipation.event_year, EventParticipation.event_week, func.sum(EventParticipation.amount), func.avg(EventParticipation.amount)).filter(*filters).order_by(EventParticipation.event_year.desc(), EventParticipation.event_week.desc()).group_by(EventParticipation.event_year, EventParticipation.event_week).limit(limit).all()
 
 def get_recent_event_participations(dt_guild_id: int) -> List[EventParticipation]:
   recent_year_results = session.query(func.max(EventParticipation.event_year)).one_or_none()

@@ -62,9 +62,9 @@ class PublicInterface(Base_Cog):
 
   @guild_commands.sub_command(name="search", description=Strings.public_interface_search_guilds_description)
   async def search_guilds(self, inter: disnake.CommandInteraction,
-                          guild_name: Optional[str] = commands.Param(default=None, description="Guild name to search"),
-                          sort_by: str = commands.Param(description="Attribute to sort guilds by", choices=["ID", "Level", "Name"]),
-                          order: str = commands.Param(description="Order method of attribute", choices=["Ascending", "Descending"])):
+                          guild_name: Optional[str] = commands.Param(default=None, description=Strings.public_interface_search_guilds_guild_name_param_description),
+                          sort_by: str = commands.Param(description=Strings.public_interface_search_guilds_sort_by_param_description, choices=["ID", "Level", "Name"]),
+                          order: str = commands.Param(description=Strings.public_interface_search_guilds_order_param_description, choices=["Ascending", "Descending"])):
     found_guilds = await dt_helpers.get_guild_info(self.bot, guild_name)
     if found_guilds is None or not found_guilds:
       return await message_utils.generate_error_message(inter, Strings.public_interface_guild_data_not_received(identifier=guild_name))
@@ -99,8 +99,8 @@ class PublicInterface(Base_Cog):
 
   @guild_commands.sub_command(name="members", description=Strings.public_interface_guild_members_description)
   async def guild_members(self, inter: disnake.CommandInteraction,
-                          identifier: str = commands.Param(description="Deep Town Guild ID or Name"),
-                          include_all_guilds: bool=commands.Param(default=True, description="Include previous guilds in event participation history")):
+                          identifier: str = commands.Param(description=Strings.dt_guild_identifier_param_description),
+                          include_all_guilds: bool=commands.Param(default=True, description=Strings.public_interface_guild_members_include_all_guilds_param_description)):
     if identifier.isnumeric():
       guild = dt_guild_repo.get_dt_guild(int(identifier))
     else:
@@ -160,8 +160,8 @@ class PublicInterface(Base_Cog):
 
   @guild_commands.sub_command(name="report", description=Strings.public_interface_guild_report_description)
   async def guild_report(self, inter: disnake.CommandInteraction,
-                         identifier: str = commands.Param(description="Deep Town Guild ID or Name"),
-                         tight_format: bool = commands.Param(default=False, description="Tight format of table (default: False)")):
+                         identifier: str = commands.Param(description=Strings.dt_guild_identifier_param_description),
+                         tight_format: bool = commands.Param(default=False, description=Strings.public_interface_guild_report_tight_format_param_description)):
     guild_data = await grab_recent_guild_event_participations(self.bot, inter, int(identifier) if identifier.isnumeric() else identifier)
     if guild_data is None: return
 
@@ -175,7 +175,7 @@ class PublicInterface(Base_Cog):
       await send_report_function(reporter_settings.get_results())
 
   @guild_commands.sub_command(name="profile", description=Strings.public_interface_guild_profile_description)
-  async def guild_profile(self, inter: disnake.CommandInteraction, identifier: str = commands.Param(description="Deep Town Guild ID or Name")):
+  async def guild_profile(self, inter: disnake.CommandInteraction, identifier: str = commands.Param(description=Strings.dt_guild_identifier_param_description)):
     matched_guilds = []
     if identifier.isnumeric():
       guild = dt_guild_repo.get_dt_guild(int(identifier))
@@ -266,7 +266,7 @@ class PublicInterface(Base_Cog):
     pass
 
   @user_command.sub_command(name="profile", description=Strings.public_interface_user_profile_description)
-  async def user_profile(self, inter: disnake.CommandInteraction, username:str=commands.Param(description="Deep Town User Name")):
+  async def user_profile(self, inter: disnake.CommandInteraction, username:str=commands.Param(description=Strings.dt_user_name_param_description)):
     matched_users = dt_user_repo.get_users_by_username(username)
     if not matched_users:
       return await message_utils.generate_error_message(inter, Strings.public_interface_user_profile_no_users(username=username))

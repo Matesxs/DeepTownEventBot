@@ -33,8 +33,8 @@ class DTEventTracker(Base_Cog):
   @tracker.sub_command(name="add_or_modify", description=Strings.event_data_tracker_add_or_modify_tracker_description)
   @cooldowns.default_cooldown
   async def add_or_modify_tracker(self, inter: disnake.CommandInteraction,
-                                  guild_id: int=commands.Param(description="Deep Town Guild ID"),
-                                  announce_channel: disnake.TextChannel=commands.Param(description="Channel for announcing results at the end of event")):
+                                  guild_id: int=commands.Param(description=Strings.dt_guild_id_param_description),
+                                  announce_channel: disnake.TextChannel=commands.Param(description=Strings.event_data_tracker_add_or_modify_tracker_announce_channel_param_description)):
     await inter.response.defer(with_message=True, ephemeral=True)
 
     existing_tracker = tracking_settings_repo.get_tracking_settings(inter.guild.id, guild_id)
@@ -62,7 +62,7 @@ class DTEventTracker(Base_Cog):
   @tracker.sub_command(name="remove", description=Strings.event_data_tracker_remove_tracker_description)
   @cooldowns.default_cooldown
   async def remove_tracker(self, inter: disnake.CommandInteraction,
-                                 guild_id: int=commands.Param(description="Deep Town Guild ID")):
+                                 guild_id: int=commands.Param(description=Strings.dt_guild_id_param_description)):
     settings = tracking_settings_repo.get_tracking_settings(inter.guild.id, guild_id)
     guild_name = settings.dt_guild.name
 

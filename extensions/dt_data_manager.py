@@ -40,16 +40,32 @@ class DTDataManager(Base_Cog):
   @data_manager.sub_command(description=Strings.data_manager_update_guild_description)
   @cooldowns.long_cooldown
   @commands.is_owner()
-  async def update_guild(self, inter: disnake.CommandInteraction, guild_id: int=commands.Param(description="Deep Town Guild ID")):
+  async def update_guild(self, inter: disnake.CommandInteraction, identifier: str=commands.Param(description=Strings.dt_guild_identifier_param_description)):
     await inter.response.defer(with_message=True, ephemeral=True)
 
-    data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
-    if data is None:
-      return await message_utils.generate_error_message(inter, Strings.data_manager_update_guild_get_failed)
+    if identifier.isnumeric():
+      data = await dt_helpers.get_dt_guild_data(self.bot, int(identifier))
+      if data is None:
+        return await message_utils.generate_error_message(inter, Strings.data_manager_update_guild_get_failed(identifier=identifier))
 
-    event_participation_repo.generate_or_update_event_participations(data)
+      event_participation_repo.generate_or_update_event_participations(data)
 
-    await message_utils.generate_success_message(inter, Strings.data_manager_update_guild_success(guild=data.name))
+      await message_utils.generate_success_message(inter, Strings.data_manager_update_guild_success(guild=data.name))
+    else:
+      matched_guilds = await dt_helpers.get_guild_info(self.bot, identifier)
+      if matched_guilds is None or not matched_guilds:
+        return await message_utils.generate_error_message(inter, Strings.data_manager_update_guild_get_failed(identifier=identifier))
+
+      guild_ids = [d[0] for d in matched_guilds]
+      updated_guilds = 0
+      for guild_id in guild_ids:
+        data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
+        if data is None: continue
+
+        updated_guilds += 1
+        event_participation_repo.generate_or_update_event_participations(data)
+
+      await message_utils.generate_success_message(inter, Strings.data_manager_update_guild_success_multiple(number=updated_guilds))
 
   @data_manager.sub_command(description=Strings.data_manager_update_all_guilds_description)
   @cooldowns.long_cooldown
@@ -107,7 +123,7 @@ class DTDataManager(Base_Cog):
 
   @data_manager.sub_command(description=Strings.data_manager_dump_guild_participation_data_description)
   @cooldowns.huge_cooldown
-  async def dump_guild_participation_data(self, inter: disnake.CommandInteraction, guild_id: int=commands.Param(description="Deep Town Guild ID")):
+  async def dump_guild_participation_data(self, inter: disnake.CommandInteraction, guild_id: int=commands.Param(description=Strings.dt_guild_id_param_description)):
     await inter.response.defer(with_message=True, ephemeral=True)
 
     dump_data = event_participation_repo.dump_guild_event_participation_data(guild_id)

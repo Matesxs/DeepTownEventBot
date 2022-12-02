@@ -51,10 +51,16 @@ class Strings(metaclass=Formatable):
 
   common_invite_brief = "Send invite link of the bot"
 
+  # Global Deep Town stuff
+  dt_guild_identifier_param_description = "Deep Town Guild Name or ID"
+  dt_guild_id_param_description = "Deep Town Guild ID"
+  dt_user_name_param_description = "Deep Town User Name"
+
   # Data manager
   data_manager_update_guild_description = "Update data of selected guild in database"
-  data_manager_update_guild_get_failed = "Failed to get guild data"
+  data_manager_update_guild_get_failed = "Failed to get guild data for guild with identifier `{identifier}`"
   data_manager_update_guild_success = "Data for guild `{guild}` fetched and updated"
+  data_manager_update_guild_success_multiple = "Data of {number} guild fetched and updated"
 
   data_manager_update_all_guilds_description = "Update data of all guilds in database"
   data_manager_update_all_guilds_success = "Updated data of `{guild_num}` guilds"
@@ -80,6 +86,7 @@ class Strings(metaclass=Formatable):
   event_data_tracker_add_or_modify_tracker_failed_to_get_data = "Failed to get guild data"
   event_data_tracker_add_or_modify_tracker_tracker_limit_reached = "Tracker limit ({limit} per guild) reached"
   event_data_tracker_add_or_modify_tracker_success_with_channel = "Set tracking for guild `{guild}` and announcement to channel `{channel}`"
+  event_data_tracker_add_or_modify_tracker_announce_channel_param_description = "Channel for announcing results at the end of event"
 
   event_data_tracker_remove_tracker_description = "Remove event tracker and its announcement settings"
   event_data_tracker_remove_tracker_success = "Removed tracking for guild `{guild}`"
@@ -99,10 +106,15 @@ class Strings(metaclass=Formatable):
   public_interface_guild_data_not_found = "No data found in database for guild with identifier `{identifier}`"
 
   public_interface_guild_report_description = "Generate report for specific Deep Town guild"
+  public_interface_guild_report_tight_format_param_description = "Tight format of table (default: False)"
 
   public_interface_guild_members_description = "List current members of specific Deep Town guild"
+  public_interface_guild_members_include_all_guilds_param_description = "Include previous guilds in event participation history"
 
   public_interface_search_guilds_description = "List Deep Town guilds or find specific one"
+  public_interface_search_guilds_guild_name_param_description = "Guild name to search"
+  public_interface_search_guilds_sort_by_param_description = "Attribute to sort guilds by"
+  public_interface_search_guilds_order_param_description = "Order method of attribute"
 
   public_interface_guild_profile_description = "Show Deep Town guild profile"
   public_interface_guild_profile_no_guilds = "No guilds found for guild identifier `{identifier}`"

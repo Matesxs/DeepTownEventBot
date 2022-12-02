@@ -65,6 +65,8 @@ class PublicInterface(Base_Cog):
                           guild_name: Optional[str] = commands.Param(default=None, description=Strings.public_interface_search_guilds_guild_name_param_description),
                           sort_by: str = commands.Param(description=Strings.public_interface_search_guilds_sort_by_param_description, choices=["ID", "Level", "Name"]),
                           order: str = commands.Param(description=Strings.public_interface_search_guilds_order_param_description, choices=["Ascending", "Descending"])):
+    await inter.response.defer(with_message=True)
+
     found_guilds = await dt_helpers.get_guild_info(self.bot, guild_name)
     if found_guilds is None or not found_guilds:
       return await message_utils.generate_error_message(inter, Strings.public_interface_guild_data_not_received(identifier=guild_name))
@@ -101,6 +103,8 @@ class PublicInterface(Base_Cog):
   async def guild_members(self, inter: disnake.CommandInteraction,
                           identifier: str = commands.Param(description=Strings.dt_guild_identifier_param_description),
                           include_all_guilds: bool=commands.Param(default=True, description=Strings.public_interface_guild_members_include_all_guilds_param_description)):
+    await inter.response.defer(with_message=True)
+
     if identifier.isnumeric():
       guild = dt_guild_repo.get_dt_guild(int(identifier))
     else:
@@ -162,6 +166,8 @@ class PublicInterface(Base_Cog):
   async def guild_report(self, inter: disnake.CommandInteraction,
                          identifier: str = commands.Param(description=Strings.dt_guild_identifier_param_description),
                          tight_format: bool = commands.Param(default=False, description=Strings.public_interface_guild_report_tight_format_param_description)):
+    await inter.response.defer(with_message=True)
+
     guild_data = await grab_recent_guild_event_participations(self.bot, inter, int(identifier) if identifier.isnumeric() else identifier)
     if guild_data is None: return
 
@@ -176,6 +182,8 @@ class PublicInterface(Base_Cog):
 
   @guild_commands.sub_command(name="profile", description=Strings.public_interface_guild_profile_description)
   async def guild_profile(self, inter: disnake.CommandInteraction, identifier: str = commands.Param(description=Strings.dt_guild_identifier_param_description)):
+    await inter.response.defer(with_message=True)
+
     matched_guilds = []
     if identifier.isnumeric():
       guild = dt_guild_repo.get_dt_guild(int(identifier))
@@ -212,6 +220,8 @@ class PublicInterface(Base_Cog):
       for member in guild.active_members:
         member_data.append((member.user.id, member.user.username, member.user.level, member.user.depth))
 
+      member_data.sort(key=lambda x: x[0])
+
       member_table_strings = table2ascii(body=member_data, header=["ID", "Name", "Level", "Depth"], alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.RIGHT, Alignment.RIGHT]).split("\n")
       member_page_strings = []
       while member_table_strings:
@@ -220,7 +230,7 @@ class PublicInterface(Base_Cog):
 
       for member_page_string in member_page_strings:
         member_page = disnake.Embed(title=f"{guild.name} members", color=disnake.Color.dark_blue(), description=f"```py\n{member_page_string}\n```")
-        message_utils.add_author_footer(guild_front_page, inter.author)
+        message_utils.add_author_footer(member_page, inter.author)
         guild_profile_lists.append(member_page)
 
       # Event participation stats
@@ -238,11 +248,26 @@ class PublicInterface(Base_Cog):
       guild_event_participations_stats_page.add_field(name="Median donate per event last year", value=f"{statistics.median(last_year_guild_participations_amounts):.2f}", inline=False)
       guild_profile_lists.append(guild_event_participations_stats_page)
 
+      # Event best contributors
+      top_event_contributors = event_participation_repo.get_best_participants(guild.id, limit=10)
+      top_event_contributors_data = [(idx + 1, contributor[0], contributor[1], f"{contributor[2]:.2f}") for idx, contributor in enumerate(top_event_contributors)]
+      event_best_contributos_table_strings = table2ascii(body=top_event_contributors_data, header=["No°", "Name", "Total", "Average"], alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.RIGHT, Alignment.RIGHT], first_col_heading=True).split("\n")
+
+      event_best_contributos_page_strings = []
+      while event_best_contributos_table_strings:
+        data_string, event_participations_strings = string_manipulation.add_string_until_length(event_best_contributos_table_strings, 3000, "\n")
+        event_best_contributos_page_strings.append(data_string)
+
+      for event_best_contributos_page_string in event_best_contributos_page_strings:
+        best_event_contributors_page = disnake.Embed(title=f"{guild.name} best event contributors", color=disnake.Color.dark_blue(), description=f"```py\n{event_best_contributos_page_string}\n```")
+        message_utils.add_author_footer(best_event_contributors_page, inter.author)
+        guild_profile_lists.append(best_event_contributors_page)
+
       # Event participations
       event_participations_data = []
       for year, week, total, average in all_guild_participations:
-        best_participant = event_participation_repo.get_best_participant(guild.id, year, week) if total != 0 else None
-        event_participations_data.append((year, week, best_participant if best_participant is not None else "Unknown", f"{float(average):.2f}"))
+        best_participants = event_participation_repo.get_best_participants(guild.id, year, week, limit=1) if total != 0 else None
+        event_participations_data.append((year, week, best_participants[0][0] if best_participants else "Unknown", f"{float(average):.2f}"))
 
       event_participations_strings = table2ascii(body=event_participations_data, header=["Year", "Week", "Top", "Average"], alignments=[Alignment.RIGHT, Alignment.RIGHT, Alignment.LEFT, Alignment.RIGHT]).split("\n")
       event_participations_page_strings = []
@@ -252,7 +277,7 @@ class PublicInterface(Base_Cog):
 
       for event_participations_page_string in event_participations_page_strings:
         event_participation_page = disnake.Embed(title=f"{guild.name} event participations", color=disnake.Color.dark_blue(), description=f"```py\n{event_participations_page_string}\n```")
-        message_utils.add_author_footer(guild_front_page, inter.author)
+        message_utils.add_author_footer(event_participation_page, inter.author)
         guild_profile_lists.append(event_participation_page)
 
       guild_profiles.append(guild_profile_lists)
@@ -267,6 +292,8 @@ class PublicInterface(Base_Cog):
 
   @user_command.sub_command(name="profile", description=Strings.public_interface_user_profile_description)
   async def user_profile(self, inter: disnake.CommandInteraction, username:str=commands.Param(description=Strings.dt_user_name_param_description)):
+    await inter.response.defer(with_message=True)
+
     matched_users = dt_user_repo.get_users_by_username(username)
     if not matched_users:
       return await message_utils.generate_error_message(inter, Strings.public_interface_user_profile_no_users(username=username))

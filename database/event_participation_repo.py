@@ -84,16 +84,19 @@ def generate_or_update_event_participations(guild_data: dt_helpers.DTGuildData) 
   event_year, event_week = dt_helpers.get_event_index(datetime.datetime.utcnow())
   prev_event_year, prev_event_week = dt_helpers.get_event_index(datetime.datetime.utcnow() - datetime.timedelta(days=7))
 
+  participation_amounts = [p.last_event_contribution for p in guild_data.players]
+  prev_participation_amounts = [p.amount for p in get_event_participations(guild_id=guild_data.id, year=prev_event_year, week=prev_event_week)]
+
+  updated = True
+  if prev_participation_amounts and participation_amounts and \
+      sum(participation_amounts) == sum(prev_participation_amounts) and \
+      statistics.mean(participation_amounts) == statistics.mean(prev_participation_amounts) and \
+      statistics.median(participation_amounts) == statistics.median(prev_participation_amounts):
+    updated = False
+
   participations = []
   for player_data in guild_data.players:
-    participations.append(get_and_update_event_participation(player_data.id, guild_data.id, event_year, event_week, player_data.last_event_contribution))
-
-  participation_amounts = [p.amount for p in participations]
-  prev_participation_amounts = [p.amount for p in get_event_participations(guild_id=guild_data.id, year=prev_event_year, week=prev_event_week)]
-  if prev_participation_amounts and participation_amounts and sum(participation_amounts) == sum(prev_participation_amounts) and statistics.mean(participation_amounts) == statistics.mean(prev_participation_amounts) and statistics.median(participation_amounts) == statistics.median(prev_participation_amounts):
-    for participation in participations:
-      participation.amount = 0
-
+    participations.append(get_and_update_event_participation(player_data.id, guild_data.id, event_year, event_week, player_data.last_event_contribution if updated else 0))
   session.commit()
   return participations
 

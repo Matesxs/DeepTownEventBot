@@ -1,6 +1,7 @@
 import datetime
 import disnake
 from disnake.ext import commands, tasks
+from typing import Optional
 import asyncio
 import pandas as pd
 import io
@@ -73,21 +74,38 @@ class DTDataManager(Base_Cog):
   async def update_all_guilds(self, inter: disnake.CommandInteraction):
     await inter.response.defer(with_message=True, ephemeral=True)
 
-    guild_ids = await dt_helpers.get_ids_of_all_guilds(self.bot)
+    if config.data_manager.periodically_pull_data:
+      self.data_update_task.restart()
 
-    if guild_ids is not None or not guild_ids:
-      pulled_data = 0
+      await message_utils.generate_success_message(inter, Strings.data_manager_update_all_guilds_success_with_periodic_update)
+    else:
+      guild_ids = await dt_helpers.get_ids_of_all_guilds(self.bot)
 
-      for guild_id in guild_ids:
-        data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
-        await asyncio.sleep(0.2)
-        if data is None: continue
+      last_update = datetime.datetime.utcnow()
 
-        event_participation_repo.generate_or_update_event_participations(data)
-        pulled_data += 1
+      if guild_ids is not None or not guild_ids:
+        pulled_data = 0
 
-      return await message_utils.generate_success_message(inter, Strings.data_manager_update_all_guilds_success(guild_num=pulled_data))
-    await message_utils.generate_error_message(inter, Strings.data_manager_update_all_guilds_failed)
+        for idx, guild_id in enumerate(guild_ids):
+          data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
+          if datetime.datetime.utcnow() - last_update > datetime.timedelta(seconds=10):
+            await inter.edit_original_response(f"```\nGuild {idx+1}/{len(guild_ids)}\n```")
+            last_update = datetime.datetime.utcnow()
+
+          await asyncio.sleep(0.2)
+          if data is None: continue
+
+          event_participation_repo.generate_or_update_event_participations(data)
+          pulled_data += 1
+
+        if not inter.is_expired():
+          return await message_utils.generate_success_message(inter, Strings.data_manager_update_all_guilds_success_without_periodic_update(guild_num=pulled_data))
+
+        original_message = await inter.original_message()
+        if original_message is not None:
+          await message_utils.generate_success_message(original_message, Strings.data_manager_update_all_guilds_success_without_periodic_update(guild_num=pulled_data))
+        return
+      await message_utils.generate_error_message(inter, Strings.data_manager_update_all_guilds_failed_without_periodic_update)
 
   @data_manager.sub_command(description=Strings.data_manager_update_tracked_guilds_description)
   @cooldowns.long_cooldown
@@ -100,15 +118,28 @@ class DTDataManager(Base_Cog):
     if guild_ids is not None or not guild_ids:
       pulled_data = 0
 
-      for guild_id in guild_ids:
+      last_update = datetime.datetime.utcnow()
+
+      for idx, guild_id in enumerate(guild_ids):
         data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
+        if datetime.datetime.utcnow() - last_update > datetime.timedelta(seconds=10):
+          await inter.edit_original_response(f"```\nGuild {idx + 1}/{len(guild_ids)}\n```")
+          last_update = datetime.datetime.utcnow()
+
         await asyncio.sleep(0.2)
         if data is None: continue
 
         event_participation_repo.generate_or_update_event_participations(data)
         pulled_data += 1
 
-      return await message_utils.generate_success_message(inter, Strings.data_manager_update_tracked_guilds_success(guild_num=pulled_data))
+      if not inter.is_expired():
+        return await message_utils.generate_success_message(inter, Strings.data_manager_update_tracked_guilds_success(guild_num=pulled_data))
+
+      original_message = await inter.original_message()
+      if original_message is not None:
+        await message_utils.generate_success_message(original_message, Strings.data_manager_update_tracked_guilds_success(guild_num=pulled_data))
+      return
+
     await message_utils.generate_error_message(inter, Strings.data_manager_update_tracked_guilds_failed)
 
   @data_manager.sub_command(description=Strings.data_manager_skip_data_update_description)
@@ -123,12 +154,15 @@ class DTDataManager(Base_Cog):
 
   @data_manager.sub_command(description=Strings.data_manager_dump_guild_participation_data_description)
   @cooldowns.huge_cooldown
-  async def dump_guild_participation_data(self, inter: disnake.CommandInteraction, guild_id: int=commands.Param(description=Strings.dt_guild_id_param_description)):
+  async def dump_guild_participation_data(self, inter: disnake.CommandInteraction, guild_id: Optional[int]=commands.Param(default=None, description=Strings.dt_guild_id_param_description)):
     await inter.response.defer(with_message=True, ephemeral=True)
 
     dump_data = event_participation_repo.dump_guild_event_participation_data(guild_id)
     if not dump_data:
-      return await message_utils.generate_error_message(inter, Strings.data_manager_dump_guild_participation_data_no_data(guild_id=guild_id))
+      if guild_id is not None:
+        return await message_utils.generate_error_message(inter, Strings.data_manager_dump_guild_participation_data_no_data(guild_id=guild_id))
+      else:
+        return await message_utils.generate_error_message(inter, Strings.data_manager_dump_guild_participation_data_no_data_no_guild_id)
 
     dataframe = pd.DataFrame(dump_data, columns=["year", "week", "guild_id", "guild_name", "user_id", "username", "amount"], index=None)
 
@@ -141,7 +175,6 @@ class DTDataManager(Base_Cog):
     await message_utils.generate_success_message(inter, Strings.data_manager_dump_guild_participation_data_success)
     await inter.send(file=discord_file)
 
-
   @commands.message_command(name="Load Event Data")
   @cooldowns.long_cooldown
   @commands.is_owner()
@@ -149,18 +182,22 @@ class DTDataManager(Base_Cog):
     await inter.response.defer(with_message=True, ephemeral=True)
 
     attachments = inter.target.attachments
+    if not attachments:
+      return await message_utils.generate_error_message(inter, Strings.data_manager_load_data_no_attachments)
 
     csv_files = []
     for attachment in attachments:
       if attachment.filename.lower().endswith(".csv"):
         csv_files.append(attachment)
 
+    last_sleep = datetime.datetime.utcnow()
+
     updated_rows = 0
-    for file in csv_files:
+    for file_idx, file in enumerate(csv_files):
       data = io.BytesIO(await file.read())
       dataframe = pd.read_csv(data, sep=";")
 
-      for index, row in dataframe.iterrows():
+      for row_idx, (_, row) in enumerate(dataframe.iterrows()):
         try:
           user_id = int(row["user_id"])
           guild_id = int(row["guild_id"])
@@ -174,13 +211,26 @@ class DTDataManager(Base_Cog):
           if "guild_name" in row.keys():
             member.guild.name = row["guild_name"]
           event_participation_repo.get_and_update_event_participation(user_id, guild_id, year, week, ammount)
+
+          if datetime.datetime.utcnow() - last_sleep >= datetime.timedelta(seconds=5):
+            await inter.edit_original_response(f"```\nFile {file_idx + 1}/{len(csv_files)}\nData row {row_idx + 1}/{dataframe.shape[0]}\n```")
+            await asyncio.sleep(0.2)
+            last_sleep = datetime.datetime.utcnow()
+
           updated_rows += 1
         except Exception:
           logger.warning(traceback.format_exc())
 
     event_participation_repo.session.commit()
 
-    await message_utils.generate_success_message(inter, Strings.data_manager_load_data_loaded(count=updated_rows))
+    logger.info(f"Loaded {updated_rows} data rows")
+
+    if not inter.is_expired():
+      return await message_utils.generate_success_message(inter, Strings.data_manager_load_data_loaded(count=updated_rows))
+
+    message = await inter.original_message()
+    if message is not None:
+      await message_utils.generate_success_message(message, Strings.data_manager_load_data_loaded(count=updated_rows))
 
   @tasks.loop(hours=config.data_manager.cleanup_rate_days * 24)
   async def cleanup_task(self):

@@ -66,7 +66,8 @@ def get_and_update_event_participation(user_id: int, guild_id: int, event_year: 
     item.amount = participation_amount
   return item
 
-def dump_guild_event_participation_data(guild_id: int) -> List[Tuple[int, int, int, str, int, str, int]]:
+def dump_guild_event_participation_data(guild_id: Optional[int]=None) -> List[Tuple[int, int, int, str, int, str, int]]:
+  filters = [EventParticipation.dt_guild_id == guild_id] if guild_id is not None else []
   data = session.query(
     EventParticipation.event_year,
     EventParticipation.event_week,
@@ -75,7 +76,7 @@ def dump_guild_event_participation_data(guild_id: int) -> List[Tuple[int, int, i
     EventParticipation.dt_user_id,
     dt_user_repo.DTUser.username,
     EventParticipation.amount
-  ).join(dt_user_repo.DTUser).join(dt_guild_repo.DTGuild).filter(EventParticipation.dt_guild_id == guild_id).all()
+  ).join(dt_user_repo.DTUser).join(dt_guild_repo.DTGuild).filter(*filters).all()
   return data
 
 def generate_or_update_event_participations(guild_data: dt_helpers.DTGuildData) -> List[EventParticipation]:

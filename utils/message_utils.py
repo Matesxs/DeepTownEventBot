@@ -5,21 +5,21 @@ import datetime
 
 from config import config
 
-async def generate_error_message(ctx: Union[commands.Context, disnake.abc.Messageable, disnake.Message, disnake.MessageInteraction, disnake.ModalInteraction, disnake.CommandInteraction], text: str):
+async def generate_error_message(ctx: Union[commands.Context, disnake.abc.Messageable, disnake.Message, disnake.MessageInteraction, disnake.ModalInteraction, disnake.ApplicationCommandInteraction], text: str):
   response_embed = disnake.Embed(color=disnake.Color.dark_red(), title=":x: | Error", description=text)
-  if isinstance(ctx, disnake.ModalInteraction) or isinstance(ctx, disnake.CommandInteraction) or isinstance(ctx, disnake.MessageInteraction):
-    return await ctx.send(embed=response_embed, ephemeral=True, delete_after=config.base.error_duration)
+  if isinstance(ctx, disnake.ModalInteraction) or isinstance(ctx, disnake.ApplicationCommandInteraction) or isinstance(ctx, disnake.MessageInteraction):
+    return await ctx.send(embed=response_embed, ephemeral=True)
   elif isinstance(ctx, disnake.Message):
-    return await ctx.reply(embed=response_embed, delete_after=config.base.error_duration)
+    return await ctx.reply(embed=response_embed)
   else:
     return await ctx.send(embed=response_embed, delete_after=config.base.error_duration)
 
-async def generate_success_message(ctx: Union[commands.Context, disnake.abc.Messageable, disnake.Message, disnake.MessageInteraction, disnake.ModalInteraction, disnake.CommandInteraction], text: str):
+async def generate_success_message(ctx: Union[commands.Context, disnake.abc.Messageable, disnake.Message, disnake.MessageInteraction, disnake.ModalInteraction, disnake.ApplicationCommandInteraction], text: str):
   response_embed = disnake.Embed(color=disnake.Color.green(), title=":white_check_mark: | Success", description=text)
-  if isinstance(ctx, disnake.ModalInteraction) or isinstance(ctx, disnake.CommandInteraction) or isinstance(ctx, disnake.MessageInteraction):
-    return await ctx.send(embed=response_embed, ephemeral=True, delete_after=config.base.error_duration)
+  if isinstance(ctx, disnake.ModalInteraction) or isinstance(ctx, disnake.ApplicationCommandInteraction) or isinstance(ctx, disnake.MessageInteraction):
+    return await ctx.send(embed=response_embed, ephemeral=True)
   elif isinstance(ctx, disnake.Message):
-    return await ctx.reply(embed=response_embed, delete_after=config.base.error_duration)
+    return await ctx.reply(embed=response_embed)
   else:
     return await ctx.send(embed=response_embed, delete_after=config.base.success_duration)
 

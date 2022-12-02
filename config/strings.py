@@ -63,8 +63,9 @@ class Strings(metaclass=Formatable):
   data_manager_update_guild_success_multiple = "Data of {number} guild fetched and updated"
 
   data_manager_update_all_guilds_description = "Update data of all guilds in database"
-  data_manager_update_all_guilds_success = "Updated data of `{guild_num}` guilds"
-  data_manager_update_all_guilds_failed = "No guilds ids for update from server"
+  data_manager_update_all_guilds_success_with_periodic_update = "Data update started"
+  data_manager_update_all_guilds_success_without_periodic_update = "Updated data of `{guild_num}` guilds"
+  data_manager_update_all_guilds_failed_without_periodic_update = "No guilds ids for update from server"
 
   data_manager_update_tracked_guilds_description = "Update data of tracked guilds in database"
   data_manager_update_tracked_guilds_success = "Updated data of `{guild_num}` guilds"
@@ -75,10 +76,13 @@ class Strings(metaclass=Formatable):
   data_manager_skip_data_update_failed = "Periodic data update not running or already marked for skipping"
 
   data_manager_load_data_description = "Load manually event data"
+  data_manager_load_data_no_attachments = "No attachments present"
+  data_manager_load_data_loading_started = "Data loading started"
   data_manager_load_data_loaded = "New data loaded, `{count}` rows\nIf some data are missing then file was in invalid format or data keys were missing"
 
   data_manager_dump_guild_participation_data_description = "Dump Deep Town guild event participation data"
   data_manager_dump_guild_participation_data_no_data = "No data found for guild with id `{guild_id}`"
+  data_manager_dump_guild_participation_data_no_data_no_guild_id = "No data found"
   data_manager_dump_guild_participation_data_success = "Dump created"
 
   # Event Tracker

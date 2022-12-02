@@ -21,19 +21,18 @@ def create_dummy_dt_guild_member(user_id: int, guild_id: int) -> DTGuildMember:
   return item
 
 def __get_and_update_dt_guild_member(user_data: DTUserData, guild_id: int) -> DTGuildMember:
+  get_and_update_dt_user(user_data) # Always update DT user data
+
   item = get_dt_guild_member(user_data.id, guild_id)
   if item is None:
-    get_and_update_dt_user(user_data)
-
     item = DTGuildMember(dt_user_id=user_data.id, dt_guild_id=guild_id)
     session.add(item)
     session.commit()
   else:
     item.current_member = True
 
-  for member in item.user.members:
-    if member.dt_guild_id != guild_id:
-      item.current_member = False
+  session.query(DTGuildMember).filter(DTGuildMember.dt_user_id == user_data.id, DTGuildMember.dt_guild_id != guild_id).update({ "current_member": False })
+  session.commit()
 
   return item
 
@@ -43,5 +42,4 @@ def get_and_update_dt_guild_members(guild_data: DTGuildData) -> List[DTGuildMemb
   dt_members = []
   for player_data in guild_data.players:
     dt_members.append(__get_and_update_dt_guild_member(player_data, guild_data.id))
-  session.commit()
   return dt_members

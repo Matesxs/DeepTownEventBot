@@ -3,6 +3,7 @@ import dataclasses
 from typing import List, Optional, Tuple
 import traceback
 
+from config import config
 from features.base_bot import BaseAutoshardedBot
 from utils.logger import setup_custom_logger
 
@@ -72,6 +73,10 @@ async def get_dt_guild_data(bot: BaseAutoshardedBot, guild_id:int) -> Optional[D
     except Exception:
       logger.error(traceback.format_exc())
       return None
+
+    if config.data_manager.ignore_empty_guilds:
+      if len(json_data["players"]["data"]) == 0:
+        return None
 
     players = []
     for player_data in json_data["players"]["data"]:

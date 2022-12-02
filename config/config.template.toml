@@ -22,6 +22,8 @@ log_channel_id = -1
 default_loaded_extensions = ["common", "dt_data_manager", "dt_event_tracker", "public_interface"]
 
 [data_manager]
+ignore_empty_guilds = true
+
 clean_none_existing_guilds = true
 cleanup_rate_days = 7
 

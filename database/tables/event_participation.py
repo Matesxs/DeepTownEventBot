@@ -1,4 +1,5 @@
-from sqlalchemy import Column, ForeignKey, Integer
+import datetime
+from sqlalchemy import Column, ForeignKey, Integer, DateTime
 from sqlalchemy.orm import relationship
 
 from database import database, BigIntegerType
@@ -11,11 +12,12 @@ class EventParticipation(database.base):
   event_week = Column(Integer, primary_key=True)
   dt_guild_id = Column(BigIntegerType, ForeignKey("dt_guilds.id", ondelete="CASCADE"), primary_key=True)
   dt_user_id = Column(BigIntegerType, ForeignKey("dt_users.id", ondelete="CASCADE"), primary_key=True)
+  updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow, index=True)
 
   dt_user = relationship("DTUser", uselist=False, back_populates="event_participations")
   dt_guild = relationship("DTGuild", uselist=False, back_populates="event_participations")
 
-  amount = Column(BigIntegerType, default=0)
+  amount = Column(BigIntegerType, default=0, index=True)
 
   def to_DTUserData(self) -> DTUserData:
     return DTUserData(self.dt_user.username,

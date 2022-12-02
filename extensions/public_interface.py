@@ -167,7 +167,7 @@ class PublicInterface(Base_Cog):
 
     send_report_function = partial(dt_report_generators.send_text_guild_event_participation_report, inter, guild_data[0].dt_guild, guild_data, colm_padding=0 if tight_format else 1)
 
-    reporter_settings = DataSelector(inter.author, ["No°", "Name", "ID", "Level", "Depth", "Online", "Donate"], ["No°", "Name", "Level", "Donate"], invisible=True)
+    reporter_settings = DataSelector(inter.author, ["No°", "Name", "ID", "Level", "Depth", "Online", "Donate", "Standing"], ["No°", "Name", "Level", "Donate"], invisible=True)
     await reporter_settings.run(inter)
     ret = await reporter_settings.wait()
 

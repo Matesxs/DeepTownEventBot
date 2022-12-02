@@ -116,9 +116,9 @@ class PublicInterface(Base_Cog):
     participations_per_user = []
     for member in guild.active_members:
       if include_all_guilds:
-        participations_per_user.append(event_participation_repo.get_user_event_participations(user_id=member.dt_user_id))
+        participations_per_user.append(event_participation_repo.get_event_participations(user_id=member.dt_user_id))
       else:
-        participations_per_user.append(event_participation_repo.get_user_event_participations(user_id=member.dt_user_id, guild_id=guild.id))
+        participations_per_user.append(event_participation_repo.get_event_participations(user_id=member.dt_user_id, guild_id=guild.id))
 
     current_time = datetime.datetime.utcnow()
     current_year, _ = dt_helpers.get_event_index(current_time)
@@ -129,7 +129,7 @@ class PublicInterface(Base_Cog):
       dt_user = member_participations[0].dt_user
 
       all_participations = [member_participation.amount for member_participation in member_participations]
-      this_year_participations = [p.amount for p in event_participation_repo.get_user_event_participations(dt_user.id, year=current_year)]
+      this_year_participations = [p.amount for p in event_participation_repo.get_event_participations(user_id=dt_user.id, year=current_year)]
 
       member_front_page = disnake.Embed(title=f"{dt_user.username}", color=disnake.Color.dark_blue())
       message_utils.add_author_footer(member_front_page, inter.author)
@@ -279,9 +279,9 @@ class PublicInterface(Base_Cog):
         event_participation_repo.generate_or_update_event_participations(guild_data)
         user = dt_user_repo.get_dt_user(user.id)
 
-      all_participations = event_participation_repo.get_user_event_participations(user.id)
+      all_participations = event_participation_repo.get_event_participations(user_id=user.id)
       all_participations_amounts = [p.amount for p in all_participations]
-      this_year_participations_amounts = [p.amount for p in event_participation_repo.get_user_event_participations(user.id, year=current_year)]
+      this_year_participations_amounts = [p.amount for p in event_participation_repo.get_event_participations(user_id=user.id, year=current_year)]
 
       # Front page
       user_front_page = disnake.Embed(title=f"{user.username}", color=disnake.Color.dark_blue())

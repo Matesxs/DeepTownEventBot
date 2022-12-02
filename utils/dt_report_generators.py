@@ -69,6 +69,7 @@ async def send_text_guild_event_participation_report(report_channel: Union[disna
     colms = ["No°", "Name", "Level", "Donate"]
 
   participation_amounts = [p.amount for p in participations]
+  if not participation_amounts: participation_amounts = [0]
   description_strings = f"{guild.name} - ID: {guild.id} - Level: {guild.level}\nYear: {participations[0].event_year} Week: {participations[0].event_week}\nDonate - Median: {statistics.median(participation_amounts):.2f} Average: {statistics.mean(participation_amounts):.2f}, Total: {sum(participation_amounts)}\n".split("\n")
 
   strings = [*description_strings]

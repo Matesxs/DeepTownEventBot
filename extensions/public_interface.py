@@ -128,8 +128,10 @@ class PublicInterface(Base_Cog):
       member_pages = []
       dt_user = member_participations[0].dt_user
 
-      all_participations = [member_participation.amount for member_participation in member_participations]
-      this_year_participations = [p.amount for p in event_participation_repo.get_event_participations(user_id=dt_user.id, year=current_year)]
+      all_participation_amounts = [member_participation.amount for member_participation in member_participations]
+      if not all_participation_amounts: all_participation_amounts = [0]
+      this_year_participation_amounts = [p.amount for p in event_participation_repo.get_event_participations(user_id=dt_user.id, year=current_year)]
+      if not this_year_participation_amounts: this_year_participation_amounts = [0]
 
       member_front_page = disnake.Embed(title=f"{dt_user.username}", color=disnake.Color.dark_blue())
       message_utils.add_author_footer(member_front_page, inter.author)
@@ -138,10 +140,10 @@ class PublicInterface(Base_Cog):
       member_front_page.add_field(name="Depth", value=str(dt_user.depth))
       member_front_page.add_field(name="Online", value=humanize.naturaltime(current_time - dt_user.last_online) if dt_user.last_online is not None else "Never")
       member_front_page.add_field(name="Current guild", value=f"{member_participations[0].dt_guild.name}({member_participations[0].dt_guild.level})", inline=False)
-      member_front_page.add_field(name="Average donate", value=f"{statistics.mean(all_participations):.2f}")
-      member_front_page.add_field(name="Median donate", value=f"{statistics.median(all_participations):.2f}", inline=False)
-      member_front_page.add_field(name="Average donate last year", value=f"{statistics.mean(this_year_participations):.2f}")
-      member_front_page.add_field(name="Median donate last year", value=f"{statistics.median(this_year_participations):.2f}", inline=False)
+      member_front_page.add_field(name="Average donate", value=f"{statistics.mean(all_participation_amounts):.2f}")
+      member_front_page.add_field(name="Median donate", value=f"{statistics.median(all_participation_amounts):.2f}", inline=False)
+      member_front_page.add_field(name="Average donate last year", value=f"{statistics.mean(this_year_participation_amounts):.2f}")
+      member_front_page.add_field(name="Median donate last year", value=f"{statistics.median(this_year_participation_amounts):.2f}", inline=False)
 
       member_pages.append(member_front_page)
 
@@ -224,7 +226,9 @@ class PublicInterface(Base_Cog):
       # Event participation stats
       all_guild_participations = event_participation_repo.get_guild_event_participations(guild.id)
       all_guild_participation_amounts = [p[2] for p in all_guild_participations]
+      if not all_guild_participation_amounts: all_guild_participation_amounts = [0]
       last_year_guild_participations_amounts = [p[2] for p in event_participation_repo.get_guild_event_participations(guild.id, current_year)]
+      if not last_year_guild_participations_amounts: last_year_guild_participations_amounts = [0]
 
       guild_event_participations_stats_page = disnake.Embed(title=f"{guild.name} event participations stats", color=disnake.Color.dark_blue())
       message_utils.add_author_footer(guild_event_participations_stats_page, inter.author)
@@ -281,7 +285,9 @@ class PublicInterface(Base_Cog):
 
       all_participations = event_participation_repo.get_event_participations(user_id=user.id)
       all_participations_amounts = [p.amount for p in all_participations]
+      if not all_participations_amounts: all_participations_amounts = [0]
       this_year_participations_amounts = [p.amount for p in event_participation_repo.get_event_participations(user_id=user.id, year=current_year)]
+      if not this_year_participations_amounts: this_year_participations_amounts = [0]
 
       # Front page
       user_front_page = disnake.Embed(title=f"{user.username}", color=disnake.Color.dark_blue())

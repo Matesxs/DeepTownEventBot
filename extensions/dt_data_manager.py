@@ -217,6 +217,7 @@ class DTDataManager(Base_Cog):
         if datetime.datetime.utcnow() - last_update >= datetime.timedelta(minutes=1):
           progress_percent = (idx / number_of_guilds) * 100
           await self.bot.change_presence(activity=disnake.Game(name=f"Updating data {progress_percent:.1f}%..."), status=disnake.Status.dnd)
+          last_update = datetime.datetime.utcnow()
 
         if self.skip_periodic_data_update:
           logger.info("Data pull interrupted")

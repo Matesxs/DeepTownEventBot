@@ -224,10 +224,10 @@ class PublicInterface(Base_Cog):
         guild_profile_lists.append(member_page)
 
       # Event participation stats
-      all_guild_participations = event_participation_repo.get_guild_event_participations(guild.id)
+      all_guild_participations = event_participation_repo.get_guild_event_participations_data(guild.id)
       all_guild_participation_amounts = [p[2] for p in all_guild_participations]
       if not all_guild_participation_amounts: all_guild_participation_amounts = [0]
-      last_year_guild_participations_amounts = [p[2] for p in event_participation_repo.get_guild_event_participations(guild.id, current_year)]
+      last_year_guild_participations_amounts = [p[2] for p in event_participation_repo.get_guild_event_participations_data(guild.id, current_year)]
       if not last_year_guild_participations_amounts: last_year_guild_participations_amounts = [0]
 
       guild_event_participations_stats_page = disnake.Embed(title=f"{guild.name} event participations stats", color=disnake.Color.dark_blue())

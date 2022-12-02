@@ -36,7 +36,7 @@ def get_best_participant(dt_guild_id: int, year: int, week: int) -> Optional[str
   if data is None: return None
   return data[0]
 
-def get_guild_event_participations(dt_guild_id: int, year: Optional[int]=None, week: Optional[int]=None) -> List[Tuple[int, int, int, float]]:
+def get_guild_event_participations_data(dt_guild_id: int, year: Optional[int]=None, week: Optional[int]=None) -> List[Tuple[int, int, int, float]]:
   filters = [EventParticipation.dt_guild_id == dt_guild_id]
   if year is not None:
     filters.append(EventParticipation.event_year == year)
@@ -55,7 +55,7 @@ def get_recent_event_participations(dt_guild_id: int) -> List[EventParticipation
 
   return session.query(EventParticipation).filter(EventParticipation.dt_guild_id == dt_guild_id, EventParticipation.event_year == recent_year, EventParticipation.event_week == recent_week).order_by(EventParticipation.amount.desc()).all()
 
-def get_and_update_event_participation(user_id: int, guild_id: int, event_year: int, event_week: int, participation_amount: int):
+def get_and_update_event_participation(user_id: int, guild_id: int, event_year: int, event_week: int, participation_amount: int) -> EventParticipation:
   item = session.query(EventParticipation).filter(EventParticipation.event_year == event_year, EventParticipation.event_week == event_week, EventParticipation.dt_user_id == user_id, EventParticipation.dt_guild_id == guild_id).one_or_none()
   if item is None:
     create_dummy_dt_guild_member(user_id, guild_id)

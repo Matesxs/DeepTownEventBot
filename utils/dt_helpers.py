@@ -2,6 +2,7 @@ import datetime
 import dataclasses
 from typing import List, Optional, Tuple
 import traceback
+from string import printable
 
 from config import config
 from features.base_bot import BaseAutoshardedBot
@@ -30,12 +31,12 @@ class DTUserData:
   @classmethod
   def from_api_data(cls, data: dict):
     return cls(
-      data[1], data[0], data[3], data[4], datetime.datetime.strptime(data[2], '%a, %d %b %Y %H:%M:%S GMT'), data[-1],
+      "".join(char for char in data[1] if char in printable) if data[1] is not None else "*Unknown*", data[0], data[3], data[4], datetime.datetime.strptime(data[2], '%a, %d %b %Y %H:%M:%S GMT'), data[-1],
       data[5], data[6], data[7], data[8], data[9], data[10], data[11], data[12]
     )
 
   def __repr__(self):
-    return f"<{self.name}({self.id}),{self.level},{self.depth},'{self.last_online if self.last_online is not None else 'Never'}',{self.last_event_contribution}, ({self.mines},{self.chem_mines},{self.oil_mines},{self.crafters},{self.smelters},{self.jewel_stations},{self.chem_stations},{self.green_houses})>"
+    return f"<{self.name}({self.id}),{self.level},{self.depth},'{self.last_online if self.last_online is not None else '*Never*'}',{self.last_event_contribution}, ({self.mines},{self.chem_mines},{self.oil_mines},{self.crafters},{self.smelters},{self.jewel_stations},{self.chem_stations},{self.green_houses})>"
 
 @dataclasses.dataclass
 class DTGuildData:
@@ -82,7 +83,7 @@ async def get_dt_guild_data(bot: BaseAutoshardedBot, guild_id:int) -> Optional[D
     for player_data in json_data["players"]["data"]:
       players.append(DTUserData.from_api_data(player_data))
 
-    return DTGuildData(json_data["name"], json_data["id"], json_data["level"], players)
+    return DTGuildData("".join(char for char in json_data["name"] if char in printable), json_data["id"], json_data["level"], players)
 
 async def get_ids_of_all_guilds(bot: BaseAutoshardedBot) -> Optional[List[int]]:
   async with bot.http_session.get("http://dtat.hampl.space/data/guild/name") as response:

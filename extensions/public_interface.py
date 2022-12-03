@@ -51,16 +51,30 @@ async def grab_recent_guild_event_participations(bot: BaseAutoshardedBot, inter:
 
   return guild_data
 
+async def send_event_leaderboards(inter: disnake.CommandInteraction, year: int, week: int, limit: int):
+  global_best_participants = event_participation_repo.get_best_participants(year=year, week=week, limit=limit)
+
+  participant_data = [(idx + 1, string_manipulation.truncate_string(username, 18), string_manipulation.truncate_string(guild_name, 18), total_contribution) for idx, (username, guild_name, total_contribution, _, _) in enumerate(global_best_participants)]
+  participant_data_table_strings = (f"Year: {year} Week: {week}\n" + table2ascii(header=["No°", "Username", "Guild", "Donate"], body=participant_data, first_col_heading=True, alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.LEFT, Alignment.RIGHT])).split("\n")
+
+  participant_data_page_strings = []
+  while participant_data_table_strings:
+    data_string, participant_data_table_strings = string_manipulation.add_string_until_length(participant_data_table_strings, 1900, "\n")
+    participant_data_page_strings.append(f"```py\n{data_string}\n```")
+
+  for participant_data_page_string in participant_data_page_strings:
+    await inter.send(participant_data_page_string)
+
 class PublicInterface(Base_Cog):
   def __init__(self, bot):
     super(PublicInterface, self).__init__(bot, __file__)
 
   @commands.slash_command(name="guild")
-  @cooldowns.default_cooldown
   async def guild_commands(self, inter: disnake.CommandInteraction):
     pass
 
   @guild_commands.sub_command(name="search", description=Strings.public_interface_search_guilds_description)
+  @cooldowns.default_cooldown
   async def search_guilds(self, inter: disnake.CommandInteraction,
                           guild_name: Optional[str] = commands.Param(default=None, description=Strings.public_interface_search_guilds_guild_name_param_description),
                           sort_by: str = commands.Param(description=Strings.public_interface_search_guilds_sort_by_param_description, choices=["ID", "Level", "Name"]),
@@ -100,6 +114,7 @@ class PublicInterface(Base_Cog):
     await embed_view.run(inter)
 
   @guild_commands.sub_command(name="members", description=Strings.public_interface_guild_members_description)
+  @cooldowns.default_cooldown
   async def guild_members(self, inter: disnake.CommandInteraction,
                           identifier: str = commands.Param(description=Strings.dt_guild_identifier_param_description),
                           include_all_guilds: bool=commands.Param(default=True, description=Strings.public_interface_guild_members_include_all_guilds_param_description)):
@@ -163,6 +178,7 @@ class PublicInterface(Base_Cog):
     await embed_view.run(inter)
 
   @guild_commands.sub_command(name="report", description=Strings.public_interface_guild_report_description)
+  @cooldowns.default_cooldown
   async def guild_report(self, inter: disnake.CommandInteraction,
                          identifier: str = commands.Param(description=Strings.dt_guild_identifier_param_description),
                          tight_format: bool = commands.Param(default=False, description=Strings.public_interface_guild_report_tight_format_param_description)):
@@ -181,6 +197,7 @@ class PublicInterface(Base_Cog):
       await send_report_function(reporter_settings.get_results())
 
   @guild_commands.sub_command(name="profile", description=Strings.public_interface_guild_profile_description)
+  @cooldowns.default_cooldown
   async def guild_profile(self, inter: disnake.CommandInteraction, identifier: str = commands.Param(description=Strings.dt_guild_identifier_param_description)):
     await inter.response.defer(with_message=True)
 
@@ -250,7 +267,7 @@ class PublicInterface(Base_Cog):
 
       # Event best contributors
       top_event_contributors = event_participation_repo.get_best_participants(guild.id, limit=10)
-      top_event_contributors_data = [(idx + 1, string_manipulation.truncate_string(contributor[0], 14), contributor[1], f"{contributor[2]:.1f}", f"{contributor[3]:.1f}") for idx, contributor in enumerate(top_event_contributors)]
+      top_event_contributors_data = [(idx + 1, string_manipulation.truncate_string(contributor[0], 14), contributor[2], f"{contributor[3]:.1f}", f"{contributor[4]:.1f}") for idx, contributor in enumerate(top_event_contributors)]
       event_best_contributos_table_strings = table2ascii(body=top_event_contributors_data, header=["No°", "Name", "Total", "Average", "Median"], alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.RIGHT, Alignment.RIGHT, Alignment.RIGHT], first_col_heading=True).split("\n")
 
       event_best_contributos_page_strings = []
@@ -267,7 +284,7 @@ class PublicInterface(Base_Cog):
       event_participations_data = []
       for year, week, total, average, median, _, _ in all_guild_participations:
         best_participants = event_participation_repo.get_best_participants(guild.id, year, week, limit=1) if total != 0 else None
-        event_participations_data.append((year, week, string_manipulation.truncate_string(best_participants[0][0], 14) if best_participants else "Unknown", f"{average:.1f}", f"{median:.1f}"))
+        event_participations_data.append((year, week, string_manipulation.truncate_string(best_participants[0][0], 14) if best_participants else "*Unknown*", f"{average:.1f}", f"{median:.1f}"))
 
       event_participations_strings = table2ascii(body=event_participations_data, header=["Year", "Week", "Top", "Average", "Median"], alignments=[Alignment.RIGHT, Alignment.RIGHT, Alignment.LEFT, Alignment.RIGHT, Alignment.RIGHT]).split("\n")
       event_participations_page_strings = []
@@ -286,11 +303,11 @@ class PublicInterface(Base_Cog):
     await embed_view.run(inter)
 
   @commands.slash_command(name="user")
-  @cooldowns.default_cooldown
   async def user_command(self, inter: disnake.CommandInteraction):
     pass
 
   @user_command.sub_command(name="profile", description=Strings.public_interface_user_profile_description)
+  @cooldowns.default_cooldown
   async def user_profile(self, inter: disnake.CommandInteraction, username:str=commands.Param(description=Strings.dt_user_name_param_description)):
     await inter.response.defer(with_message=True)
 
@@ -359,6 +376,29 @@ class PublicInterface(Base_Cog):
 
     embed_view = EmbedView2D(inter.author, user_profiles, invert_list_dir=True)
     await embed_view.run(inter)
+
+  @commands.slash_command(name="global")
+  async def global_data_commands(self, inter: disnake.CommandInteraction):
+    pass
+
+  @global_data_commands.sub_command_group(name="event_leaderboard")
+  async def global_event_command_group(self, inter: disnake.CommandInteraction):
+    pass
+
+  @global_event_command_group.sub_command(name="current", description=Strings.public_interface_global_event_leaderboard_current_description)
+  async def global_event_current_leaderboard(self, inter: disnake.CommandInteraction,
+                                             user_count: int=commands.Param(default=20, min_value=1, max_value=200, description=Strings.public_interface_global_event_leaderboard_current_user_count_param_description)):
+    await inter.response.defer(with_message=True)
+    event_year, event_week = dt_helpers.get_event_index(datetime.datetime.utcnow())
+    await send_event_leaderboards(inter, event_year, event_week, user_count)
+
+  @global_event_command_group.sub_command(name="specific", description=Strings.public_interface_global_event_leaderboard_specific_description)
+  async def global_event_current_leaderboard(self, inter: disnake.CommandInteraction,
+                                             year: int=commands.Param(description=Strings.public_interface_global_event_leaderboard_specific_year_param_description),
+                                             week: int=commands.Param(min_value=1, description=Strings.public_interface_global_event_leaderboard_specific_week_param_description),
+                                             user_count: int = commands.Param(default=20, min_value=1, max_value=200, description=Strings.public_interface_global_event_leaderboard_specific_user_count_param_description)):
+    await inter.response.defer(with_message=True)
+    await send_event_leaderboards(inter, year, week, user_count)
 
 def setup(bot):
   bot.add_cog(PublicInterface(bot))

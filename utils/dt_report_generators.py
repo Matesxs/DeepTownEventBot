@@ -63,7 +63,7 @@ def generate_participation_strings(participations: List[EventParticipation], col
     if "Depth" in colms:
       data.append(participation.dt_user.depth)
     if "Online" in colms:
-      data.append(humanize.naturaltime(current_time - participation.dt_user.last_online) if participation.dt_user.last_online is not None else "Never")
+      data.append(humanize.naturaltime(current_time - participation.dt_user.last_online) if participation.dt_user.last_online is not None else "*Never*")
     if "Donate" in colms:
       data.append(participation.amount)
     if "Standing" in colms:

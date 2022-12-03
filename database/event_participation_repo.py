@@ -25,7 +25,14 @@ def get_event_participations(user_id: Optional[int]=None, guild_id: Optional[int
 
   return session.query(EventParticipation).filter(*filters).order_by(*order_by).limit(limit).all()
 
-def get_best_participants(guild_id: Optional[int]=None, year: Optional[int]=None, week: Optional[int]=None, limit: int=10) -> List[Tuple[str, int, float, float]]:
+def get_best_participants(guild_id: Optional[int]=None, year: Optional[int]=None, week: Optional[int]=None, limit: int=10) -> List[Tuple[str, str, int, float, float]]:
+  """
+  :param guild_id: Deep Town Guild ID
+  :param year: Event year
+  :param week: Event week
+  :param limit: Limit of retrieved data rows
+  :return: username, guild name, total, average, median
+  """
   filters = []
   if guild_id is not None:
     filters.append(EventParticipation.dt_guild_id == guild_id)
@@ -34,15 +41,34 @@ def get_best_participants(guild_id: Optional[int]=None, year: Optional[int]=None
   if week is not None:
     filters.append(EventParticipation.event_week == week)
 
-  return session.query(dt_user_repo.DTUser.username, func.sum(EventParticipation.amount), func.avg(EventParticipation.amount), func.percentile_cont(0.5).within_group(EventParticipation.amount)).filter(*filters).join(dt_user_repo.DTUser).group_by(dt_user_repo.DTUser.username).order_by(func.sum(EventParticipation.amount).desc()).limit(limit).all()
+  return session.query(dt_user_repo.DTUser.username,
+                       dt_guild_repo.DTGuild.name,
+                       func.sum(EventParticipation.amount),
+                       func.avg(EventParticipation.amount),
+                       func.percentile_cont(0.5).within_group(EventParticipation.amount)
+                       ).filter(*filters).join(dt_user_repo.DTUser, dt_guild_repo.DTGuild).group_by(dt_user_repo.DTUser.username, dt_guild_repo.DTGuild.name).order_by(func.sum(EventParticipation.amount).desc()).limit(limit).all()
 
-def get_guild_event_participations_data(dt_guild_id: int, year: Optional[int]=None, week: Optional[int]=None, limit: int=500) -> List[Tuple[int, int, int, float, float, int, int]]:
-  filters = [EventParticipation.dt_guild_id == dt_guild_id]
+def get_guild_event_participations_data(guild_id: int, year: Optional[int]=None, week: Optional[int]=None, limit: int=500) -> List[Tuple[int, int, int, float, float, int, int]]:
+  """
+  :param guild_id: Deep Town Guild ID
+  :param year: Event year
+  :param week: Event week
+  :param limit: Limit of retrieved data rows
+  :return: event_year, event_week, total, average, median, active_players, all_players
+  """
+  filters = [EventParticipation.dt_guild_id == guild_id]
   if year is not None:
     filters.append(EventParticipation.event_year == year)
   if week is not None:
     filters.append(EventParticipation.event_week == week)
-  return session.query(EventParticipation.event_year, EventParticipation.event_week, func.sum(EventParticipation.amount), func.avg(EventParticipation.amount), func.percentile_cont(0.5).within_group(EventParticipation.amount), func.count(func.nullif(EventParticipation.amount, 0)), func.count(EventParticipation.amount)).filter(*filters).order_by(EventParticipation.event_year.desc(), EventParticipation.event_week.desc()).group_by(EventParticipation.event_year, EventParticipation.event_week).limit(limit).all()
+  return session.query(EventParticipation.event_year,
+                       EventParticipation.event_week,
+                       func.sum(EventParticipation.amount),
+                       func.avg(EventParticipation.amount),
+                       func.percentile_cont(0.5).within_group(EventParticipation.amount),
+                       func.count(func.nullif(EventParticipation.amount, 0)),
+                       func.count(EventParticipation.amount)
+                       ).filter(*filters).order_by(EventParticipation.event_year.desc(), EventParticipation.event_week.desc()).group_by(EventParticipation.event_year, EventParticipation.event_week).limit(limit).all()
 
 def get_recent_guild_event_participations(dt_guild_id: int) -> List[EventParticipation]:
   recent_year_results = session.query(func.max(EventParticipation.event_year)).one_or_none()
@@ -53,7 +79,7 @@ def get_recent_guild_event_participations(dt_guild_id: int) -> List[EventPartici
   if recent_week_results is None: return []
   recent_week = recent_week_results[0]
 
-  return session.query(EventParticipation).filter(EventParticipation.dt_guild_id == dt_guild_id, EventParticipation.event_year == recent_year, EventParticipation.event_week == recent_week).order_by(EventParticipation.amount.desc()).all()
+  return get_event_participations(guild_id=dt_guild_id, year=recent_year, week=recent_week, order_by=[EventParticipation.amount.desc()])
 
 def get_and_update_event_participation(user_id: int, guild_id: int, event_year: int, event_week: int, participation_amount: int) -> EventParticipation:
   item = session.query(EventParticipation).filter(EventParticipation.event_year == event_year, EventParticipation.event_week == event_week, EventParticipation.dt_user_id == user_id, EventParticipation.dt_guild_id == guild_id).one_or_none()

@@ -36,13 +36,13 @@ def get_best_participants(guild_id: Optional[int]=None, year: Optional[int]=None
 
   return session.query(dt_user_repo.DTUser.username, func.sum(EventParticipation.amount), func.avg(EventParticipation.amount), func.percentile_cont(0.5).within_group(EventParticipation.amount)).filter(*filters).join(dt_user_repo.DTUser).group_by(dt_user_repo.DTUser.username).order_by(func.sum(EventParticipation.amount).desc()).limit(limit).all()
 
-def get_guild_event_participations_data(dt_guild_id: int, year: Optional[int]=None, week: Optional[int]=None, limit: int=500) -> List[Tuple[int, int, int, float, float]]:
+def get_guild_event_participations_data(dt_guild_id: int, year: Optional[int]=None, week: Optional[int]=None, limit: int=500) -> List[Tuple[int, int, int, float, float, int, int]]:
   filters = [EventParticipation.dt_guild_id == dt_guild_id]
   if year is not None:
     filters.append(EventParticipation.event_year == year)
   if week is not None:
     filters.append(EventParticipation.event_week == week)
-  return session.query(EventParticipation.event_year, EventParticipation.event_week, func.sum(EventParticipation.amount), func.avg(EventParticipation.amount), func.percentile_cont(0.5).within_group(EventParticipation.amount)).filter(*filters).order_by(EventParticipation.event_year.desc(), EventParticipation.event_week.desc()).group_by(EventParticipation.event_year, EventParticipation.event_week).limit(limit).all()
+  return session.query(EventParticipation.event_year, EventParticipation.event_week, func.sum(EventParticipation.amount), func.avg(EventParticipation.amount), func.percentile_cont(0.5).within_group(EventParticipation.amount), func.count(func.nullif(EventParticipation.amount, 0)), func.count(EventParticipation.amount)).filter(*filters).order_by(EventParticipation.event_year.desc(), EventParticipation.event_week.desc()).group_by(EventParticipation.event_year, EventParticipation.event_week).limit(limit).all()
 
 def get_recent_guild_event_participations(dt_guild_id: int) -> List[EventParticipation]:
   recent_year_results = session.query(func.max(EventParticipation.event_year)).one_or_none()

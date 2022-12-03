@@ -265,7 +265,7 @@ class PublicInterface(Base_Cog):
 
       # Event participations
       event_participations_data = []
-      for year, week, total, average, median in all_guild_participations:
+      for year, week, total, average, median, _, _ in all_guild_participations:
         best_participants = event_participation_repo.get_best_participants(guild.id, year, week, limit=1) if total != 0 else None
         event_participations_data.append((year, week, string_manipulation.truncate_string(best_participants[0][0], 14) if best_participants else "Unknown", f"{average:.1f}", f"{median:.1f}"))
 

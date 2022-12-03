@@ -78,14 +78,17 @@ def generate_participation_strings(participations: List[EventParticipation], col
 
   return table2ascii(body=data_list, header=colms, alignments=alligments, cell_padding=colm_padding, first_col_heading="No°" in colms).split("\n")
 
-async def send_text_guild_event_participation_report(report_channel: Union[disnake.TextChannel, disnake.Thread, disnake.VoiceChannel, disnake.PartialMessageable, disnake.CommandInteraction, commands.Context], guild: DTGuild, participations: List[EventParticipation], colms: Optional[List[str]]=None, colm_padding: int=0):
+async def send_text_guild_event_participation_report(report_channel: Union[disnake.TextChannel, disnake.Thread, disnake.VoiceChannel, disnake.PartialMessageable, disnake.ApplicationCommandInteraction, commands.Context], guild: DTGuild, participations: List[EventParticipation], colms: Optional[List[str]]=None, colm_padding: int=0):
   if not participations: return
   if colms is None:
     colms = ["No°", "Name", "Level", "Donate"]
 
   participation_amounts = [p.amount for p in participations]
+  all_players = len(participation_amounts)
+  active_players = len([a for a in participation_amounts if a > 0])
+
   if not participation_amounts: participation_amounts = [0]
-  description_strings = f"{guild.name} - ID: {guild.id} - Level: {guild.level}\nYear: {participations[0].event_year} Week: {participations[0].event_week}\nDonate - Median: {statistics.median(participation_amounts):.1f} Average: {statistics.mean(participation_amounts):.1f}, Total: {sum(participation_amounts)}\n".split("\n")
+  description_strings = f"{guild.name} - ID: {guild.id} - Level: {guild.level}\nYear: {participations[0].event_year} Week: {participations[0].event_week}\nDonate - Median: {statistics.median(participation_amounts):.1f} Average: {statistics.mean(participation_amounts):.1f}, Total: {sum(participation_amounts)}\nActivity: {active_players}/{all_players}\n".split("\n")
 
   strings = [*description_strings]
   strings.extend(generate_participation_strings(participations, colms, colm_padding))

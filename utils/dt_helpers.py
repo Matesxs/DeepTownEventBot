@@ -2,7 +2,6 @@ import datetime
 import dataclasses
 from typing import List, Optional, Tuple
 import traceback
-from string import printable
 
 from config import config
 from features.base_bot import BaseAutoshardedBot
@@ -31,7 +30,7 @@ class DTUserData:
   @classmethod
   def from_api_data(cls, data: dict):
     return cls(
-      "".join(char for char in data[1] if char in printable) if data[1] is not None else "*Unknown*", data[0], data[3], data[4], datetime.datetime.strptime(data[2], '%a, %d %b %Y %H:%M:%S GMT'), data[-1],
+      data[1] if data[1] is not None else "*Unknown*", data[0], data[3], data[4], datetime.datetime.strptime(data[2], '%a, %d %b %Y %H:%M:%S GMT'), data[-1],
       data[5], data[6], data[7], data[8], data[9], data[10], data[11], data[12]
     )
 
@@ -83,7 +82,7 @@ async def get_dt_guild_data(bot: BaseAutoshardedBot, guild_id:int) -> Optional[D
     for player_data in json_data["players"]["data"]:
       players.append(DTUserData.from_api_data(player_data))
 
-    return DTGuildData("".join(char for char in json_data["name"] if char in printable) if json_data["name"] is not None else "*Unknown*", json_data["id"], json_data["level"], players)
+    return DTGuildData(json_data["name"] if json_data["name"] is not None else "*Unknown*", json_data["id"], json_data["level"], players)
 
 async def get_ids_of_all_guilds(bot: BaseAutoshardedBot) -> Optional[List[int]]:
   async with bot.http_session.get("http://dtat.hampl.space/data/guild/name") as response:

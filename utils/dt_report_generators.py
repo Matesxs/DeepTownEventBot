@@ -53,9 +53,9 @@ def generate_participation_strings(participations: List[EventParticipation], col
     if "Week" in colms:
       data.append(participation.event_week)
     if "Guild" in colms:
-      data.append(participation.dt_guild.name)
+      data.append(string_manipulation.truncate_string(participation.dt_guild.name, 20))
     if "Name" in colms:
-      data.append(participation.dt_user.username)
+      data.append(string_manipulation.truncate_string(participation.dt_user.username, 20))
     if "ID" in colms:
       data.append(participation.dt_user_id)
     if "Level" in colms:

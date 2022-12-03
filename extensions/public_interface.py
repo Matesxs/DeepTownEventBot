@@ -54,7 +54,7 @@ async def grab_recent_guild_event_participations(bot: BaseAutoshardedBot, inter:
 async def send_event_leaderboards(inter: disnake.CommandInteraction, year: int, week: int, limit: int):
   global_best_participants = event_participation_repo.get_best_participants(year=year, week=week, limit=limit)
 
-  participant_data = [(idx + 1, string_manipulation.truncate_string(username, 18), string_manipulation.truncate_string(guild_name, 18), total_contribution) for idx, (username, guild_name, total_contribution, _, _) in enumerate(global_best_participants)]
+  participant_data = [(idx + 1, string_manipulation.truncate_string(username, 20), string_manipulation.truncate_string(guild_name, 20), total_contribution) for idx, (username, guild_name, total_contribution, _, _) in enumerate(global_best_participants)]
   participant_data_table_strings = (f"Year: {year} Week: {week}\n" + table2ascii(header=["No°", "Username", "Guild", "Donate"], body=participant_data, first_col_heading=True, alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.LEFT, Alignment.RIGHT])).split("\n")
 
   participant_data_page_strings = []

@@ -83,7 +83,7 @@ async def get_dt_guild_data(bot: BaseAutoshardedBot, guild_id:int) -> Optional[D
     for player_data in json_data["players"]["data"]:
       players.append(DTUserData.from_api_data(player_data))
 
-    return DTGuildData("".join(char for char in json_data["name"] if char in printable), json_data["id"], json_data["level"], players)
+    return DTGuildData("".join(char for char in json_data["name"] if char in printable) if json_data["name"] is not None else "*Unknown*", json_data["id"], json_data["level"], players)
 
 async def get_ids_of_all_guilds(bot: BaseAutoshardedBot) -> Optional[List[int]]:
   async with bot.http_session.get("http://dtat.hampl.space/data/guild/name") as response:

@@ -4,6 +4,7 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects import postgresql, sqlite
 import pkgutil
 import importlib
+import traceback
 
 from config import config
 from utils.logger import setup_custom_logger
@@ -20,17 +21,18 @@ class Database:
       self.base = declarative_base()
       self.db = create_engine(config.base.database_connect_string)
 
-    except Exception as e:
-      logger.error(f"Failed to create database connection\n{e}")
+    except Exception:
+      logger.error(f"Failed to create database connection\n{traceback.format_exc()}")
       exit(-1)
 
     logger.info("Database opened")
 
+database:Database = Database()
+
 try:
-  database:Database = Database()
   session:Session = sessionmaker(database.db)()
-except Exception as e:
-  logger.error(f"Failed to create database session\n{e}")
+except Exception:
+  logger.error(f"Failed to create database session\n{traceback.format_exc()}")
   exit(-1)
 
 BigIntegerType = BigInteger()

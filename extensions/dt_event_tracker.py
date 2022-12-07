@@ -150,9 +150,9 @@ class DTEventTracker(Base_Cog):
     logger.info(f"Current date: {datetime.datetime.utcnow()}")
 
     today = datetime.datetime.utcnow()
-    today_announce_time = datetime.datetime.utcnow().replace(hour=8, minute=10, second=0, microsecond=0)
-    next_monday = today_announce_time + datetime.timedelta(days=7 - (today.weekday() % 7))
-    if today.weekday() == 0 and (today.hour < 8 or (today.hour == 8 and today.minute < 10)):
+    today_announce_time = datetime.datetime.utcnow().replace(hour=config.event_tracker.announce_time_hours, minute=config.event_tracker.announce_time_minutes, second=0, microsecond=0)
+    next_monday = today_announce_time + datetime.timedelta(days=(7 - config.event_tracker.announce_day_index) - (today.weekday() % 7))
+    if today.weekday() == 0 and (today.hour < config.event_tracker.announce_time_hours or (today.hour == config.event_tracker.announce_time_hours and today.minute < config.event_tracker.announce_time_minutes)):
       next_monday -= datetime.timedelta(days=7)
     delta_to_next_monday = next_monday - datetime.datetime.utcnow()
 

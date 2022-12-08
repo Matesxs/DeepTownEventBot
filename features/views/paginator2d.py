@@ -39,7 +39,7 @@ reaction_ids = ["embed:prev_page", "embed:up_page", "embed:next_page", "embed:do
 
 class EmbedView2D(disnake.ui.View):
 
-  def __init__(self, author: disnake.User, embeds: List[List[disnake.Embed]], perma_lock: bool = False, roll_arroud: bool = True, timeout: Optional[float] = 300, invisible: bool=False, invert_list_dir: bool=False):
+  def __init__(self, author: disnake.User, embeds: List[List[disnake.Embed]], perma_lock: bool = False, roll_arroud: bool = True, timeout: Optional[float] = 600, invisible: bool=False, invert_list_dir: bool=False, delete_on_timeout: bool=False):
     self.message: Optional[Union[disnake.Message, disnake.ApplicationCommandInteraction, disnake.ModalInteraction, disnake.MessageCommandInteraction]] = None
     self.vert_page = 1
     self.hor_page = 1
@@ -51,7 +51,7 @@ class EmbedView2D(disnake.ui.View):
     self.embeds = embeds
     self.max_vert_page = len(embeds)
     self.invisible = invisible
-
+    self.delete_on_timeout = delete_on_timeout
     super().__init__(timeout=timeout)
 
     if self.max_vert_page > 1:
@@ -163,8 +163,14 @@ class EmbedView2D(disnake.ui.View):
     try:
       self.clear_items()
       if isinstance(self.message, disnake.Message):
-        await self.message.edit(view=self)
+        if self.delete_on_timeout:
+          await self.message.delete()
+        else:
+          await self.message.edit(view=self)
       else:
-        await self.message.edit_original_message(view=self)
+        if self.delete_on_timeout:
+          await self.message.delete_original_message()
+        else:
+          await self.message.edit_original_message(view=self)
     except:
       pass

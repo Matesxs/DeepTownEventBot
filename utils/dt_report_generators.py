@@ -97,7 +97,7 @@ async def send_text_guild_event_participation_report(report_channel: Union[disna
   announce_strings = []
   while strings:
     final_string, strings = string_manipulation.add_string_until_length(strings, 1900, "\n")
-    announce_strings.append(f"```py\n{final_string}\n```")
+    announce_strings.append(f"```\n{final_string}\n```")
 
   for announce_string in announce_strings:
     await report_channel.send(announce_string)

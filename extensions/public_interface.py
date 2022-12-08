@@ -15,7 +15,7 @@ from config import cooldowns, Strings
 from utils import dt_helpers, dt_report_generators, message_utils, string_manipulation
 from features.views.paginator import EmbedView
 from features.views.paginator2d import EmbedView2D
-from database import event_participation_repo, dt_user_repo, dt_guild_repo
+from database import event_participation_repo, dt_user_repo, dt_guild_repo, dt_guild_member_repo
 from features.views.data_selector import DataSelector
 
 logger = setup_custom_logger(__name__)
@@ -168,7 +168,7 @@ class PublicInterface(Base_Cog):
 
       participation_pages_data = dt_report_generators.generate_participations_page_strings(member_participations, include_guild=include_all_guilds)
       for participation_page_data in participation_pages_data:
-        participation_page = disnake.Embed(title=f"{dt_user.username} event participations", description=f"```py\n{participation_page_data}\n```", color=disnake.Color.dark_blue())
+        participation_page = disnake.Embed(title=f"{dt_user.username} event participations", description=f"```\n{participation_page_data}\n```", color=disnake.Color.dark_blue())
         message_utils.add_author_footer(participation_page, inter.author)
         member_pages.append(participation_page)
 
@@ -229,7 +229,8 @@ class PublicInterface(Base_Cog):
       message_utils.add_author_footer(guild_front_page, inter.author)
       guild_front_page.add_field(name="ID", value=str(guild.id))
       guild_front_page.add_field(name="Level", value=str(guild.level))
-      guild_front_page.add_field(name="Active members", value=str(len(guild.active_members)))
+      guild_front_page.add_field(name="Members", value=str(len(guild.active_members)))
+      guild_front_page.add_field(name="Position", value=str(dt_guild_repo.get_guild_level_leaderboard(guild.id)[0][0]))
       guild_profile_lists.append(guild_front_page)
 
       # Members list
@@ -246,7 +247,7 @@ class PublicInterface(Base_Cog):
         member_page_strings.append(data_string)
 
       for member_page_string in member_page_strings:
-        member_page = disnake.Embed(title=f"{guild.name} members", color=disnake.Color.dark_blue(), description=f"```py\n{member_page_string}\n```")
+        member_page = disnake.Embed(title=f"{guild.name} members", color=disnake.Color.dark_blue(), description=f"```\n{member_page_string}\n```")
         message_utils.add_author_footer(member_page, inter.author)
         guild_profile_lists.append(member_page)
 
@@ -276,7 +277,7 @@ class PublicInterface(Base_Cog):
         event_best_contributos_page_strings.append(data_string)
 
       for event_best_contributos_page_string in event_best_contributos_page_strings:
-        best_event_contributors_page = disnake.Embed(title=f"{guild.name} best event contributors", color=disnake.Color.dark_blue(), description=f"```py\n{event_best_contributos_page_string}\n```")
+        best_event_contributors_page = disnake.Embed(title=f"{guild.name} best event contributors", color=disnake.Color.dark_blue(), description=f"```\n{event_best_contributos_page_string}\n```")
         message_utils.add_author_footer(best_event_contributors_page, inter.author)
         guild_profile_lists.append(best_event_contributors_page)
 
@@ -293,13 +294,40 @@ class PublicInterface(Base_Cog):
         event_participations_page_strings.append(data_string)
 
       for event_participations_page_string in event_participations_page_strings:
-        event_participation_page = disnake.Embed(title=f"{guild.name} event participations", color=disnake.Color.dark_blue(), description=f"```py\n{event_participations_page_string}\n```")
+        event_participation_page = disnake.Embed(title=f"{guild.name} event participations", color=disnake.Color.dark_blue(), description=f"```\n{event_participations_page_string}\n```")
         message_utils.add_author_footer(event_participation_page, inter.author)
         guild_profile_lists.append(event_participation_page)
 
       guild_profiles.append(guild_profile_lists)
 
     embed_view = EmbedView2D(inter.author, guild_profiles, invert_list_dir=True)
+    await embed_view.run(inter)
+
+  @guild_commands.sub_command(name="leaderboard", description=Strings.public_interface_guild_leaderboard_description)
+  @cooldowns.default_cooldown
+  async def guild_leaderboard(self, inter: disnake.CommandInteraction):
+    await inter.response.defer(with_message=True)
+
+    guild_leaderboard_data = dt_guild_repo.get_guild_level_leaderboard()
+    if not guild_leaderboard_data:
+      return await message_utils.generate_error_message(inter, Strings.public_interface_guild_leaderboard_no_guilds)
+
+    standing_table_data = []
+    for standing, guild_id, guild_name, level in guild_leaderboard_data:
+      member_number = dt_guild_member_repo.get_number_of_members(guild_id)
+      standing_table_data.append((standing, string_manipulation.truncate_string(guild_name, 20), level, member_number))
+
+    standing_table_strings = table2ascii(["No°", "Name", "Level", "Members"], standing_table_data, alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.RIGHT, Alignment.RIGHT], first_col_heading=True).split("\n")
+
+    standing_pages = []
+    while standing_table_strings:
+      description, standing_table_strings = string_manipulation.add_string_until_length(standing_table_strings, 2000, "\n")
+
+      embed = disnake.Embed(title="Deep Town Guilds Leaderboard", color=disnake.Color.dark_blue(), description=f"```\n{description}\n```")
+      message_utils.add_author_footer(embed, inter.author)
+      standing_pages.append(embed)
+
+    embed_view = EmbedView(inter.author, standing_pages)
     await embed_view.run(inter)
 
   @commands.slash_command(name="user")
@@ -368,7 +396,7 @@ class PublicInterface(Base_Cog):
       # Event participations
       participation_pages_data = dt_report_generators.generate_participations_page_strings(all_participations, include_guild=True)
       for participation_page_data in participation_pages_data:
-        participation_page = disnake.Embed(title=f"{user.username} event participations", description=f"```py\n{participation_page_data}\n```", color=disnake.Color.dark_blue())
+        participation_page = disnake.Embed(title=f"{user.username} event participations", description=f"```\n{participation_page_data}\n```", color=disnake.Color.dark_blue())
         message_utils.add_author_footer(participation_page, inter.author)
         user_profile_lists.append(participation_page)
 
@@ -377,26 +405,22 @@ class PublicInterface(Base_Cog):
     embed_view = EmbedView2D(inter.author, user_profiles, invert_list_dir=True)
     await embed_view.run(inter)
 
-  @commands.slash_command(name="global")
-  async def global_data_commands(self, inter: disnake.CommandInteraction):
+  @commands.slash_command(name="event_leaderboard")
+  async def event_leaderboard(self, inter: disnake.CommandInteraction):
     pass
 
-  @global_data_commands.sub_command_group(name="event_leaderboard")
-  async def global_event_command_group(self, inter: disnake.CommandInteraction):
-    pass
-
-  @global_event_command_group.sub_command(name="current", description=Strings.public_interface_global_event_leaderboard_current_description)
+  @event_leaderboard.sub_command(name="current", description=Strings.public_interface_event_leaderboard_current_description)
   async def global_event_current_leaderboard(self, inter: disnake.CommandInteraction,
-                                             user_count: int=commands.Param(default=20, min_value=1, max_value=200, description=Strings.public_interface_global_event_leaderboard_current_user_count_param_description)):
+                                             user_count: int=commands.Param(default=20, min_value=1, max_value=200, description=Strings.public_interface_event_leaderboard_current_user_count_param_description)):
     await inter.response.defer(with_message=True)
     event_year, event_week = dt_helpers.get_event_index(datetime.datetime.utcnow())
     await send_event_leaderboards(inter, event_year, event_week, user_count)
 
-  @global_event_command_group.sub_command(name="specific", description=Strings.public_interface_global_event_leaderboard_specific_description)
+  @event_leaderboard.sub_command(name="specific", description=Strings.public_interface_event_leaderboard_specific_description)
   async def global_event_current_leaderboard(self, inter: disnake.CommandInteraction,
-                                             year: int=commands.Param(description=Strings.public_interface_global_event_leaderboard_specific_year_param_description),
-                                             week: int=commands.Param(min_value=1, description=Strings.public_interface_global_event_leaderboard_specific_week_param_description),
-                                             user_count: int = commands.Param(default=20, min_value=1, max_value=200, description=Strings.public_interface_global_event_leaderboard_specific_user_count_param_description)):
+                                             year: int=commands.Param(description=Strings.public_interface_event_leaderboard_specific_year_param_description),
+                                             week: int=commands.Param(min_value=1, description=Strings.public_interface_event_leaderboard_specific_week_param_description),
+                                             user_count: int = commands.Param(default=20, min_value=1, max_value=200, description=Strings.public_interface_event_leaderboard_specific_user_count_param_description)):
     await inter.response.defer(with_message=True)
     await send_event_leaderboards(inter, year, week, user_count)
 

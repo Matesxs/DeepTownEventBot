@@ -116,7 +116,10 @@ class DTEventTracker(Base_Cog):
 
   async def send_tracker_text_announcement(self, tracker: tracking_settings_repo.TrackingSettings):
     announce_channel = await tracker.get_announce_channel(self.bot)
-    if announce_channel is None: return
+    if announce_channel is None:
+      # Announce channel not found so the tracker is not valid anymore
+      tracking_settings_repo.session.delete(tracker)
+      return
 
     participations = event_participation_repo.get_recent_guild_event_participations(tracker.dt_guild_id)
     if not participations: return
@@ -144,6 +147,7 @@ class DTEventTracker(Base_Cog):
     for tracker in trackers:
       await self.send_tracker_text_announcement(tracker)
       await asyncio.sleep(0.25)
+    logger.info(f"Announcements send, next announcement {datetime.datetime.utcnow() + datetime.timedelta(days=7)}")
 
   @result_announce_task.before_loop
   async def result_announce_wait_pretask(self):

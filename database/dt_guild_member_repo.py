@@ -1,4 +1,5 @@
 from typing import Optional, List
+from sqlalchemy import func
 
 from database import session
 from database.tables.dt_guild_member import DTGuildMember
@@ -43,3 +44,7 @@ def get_and_update_dt_guild_members(guild_data: DTGuildData) -> List[DTGuildMemb
   for player_data in guild_data.players:
     dt_members.append(__get_and_update_dt_guild_member(player_data, guild_data.id))
   return dt_members
+
+def get_number_of_members(guild_id: int) -> int:
+  data = session.query(func.count(DTGuildMember.dt_user_id)).filter(DTGuildMember.dt_guild_id == guild_id, DTGuildMember.current_member == True).one_or_none()
+  return data[0] if data is not None else 0

@@ -115,6 +115,9 @@ class Strings(metaclass=Formatable):
   public_interface_guild_members_description = "List current members of specific Deep Town guild"
   public_interface_guild_members_include_all_guilds_param_description = "Include previous guilds in event participation history"
 
+  public_interface_guild_leaderboard_description = "Leaderboard of guilds by level (if multiple guild have same level then sorted by name)"
+  public_interface_guild_leaderboard_no_guilds = "No guilds found in database"
+
   public_interface_search_guilds_description = "List Deep Town guilds or find specific one"
   public_interface_search_guilds_guild_name_param_description = "Guild name to search"
   public_interface_search_guilds_sort_by_param_description = "Attribute to sort guilds by"
@@ -126,10 +129,10 @@ class Strings(metaclass=Formatable):
   public_interface_user_profile_description = "Show Deep Town user profile"
   public_interface_user_profile_no_users = "No users found with username `{username}`"
 
-  public_interface_global_event_leaderboard_current_description = "Show leaderboard of participants in current event"
-  public_interface_global_event_leaderboard_current_user_count_param_description = "Number of top users to display"
+  public_interface_event_leaderboard_current_description = "Show leaderboard of participants in current event"
+  public_interface_event_leaderboard_current_user_count_param_description = "Number of top users to display"
 
-  public_interface_global_event_leaderboard_specific_description = "Show leaderboard of participants in specific event"
-  public_interface_global_event_leaderboard_specific_year_param_description = "Year of event"
-  public_interface_global_event_leaderboard_specific_week_param_description = "Week of event"
-  public_interface_global_event_leaderboard_specific_user_count_param_description = "Number of top users to display"
+  public_interface_event_leaderboard_specific_description = "Show leaderboard of participants in specific event"
+  public_interface_event_leaderboard_specific_year_param_description = "Year of event"
+  public_interface_event_leaderboard_specific_week_param_description = "Week of event"
+  public_interface_event_leaderboard_specific_user_count_param_description = "Number of top users to display"

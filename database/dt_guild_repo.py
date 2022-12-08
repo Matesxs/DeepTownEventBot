@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional, List, Tuple
 
 from database import session
 from database.tables.dt_guild import DTGuild
@@ -33,3 +33,20 @@ def remove_deleted_guilds(guild_id_list: List[int]) -> int:
   deleted_guilds = session.query(DTGuild).filter(DTGuild.id.not_in(guild_id_list)).delete()
   session.commit()
   return deleted_guilds
+
+def get_guild_level_leaderboard(guild_id: Optional[int]=None) -> List[Tuple[int, int, str, int]]:
+  """
+  :param guild_id: Optional deep town guild id
+  :return: standing, guild id, guild name, guild level
+  """
+
+  data = session.execute(f"""
+  SELECT position, id, name, level
+  FROM (SELECT ROW_NUMBER() OVER(ORDER BY level DESC) AS position, id, name, level
+        FROM dt_guilds
+        ORDER BY level DESC) as pin
+  {f"WHERE id={guild_id}" if guild_id is not None else ""}
+  ORDER BY level DESC;
+  """).all()
+
+  return data

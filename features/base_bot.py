@@ -70,7 +70,7 @@ class BaseAutoshardedBot(commands.AutoShardedBot):
     if self.initialized: return
     self.initialized = True
 
-    logger.info(f"Logged in as: {self.user} (ID: {self.user.id}) on {self.shard_count} shards")
+    logger.info(f"Logged in as: {self.user} (ID: {self.user.id}) on {self.shard_count} shards in {len(self.guilds)} guilds")
     await self.change_presence(activity=disnake.Game(name=config.base.status_message, type=0), status=disnake.Status.online)
     log_channel = await object_getters.get_or_fetch_channel(self, config.base.log_channel_id)
     if log_channel is not None:

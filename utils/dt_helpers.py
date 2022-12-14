@@ -101,7 +101,7 @@ async def get_ids_of_all_guilds(bot: BaseAutoshardedBot) -> Optional[List[int]]:
     return ids
 
 async def get_guild_info(bot: BaseAutoshardedBot, guild_name: Optional[str]=None) -> Optional[List[Tuple[int, str, int]]]:
-  async with bot.http_session.get("http://dtat.hampl.space/data/guild/name" + "" if guild_name is None else f"/{guild_name}") as response:
+  async with bot.http_session.get("http://dtat.hampl.space/data/guild/name" + "" if guild_name is None else f"/{guild_name.replace(' ', '_')}") as response:
     if response.status != 200:
       return None
 

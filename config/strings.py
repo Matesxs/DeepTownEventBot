@@ -43,6 +43,7 @@ class Strings(metaclass=Formatable):
   error_interaction_timeout = "Interaction took more than 3 seconds to be responded to. Try again later."
   error_forbiden = "Bot can't do this action"
   error_blocked_dms = "You have blocked DMs"
+  error_unknown_error = "Unknown error when processing command, report this to bot administrator"
 
   # Common
   common_ping_brief = "Ping a bot and get his reponse times"
@@ -136,3 +137,5 @@ class Strings(metaclass=Formatable):
   public_interface_event_leaderboard_specific_year_param_description = "Year of event"
   public_interface_event_leaderboard_specific_week_param_description = "Week of event"
   public_interface_event_leaderboard_specific_user_count_param_description = "Number of top users to display"
+
+  public_interface_delete_bot_message_invalid_message = "This is not message of this bot!"

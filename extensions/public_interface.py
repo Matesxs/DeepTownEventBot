@@ -12,7 +12,7 @@ from features.base_cog import Base_Cog
 from features.base_bot import BaseAutoshardedBot
 from utils.logger import setup_custom_logger
 from config import cooldowns, Strings
-from utils import dt_helpers, dt_report_generators, message_utils, string_manipulation
+from utils import dt_helpers, dt_report_generators, message_utils, string_manipulation, permission_helper
 from features.views.paginator import EmbedView
 from features.views.paginator2d import EmbedView2D
 from database import event_participation_repo, dt_user_repo, dt_guild_repo, dt_guild_member_repo
@@ -423,6 +423,14 @@ class PublicInterface(Base_Cog):
                                              user_count: int = commands.Param(default=20, min_value=1, max_value=200, description=Strings.public_interface_event_leaderboard_specific_user_count_param_description)):
     await inter.response.defer(with_message=True)
     await send_event_leaderboards(inter, year, week, user_count)
+
+  @commands.message_command(name="Delete Bot Message")
+  @cooldowns.short_cooldown
+  @commands.check(permission_helper.is_administrator)
+  async def delete_bot_message(self, inter: disnake.MessageCommandInteraction):
+    if inter.target.author == self.bot.user.id:
+      return await inter.target.delete()
+    return await message_utils.generate_error_message(inter, Strings.public_interface_delete_bot_message_invalid_message)
 
 def setup(bot):
   bot.add_cog(PublicInterface(bot))

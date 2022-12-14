@@ -26,7 +26,11 @@ class Errors(Base_Cog):
     await self.command_error_handling(inter, error)
 
   async def command_error_handling(self, ctx, error):
-    if isinstance(error, commands.CommandNotFound):
+    if isinstance(error, disnake.Forbidden):
+      await message_utils.generate_error_message(ctx, Strings.error_forbiden)
+    elif isinstance(error, disnake.HTTPException) and error.code == 50007:
+      await message_utils.generate_error_message(ctx, Strings.error_blocked_dms)
+    elif isinstance(error, commands.CommandNotFound):
       await message_utils.generate_error_message(ctx, Strings.error_unknown_command)
     elif isinstance(error, commands.CommandOnCooldown):
       await message_utils.generate_error_message(ctx, Strings.error_command_on_cooldown(remaining=round(error.retry_after, 2)))
@@ -44,10 +48,6 @@ class Errors(Base_Cog):
       await message_utils.generate_error_message(ctx, Strings.error_no_private_message)
     elif isinstance(error, disnake.InteractionTimedOut):
       await message_utils.generate_error_message(ctx, Strings.error_interaction_timeout)
-    elif isinstance(error, disnake.Forbidden):
-      await message_utils.generate_error_message(ctx, Strings.error_forbiden)
-    elif isinstance(error, disnake.HTTPException) and error.code == 50007:
-      await message_utils.generate_error_message(ctx, Strings.error_blocked_dms)
     else:
       self.bot.last_error = datetime.datetime.utcnow()
 
@@ -57,17 +57,23 @@ class Errors(Base_Cog):
       log_channel = self.bot.get_channel(config.base.log_channel_id)
       if log_channel is None: return
 
-      if isinstance(ctx, (disnake.ApplicationCommandInteraction, disnake.ModalInteraction, disnake.MessageCommandInteraction)):
+      if hasattr(ctx, "application_command") and ctx.application_command is not None:
         embed = disnake.Embed(title=f"Ignoring exception in application interaction {ctx.application_command}", color=0xFF0000)
-      else:
+      elif hasattr(ctx, "command") and ctx.command is not None:
         embed = disnake.Embed(title=f"Ignoring exception in command {ctx.command}", color=0xFF0000)
+      else:
+        embed = disnake.Embed(title=f"Ignoring exception", color=0xFF0000)
+
+      if hasattr(ctx, "message") and ctx.message is not None:
         embed.add_field(name="Message", value=ctx.message.content[:1000])
         embed.add_field(name="Link", value=ctx.message.jump_url, inline=False)
 
-      embed.add_field(name="Autor", value=str(ctx.author))
+      if hasattr(ctx, "author" and ctx.author is not None):
+        embed.add_field(name="Autor", value=str(ctx.author))
+
       embed.add_field(name="Type", value=str(type(error)))
 
-      if ctx.guild:
+      if hasattr(ctx, "guild") and ctx.guild is not None:
         embed.add_field(name="Guild", value=ctx.guild.name)
 
       await log_channel.send(embed=embed)
@@ -76,6 +82,11 @@ class Errors(Base_Cog):
       if log_channel is not None:
         for message in output:
           await log_channel.send(f"```\n{message}\n```")
+
+      try:
+        await message_utils.generate_error_message(ctx, Strings.error_unknown_error)
+      except:
+        pass
 
 
 def setup(bot):

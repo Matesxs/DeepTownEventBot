@@ -40,6 +40,10 @@ class Listeners(Base_Cog):
       logger.warning(f"Failed to execute message edit handler\n{traceback.format_exc()}")
 
   @commands.Cog.listener()
+  async def on_guild_joined(self, guild: disnake.Guild):
+    guilds_repo.get_or_create_guild_if_not_exist(guild)
+
+  @commands.Cog.listener()
   async def on_guild_remove(self, guild: disnake.Guild):
     guilds_repo.remove_guild(guild.id)
 

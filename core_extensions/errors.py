@@ -68,7 +68,7 @@ class Errors(Base_Cog):
         embed.add_field(name="Message", value=ctx.message.content[:1000])
         embed.add_field(name="Link", value=ctx.message.jump_url, inline=False)
 
-      if hasattr(ctx, "author" and ctx.author is not None):
+      if hasattr(ctx, "author") and ctx.author is not None:
         embed.add_field(name="Autor", value=str(ctx.author))
 
       embed.add_field(name="Type", value=str(type(error)))

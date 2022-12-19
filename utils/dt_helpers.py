@@ -2,6 +2,7 @@ import datetime
 import dataclasses
 from typing import List, Optional, Tuple
 import traceback
+from aiohttp.client_exceptions import InvalidURL
 
 from config import config
 from features.base_bot import BaseAutoshardedBot
@@ -101,17 +102,20 @@ async def get_ids_of_all_guilds(bot: BaseAutoshardedBot) -> Optional[List[int]]:
     return ids
 
 async def get_guild_info(bot: BaseAutoshardedBot, guild_name: Optional[str]=None) -> Optional[List[Tuple[int, str, int]]]:
-  async with bot.http_session.get("http://dtat.hampl.space/data/guild/name" + "" if guild_name is None else f"/{guild_name.replace(' ', '_')}") as response:
-    if response.status != 200:
-      return None
+  try:
+    async with bot.http_session.get("http://dtat.hampl.space/data/guild/name" + ("" if guild_name is None else f"/{guild_name.replace(' ', '_')}")) as response:
+      if response.status != 200:
+        return None
 
-    try:
-      json_data = await response.json(content_type="text/html")
-    except Exception:
-      logger.error(traceback.format_exc())
-      return None
+      try:
+        json_data = await response.json(content_type="text/html")
+      except Exception:
+        logger.error(traceback.format_exc())
+        return None
 
-    data = []
-    for guild_data in json_data["data"]:
-      data.append(tuple(guild_data))
-    return data
+      data = []
+      for guild_data in json_data["data"]:
+        data.append(tuple(guild_data))
+      return data
+  except InvalidURL:
+    return None

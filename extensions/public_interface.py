@@ -116,8 +116,7 @@ class PublicInterface(Base_Cog):
   @guild_commands.sub_command(name="members", description=Strings.public_interface_guild_members_description)
   @cooldowns.default_cooldown
   async def guild_members(self, inter: disnake.CommandInteraction,
-                          identifier: str = commands.Param(description=Strings.dt_guild_identifier_param_description),
-                          include_all_guilds: bool=commands.Param(default=True, description=Strings.public_interface_guild_members_include_all_guilds_param_description)):
+                          identifier: str = commands.Param(description=Strings.dt_guild_identifier_param_description)):
     await inter.response.defer(with_message=True)
 
     if identifier.isnumeric():
@@ -134,10 +133,7 @@ class PublicInterface(Base_Cog):
 
     participations_per_user = []
     for member in guild.active_members:
-      if include_all_guilds:
-        participations_per_user.append(event_participation_repo.get_event_participations(user_id=member.dt_user_id))
-      else:
-        participations_per_user.append(event_participation_repo.get_event_participations(user_id=member.dt_user_id, guild_id=guild.id))
+      participations_per_user.append(event_participation_repo.get_event_participations(user_id=member.dt_user_id))
 
     current_time = datetime.datetime.utcnow()
     current_year, _ = dt_helpers.get_event_index(current_time)
@@ -166,7 +162,7 @@ class PublicInterface(Base_Cog):
 
       member_pages.append(member_front_page)
 
-      participation_pages_data = dt_report_generators.generate_participations_page_strings(member_participations, include_guild=include_all_guilds)
+      participation_pages_data = dt_report_generators.generate_participations_page_strings(member_participations)
       for participation_page_data in participation_pages_data:
         participation_page = disnake.Embed(title=f"{dt_user.username} event participations", description=f"```\n{participation_page_data}\n```", color=disnake.Color.dark_blue())
         message_utils.add_author_footer(participation_page, inter.author)

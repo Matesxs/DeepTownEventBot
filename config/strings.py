@@ -43,6 +43,7 @@ class Strings(metaclass=Formatable):
   error_interaction_timeout = "Interaction took more than 3 seconds to be responded to. Try again later."
   error_forbiden = "Bot can't do this action"
   error_blocked_dms = "You have blocked DMs"
+  error_not_found = "Not found\n{code} - {text}"
   error_unknown_error = "Unknown error when processing command, report this to bot administrator"
 
   # Common
@@ -75,6 +76,16 @@ class Strings(metaclass=Formatable):
   data_manager_skip_data_update_description = "Skip periodic data update"
   data_manager_skip_data_update_success = "Skipping periodic data update"
   data_manager_skip_data_update_failed = "Periodic data update not running or already marked for skipping"
+
+  data_manager_add_remove_dt_item_name_param_description = "Deep Town item name"
+
+  data_manager_add_dt_item_description = "Create Deep Town item"
+  data_manager_add_dt_item_value_param_description = "Event value of one item"
+  data_manager_add_dt_item_success = "Set value of item `{name}` to value `{value}`"
+
+  data_manager_remove_dt_item_description = "Remove Deep Town item"
+  data_manager_remove_dt_item_success = "Item `{name}` removed from database"
+  data_manager_remove_dt_item_failed = "Item `{name}` not found in database"
 
   data_manager_load_data_description = "Load manually event data"
   data_manager_load_data_no_attachments = "No attachments present"
@@ -114,7 +125,6 @@ class Strings(metaclass=Formatable):
   public_interface_guild_report_tight_format_param_description = "Tight format of table (default: False)"
 
   public_interface_guild_members_description = "List current members of specific Deep Town guild"
-  public_interface_guild_members_include_all_guilds_param_description = "Include previous guilds in event participation history"
 
   public_interface_guild_leaderboard_description = "Leaderboard of guilds by level (if multiple guild have same level then sorted by name)"
   public_interface_guild_leaderboard_no_guilds = "No guilds found in database"

@@ -30,6 +30,9 @@ def get_all_dt_item_names() -> List[str]:
   data = session.query(DTItem.name).order_by(DTItem.name).all()
   return [d[0] for d in data]
 
+def get_all_dt_items() -> List[DTItem]:
+  return session.query(DTItem).all()
+
 def get_event_item(name: str) -> Optional[EventItem]:
   return session.query(EventItem).filter(EventItem.item_name == name).one_or_none()
 

@@ -6,12 +6,15 @@ import asyncio
 import pandas as pd
 import io
 import traceback
+from table2ascii import table2ascii
+from table2ascii.alignment import Alignment
 
 from features.base_cog import Base_Cog
-from utils import dt_helpers, message_utils
+from utils import dt_helpers, message_utils, string_manipulation
 from utils.logger import setup_custom_logger
 from config import cooldowns, Strings, config
 from database import event_participation_repo, tracking_settings_repo, dt_guild_repo, dt_guild_member_repo
+from features.views.paginator import EmbedView
 
 logger = setup_custom_logger(__name__)
 
@@ -203,36 +206,58 @@ class DTDataManager(Base_Cog):
     else:
       await message_utils.generate_error_message(inter, Strings.data_manager_remove_dt_item_failed(name=name))
 
-  @data_manager.sub_command(description="Set Deep Town items in event")
+  @data_manager.sub_command(description=Strings.data_manager_list_dt_items_description)
+  @cooldowns.default_cooldown
+  async def list_dt_items(self, inter: disnake.CommandInteraction):
+    await inter.response.defer(with_message=True)
+
+    items = event_participation_repo.get_all_dt_items()
+    if not items:
+      return await message_utils.generate_error_message(inter, Strings.data_manager_list_dt_items_no_items)
+
+    item_data = [(item.name, f"{item.value:.3f}") for item in items]
+    item_table_strings = table2ascii(["Name", "Value"], item_data, alignments=[Alignment.LEFT, Alignment.RIGHT]).split("\n")
+
+    pages = []
+    while item_table_strings:
+      data_string, item_table_strings = string_manipulation.add_string_until_length(item_table_strings, 1000, "\n")
+      embed = disnake.Embed(title="Deep Town Items", description=f"```\n{data_string}\n```", color=disnake.Color.dark_blue())
+      message_utils.add_author_footer(embed, inter.author)
+      pages.append(embed)
+
+    embed_view = EmbedView(inter.author, pages)
+    await embed_view.run(inter)
+
+  @data_manager.sub_command(description=Strings.data_manager_set_event_items_description)
   @cooldowns.short_cooldown
   @commands.is_owner()
   async def set_event_items(self, inter: disnake.CommandInteraction,
-                            event_year: Optional[int]=commands.Param(default=None, min_value=0, description="Event year"),
-                            event_week: Optional[int]=commands.Param(default=None, min_value=0, description="Event week"),
-                            item1: str=commands.Param(description="Event Deep Town Item 1"),
-                            item2: str=commands.Param(description="Event Deep Town Item 2"),
-                            item3: str=commands.Param(description="Event Deep Town Item 3"),
-                            item4: str=commands.Param(description="Event Deep Town Item 4"),
-                            base_amount1: int=commands.Param(default=0, min_value=0, description="Base amount for item 1"),
-                            base_amount2: int=commands.Param(default=0, min_value=0, description="Base amount for item 2"),
-                            base_amount3: int=commands.Param(default=0, min_value=0, description="Base amount for item 3"),
-                            base_amount4: int=commands.Param(default=0, min_value=0, description="Base amount for item 4")):
+                            event_year: Optional[int]=commands.Param(default=None, min_value=0, description=Strings.data_manager_set_remove_event_items_year_param_description),
+                            event_week: Optional[int]=commands.Param(default=None, min_value=0, description=Strings.data_manager_set_remove_event_items_week_param_description),
+                            item1: str=commands.Param(description=Strings.data_manager_set_event_items_item_name_param_description(number=1)),
+                            item2: str=commands.Param(description=Strings.data_manager_set_event_items_item_name_param_description(number=2)),
+                            item3: str=commands.Param(description=Strings.data_manager_set_event_items_item_name_param_description(number=3)),
+                            item4: str=commands.Param(description=Strings.data_manager_set_event_items_item_name_param_description(number=4)),
+                            base_amount1: int=commands.Param(default=0, min_value=0, description=Strings.data_manager_set_event_items_item_amount_param_description(number=1)),
+                            base_amount2: int=commands.Param(default=0, min_value=0, description=Strings.data_manager_set_event_items_item_amount_param_description(number=2)),
+                            base_amount3: int=commands.Param(default=0, min_value=0, description=Strings.data_manager_set_event_items_item_amount_param_description(number=3)),
+                            base_amount4: int=commands.Param(default=0, min_value=0, description=Strings.data_manager_set_event_items_item_amount_param_description(number=4))):
     await inter.response.defer(with_message=True, ephemeral=True)
 
     if event_year is None or event_week is None:
       event_year, event_week = dt_helpers.get_event_index(datetime.datetime.utcnow())
 
     if event_participation_repo.get_dt_item(item1) is None:
-      return await message_utils.generate_error_message(inter, f"Item `{item1}` not found in database")
+      return await message_utils.generate_error_message(inter, Strings.data_manager_set_event_items_item_not_in_database(item=item1))
 
     if event_participation_repo.get_dt_item(item2) is None:
-      return await message_utils.generate_error_message(inter, f"Item `{item2}` not found in database")
+      return await message_utils.generate_error_message(inter, Strings.data_manager_set_event_items_item_not_in_database(item=item2))
 
     if event_participation_repo.get_dt_item(item3) is None:
-      return await message_utils.generate_error_message(inter, f"Item `{item3}` not found in database")
+      return await message_utils.generate_error_message(inter, Strings.data_manager_set_event_items_item_not_in_database(item=item3))
 
     if event_participation_repo.get_dt_item(item4) is None:
-      return await message_utils.generate_error_message(inter, f"Item `{item4}` not found in database")
+      return await message_utils.generate_error_message(inter, Strings.data_manager_set_event_items_item_not_in_database(item=item4))
 
     event_participation_repo.set_event_item(event_year, event_week, item1, base_amount1, commit=False)
     event_participation_repo.set_event_item(event_year, event_week, item2, base_amount2, commit=False)
@@ -240,23 +265,23 @@ class DTDataManager(Base_Cog):
     event_participation_repo.set_event_item(event_year, event_week, item4, base_amount4, commit=False)
     event_participation_repo.session.commit()
 
-    await message_utils.generate_success_message(inter, f"Items for event `{event_year} {event_week}` set\n{item1} - {base_amount1}\n{item2} - {base_amount2}\n{item3} - {base_amount3}\n{item4} - {base_amount4}")
+    await message_utils.generate_success_message(inter, Strings.data_manager_set_event_items_success(event_year=event_year, event_week=event_week, item1=item1, item2=item2, item3=item3, item4=item4, base_amount1=base_amount1, base_amount2=base_amount2, base_amount3=base_amount3, base_amount4=base_amount4))
 
-  @data_manager.sub_command(description="Remove Deep Town items for event")
+  @data_manager.sub_command(description=Strings.data_manager_remove_event_items_description)
   @cooldowns.short_cooldown
   @commands.is_owner()
   async def remove_event_items(self, inter: disnake.CommandInteraction,
-                               event_year: Optional[int]=commands.Param(default=None, min_value=0, description="Event year"),
-                               event_week: Optional[int]=commands.Param(default=None, min_value=0, description="Event week")):
+                               event_year: Optional[int]=commands.Param(default=None, min_value=0, description=Strings.data_manager_set_remove_event_items_year_param_description),
+                               event_week: Optional[int]=commands.Param(default=None, min_value=0, description=Strings.data_manager_set_remove_event_items_week_param_description)):
     await inter.response.defer(with_message=True, ephemeral=True)
 
     if event_year is None or event_week is None:
       event_year, event_week = dt_helpers.get_event_index(datetime.datetime.utcnow())
 
     if event_participation_repo.remove_event_participation_items(event_year, event_week):
-      await message_utils.generate_success_message(inter, f"Removed event items for `{event_year} {event_week}`")
+      await message_utils.generate_success_message(inter, Strings.data_manager_remove_event_items_success(event_year=event_year, event_week=event_week))
     else:
-      await message_utils.generate_error_message(inter, f"Can't find event items for `{event_year} {event_week}`")
+      await message_utils.generate_error_message(inter, Strings.data_manager_remove_event_items_failed(event_year=event_year, event_week=event_week))
 
   @set_event_items.autocomplete("item1")
   @set_event_items.autocomplete("item2")

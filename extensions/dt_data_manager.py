@@ -259,13 +259,24 @@ class DTDataManager(Base_Cog):
     if event_participation_repo.get_dt_item(item4) is None:
       return await message_utils.generate_error_message(inter, Strings.data_manager_set_event_items_item_not_in_database(item=item4))
 
+    event_participation_repo.remove_event_participation_items(event_year, event_week)
+
     event_participation_repo.set_event_item(event_year, event_week, item1, base_amount1, commit=False)
     event_participation_repo.set_event_item(event_year, event_week, item2, base_amount2, commit=False)
     event_participation_repo.set_event_item(event_year, event_week, item3, base_amount3, commit=False)
     event_participation_repo.set_event_item(event_year, event_week, item4, base_amount4, commit=False)
     event_participation_repo.session.commit()
 
-    await message_utils.generate_success_message(inter, Strings.data_manager_set_event_items_success(event_year=event_year, event_week=event_week, item1=item1, item2=item2, item3=item3, item4=item4, base_amount1=base_amount1, base_amount2=base_amount2, base_amount3=base_amount3, base_amount4=base_amount4))
+    await message_utils.generate_success_message(inter, Strings.data_manager_set_event_items_success(event_year=event_year,
+                                                                                                     event_week=event_week,
+                                                                                                     item1=item1,
+                                                                                                     item2=item2,
+                                                                                                     item3=item3,
+                                                                                                     item4=item4,
+                                                                                                     base_amount1=base_amount1,
+                                                                                                     base_amount2=base_amount2,
+                                                                                                     base_amount3=base_amount3,
+                                                                                                     base_amount4=base_amount4))
 
   @data_manager.sub_command(description=Strings.data_manager_remove_event_items_description)
   @cooldowns.short_cooldown

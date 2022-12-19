@@ -259,6 +259,10 @@ class DTDataManager(Base_Cog):
     if event_participation_repo.get_dt_item(item4) is None:
       return await message_utils.generate_error_message(inter, Strings.data_manager_set_event_items_item_not_in_database(item=item4))
 
+    unique_item_names = list(set(list([item1, item2, item3, item4])))
+    if len(unique_item_names) != 4:
+      return await message_utils.generate_error_message(inter, Strings.data_manager_set_event_items_repeated_items)
+
     event_participation_repo.remove_event_participation_items(event_year, event_week)
 
     event_participation_repo.set_event_item(event_year, event_week, item1, base_amount1, commit=False)

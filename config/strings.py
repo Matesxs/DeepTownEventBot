@@ -98,6 +98,7 @@ class Strings(metaclass=Formatable):
   data_manager_set_event_items_item_amount_param_description = "Base amount for item {number}"
   data_manager_set_event_items_item_not_in_database = "Item `{item}` not found in database"
   data_manager_set_event_items_success = "Items for event `{event_year} {event_week}` set\n{item1} - {base_amount1}\n{item2} - {base_amount2}\n{item3} - {base_amount3}\n{item4} - {base_amount4}"
+  data_manager_set_event_items_repeated_items = "Inserted not unique items"
 
   data_manager_remove_event_items_description = "Remove Deep Town items for event"
   data_manager_remove_event_items_success = "Removed event items for `{event_year} {event_week}`"

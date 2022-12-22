@@ -390,7 +390,7 @@ class PublicInterface(Base_Cog):
       user_profile_lists.append(user_event_participations_stats_page)
 
       # Event participations
-      participation_pages_data = dt_report_generators.generate_participations_page_strings(all_participations, include_guild=True)
+      participation_pages_data = dt_report_generators.generate_participations_page_strings(all_participations)
       for participation_page_data in participation_pages_data:
         participation_page = disnake.Embed(title=f"{user.username} event participations", description=f"```\n{participation_page_data}\n```", color=disnake.Color.dark_blue())
         message_utils.add_author_footer(participation_page, inter.author)
@@ -401,11 +401,30 @@ class PublicInterface(Base_Cog):
     embed_view = EmbedView2D(inter.author, user_profiles, invert_list_dir=True)
     await embed_view.run(inter)
 
-  @commands.slash_command(name="event_leaderboard")
+  @commands.slash_command(name="event")
+  async def event_commands(self, inter: disnake.CommandInteraction):
+    pass
+
+  @event_commands.sub_command(name="help", description=Strings.public_interface_event_help_description)
+  @cooldowns.default_cooldown
+  async def event_help(self, inter: disnake.CommandInteraction):
+    await inter.response.defer(with_message=True)
+
+    year, week = dt_helpers.get_event_index(datetime.datetime.utcnow())
+    event_specification = event_participation_repo.get_or_create_event_specification(year, week)
+
+    item_table = dt_report_generators.get_event_items_table(event_specification)
+    if item_table is None:
+      return await message_utils.generate_error_message(inter, Strings.public_interface_event_help_no_items)
+
+    await inter.send(f"```\nYear: {year} Week: {week}\n{item_table}\n```")
+
+  @event_commands.sub_command_group(name="leaderboard")
   async def event_leaderboard(self, inter: disnake.CommandInteraction):
     pass
 
   @event_leaderboard.sub_command(name="current", description=Strings.public_interface_event_leaderboard_current_description)
+  @cooldowns.default_cooldown
   async def global_event_current_leaderboard(self, inter: disnake.CommandInteraction,
                                              user_count: int=commands.Param(default=20, min_value=1, max_value=200, description=Strings.public_interface_event_leaderboard_current_user_count_param_description)):
     await inter.response.defer(with_message=True)
@@ -413,6 +432,7 @@ class PublicInterface(Base_Cog):
     await send_event_leaderboards(inter, event_year, event_week, user_count)
 
   @event_leaderboard.sub_command(name="specific", description=Strings.public_interface_event_leaderboard_specific_description)
+  @cooldowns.default_cooldown
   async def global_event_current_leaderboard(self, inter: disnake.CommandInteraction,
                                              year: int=commands.Param(description=Strings.public_interface_event_leaderboard_specific_year_param_description),
                                              week: int=commands.Param(min_value=1, description=Strings.public_interface_event_leaderboard_specific_week_param_description),

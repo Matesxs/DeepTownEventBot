@@ -157,6 +157,9 @@ class Strings(metaclass=Formatable):
   public_interface_user_profile_description = "Show Deep Town user profile"
   public_interface_user_profile_no_users = "No users found with username `{username}`"
 
+  public_interface_event_help_description = "Show items for current item"
+  public_interface_event_help_no_items = "Items not set for this event"
+
   public_interface_event_leaderboard_current_description = "Show leaderboard of participants in current event"
   public_interface_event_leaderboard_current_user_count_param_description = "Number of top users to display"
 

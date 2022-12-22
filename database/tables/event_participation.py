@@ -11,6 +11,9 @@ class DTItem(database.base):
   name = Column(String, primary_key=True)
   value = Column(Float, nullable=False, default=0)
 
+  def __repr__(self):
+    return f"{self.name}: {self.value}"
+
 class EventItem(database.base):
   __tablename__ = "event_items"
 

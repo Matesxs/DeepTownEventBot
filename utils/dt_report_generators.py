@@ -7,7 +7,7 @@ from table2ascii import table2ascii, Alignment
 import statistics
 
 from utils import string_manipulation
-from database.tables.event_participation import EventParticipation
+from database.tables.event_participation import EventParticipation, EventSpecification
 from database.tables.dt_guild import DTGuild
 
 def generate_participation_strings(participations: List[EventParticipation], colms: List[str], colm_padding: int=0) -> List[str]:
@@ -91,11 +91,10 @@ async def send_text_guild_event_participation_report(report_channel: Union[disna
   if not participation_amounts: participation_amounts = [0]
   if not non_zero_participation_amounts: non_zero_participation_amounts = [0]
 
-  event_items_data = [(eitem.item.name, f"{eitem.item.value:.3f}") for eitem in participations[0].event_specification.participation_items]
-  event_items_table = table2ascii(["Name", "Value"], event_items_data, alignments=[Alignment.LEFT, Alignment.RIGHT])
+  event_items_table = get_event_items_table(participations[0].event_specification)
 
   description_strings = (f"{guild.name} - ID: {guild.id} - Level: {guild.level}\nYear: {participations[0].event_specification.event_year} Week: {participations[0].event_specification.event_week}\n" +
-                         (("\nEvent items:\n" + event_items_table + "\n\n") if show_event_items and event_items_data else "") +
+                         (("\nEvent items:\n" + event_items_table + "\n\n") if show_event_items and event_items_table is not None else "") +
                          f"Donate - Median: {statistics.median(non_zero_participation_amounts):.1f} Average: {statistics.mean(participation_amounts):.1f}, Total: {sum(participation_amounts)}\nActivity: {active_players}/{all_players}\n").split("\n")
 
   strings = [*description_strings]
@@ -119,3 +118,11 @@ def generate_participations_page_strings(participations: List[EventParticipation
     output_pages.append(data_string)
 
   return output_pages
+
+def get_event_items_table(event_specification: EventSpecification) -> Optional[str]:
+  if event_specification is None: return None
+  if not event_specification.participation_items: return None
+
+  event_items_data = [(eitem.item.name, f"{eitem.item.value:.3f}") for eitem in event_specification.participation_items]
+  event_items_table = table2ascii(["Name", "Value"], event_items_data, alignments=[Alignment.LEFT, Alignment.RIGHT])
+  return event_items_table

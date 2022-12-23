@@ -4,7 +4,7 @@ import re
 
 from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
-from utils import object_getters, string_manipulation, message_utils
+from utils import object_getters, string_manipulation
 
 logger = setup_custom_logger(__name__)
 

@@ -13,7 +13,7 @@ from features.base_cog import Base_Cog
 from utils import dt_helpers, message_utils, string_manipulation
 from utils.logger import setup_custom_logger
 from config import cooldowns, Strings, config
-from database import event_participation_repo, tracking_settings_repo, dt_guild_repo, dt_guild_member_repo
+from database import event_participation_repo, tracking_settings_repo, dt_guild_repo, dt_guild_member_repo, guilds_repo
 from features.views.paginator import EmbedView
 
 logger = setup_custom_logger(__name__)
@@ -461,6 +461,14 @@ class DTDataManager(Base_Cog):
 
     await asyncio.sleep(30)
     await self.bot.change_presence(activity=disnake.Game(name=config.base.status_message), status=disnake.Status.online)
+
+  @commands.Cog.listener()
+  async def on_guild_joined(self, guild: disnake.Guild):
+    guilds_repo.get_or_create_guild_if_not_exist(guild)
+
+  @commands.Cog.listener()
+  async def on_guild_remove(self, guild: disnake.Guild):
+    guilds_repo.remove_guild(guild.id)
 
 def setup(bot):
   bot.add_cog(DTDataManager(bot))

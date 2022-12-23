@@ -4,7 +4,6 @@ from typing import List
 import asyncio
 import traceback
 
-from database import guilds_repo
 from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
 
@@ -38,14 +37,6 @@ class Listeners(Base_Cog):
       await asyncio.gather(*cogs_listening_futures)
     except:
       logger.warning(f"Failed to execute message edit handler\n{traceback.format_exc()}")
-
-  @commands.Cog.listener()
-  async def on_guild_joined(self, guild: disnake.Guild):
-    guilds_repo.get_or_create_guild_if_not_exist(guild)
-
-  @commands.Cog.listener()
-  async def on_guild_remove(self, guild: disnake.Guild):
-    guilds_repo.remove_guild(guild.id)
 
 def setup(bot):
   bot.add_cog(Listeners(bot))

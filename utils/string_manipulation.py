@@ -1,5 +1,5 @@
 import math
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 def add_string_until_length(strings:List[str], max_length:int, sep:str) -> Tuple[str, List[str]]:
   output = ""
@@ -28,3 +28,9 @@ def split_to_parts(items: str, length: int) -> List[str]:
     result.append(items[x * length:(x * length) + length])
 
   return result
+
+def format_number(number: Union[int, float], precision: int=0, delim: str=" ") -> str:
+  if not isinstance(number, float):
+    number = float(number)
+
+  return f"{number:,.{precision}f}".replace(",", delim)

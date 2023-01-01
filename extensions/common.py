@@ -6,7 +6,7 @@ import humanize
 
 from config import cooldowns, Strings, config
 from features.base_cog import Base_Cog
-from utils import message_utils
+from utils import message_utils, permission_helper
 
 class Common(Base_Cog):
   def __init__(self, bot):
@@ -47,6 +47,14 @@ class Common(Base_Cog):
     message_utils.add_author_footer(embed, ctx.author)
 
     await ctx.send(embed=embed)
+
+  @commands.message_command(name="Delete Bot Message")
+  @cooldowns.short_cooldown
+  @commands.check(permission_helper.is_administrator)
+  async def delete_bot_message(self, inter: disnake.MessageCommandInteraction):
+    if inter.target.author == self.bot.user.id:
+      return await inter.target.delete()
+    return await message_utils.generate_error_message(inter, Strings.public_interface_delete_bot_message_invalid_message)
 
 
 def setup(bot):

@@ -149,7 +149,7 @@ class Strings(metaclass=Formatable):
   public_interface_search_guilds_description = "List Deep Town guilds or find specific one"
   public_interface_search_guilds_guild_name_param_description = "Guild name to search"
   public_interface_search_guilds_sort_by_param_description = "Attribute to sort guilds by"
-  public_interface_search_guilds_order_param_description = "Order method of attribute"
+  public_interface_search_guilds_order_mode_param_description = "Order method of attribute"
 
   public_interface_guild_profile_description = "Show Deep Town guild profile"
   public_interface_guild_profile_no_guilds = "No guilds found for guild identifier `{identifier}`"

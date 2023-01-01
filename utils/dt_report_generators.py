@@ -65,7 +65,7 @@ def generate_participation_strings(participations: List[EventParticipation], col
     if "Online" in colms:
       data.append(humanize.naturaltime(current_time - participation.dt_user.last_online) if participation.dt_user.last_online is not None else "*Never*")
     if "Donate" in colms:
-      data.append(participation.amount)
+      data.append(string_manipulation.format_number(participation.amount))
     if "Standing" in colms:
       if participation.amount < low_average_participation:
         data.append("Low")
@@ -95,7 +95,7 @@ async def send_text_guild_event_participation_report(report_channel: Union[disna
 
   description_strings = (f"{guild.name} - ID: {guild.id} - Level: {guild.level}\nYear: {participations[0].event_specification.event_year} Week: {participations[0].event_specification.event_week}\n" +
                          (("\nEvent items:\n" + event_items_table + "\n\n") if show_event_items and event_items_table is not None else "") +
-                         f"Donate - Median: {statistics.median(non_zero_participation_amounts):.1f} Average: {statistics.mean(participation_amounts):.1f}, Total: {sum(participation_amounts)}\nActivity: {active_players}/{all_players}\n").split("\n")
+                         f"Donate - Median: {string_manipulation.format_number(statistics.median(non_zero_participation_amounts), 1)} Average: {string_manipulation.format_number(statistics.mean(participation_amounts), 1)}, Total: {string_manipulation.format_number(sum(participation_amounts))}\nActivity: {active_players}/{all_players}\n").split("\n")
 
   strings = [*description_strings]
   strings.extend(generate_participation_strings(participations, colms, colm_padding))
@@ -123,6 +123,6 @@ def get_event_items_table(event_specification: EventSpecification) -> Optional[s
   if event_specification is None: return None
   if not event_specification.participation_items: return None
 
-  event_items_data = [(eitem.item.name, f"{eitem.item.value:.3f}") for eitem in event_specification.participation_items]
+  event_items_data = [(eitem.item.name, f"{string_manipulation.format_number(eitem.item.value, 3)}") for eitem in event_specification.participation_items]
   event_items_table = table2ascii(["Name", "Value"], event_items_data, alignments=[Alignment.LEFT, Alignment.RIGHT])
   return event_items_table

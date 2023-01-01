@@ -28,7 +28,7 @@ class BetterMessageLinks(Base_Cog):
       original_message = await object_getters.get_or_fetch_message(self.bot, original_message_channel, int(match[2]))
       if original_message is None: continue
 
-      embed = disnake.Embed(description=f"{string_manipulation.truncate_string(original_message.content, 3500) if original_message.content else '*No content*'}\n\n**Source**\n[Message link]({original_message.jump_url}) to {original_message.channel.mention}", color=disnake.Color.dark_grey())
+      embed = disnake.Embed(description=f"{string_manipulation.truncate_string(original_message.content, 3500) if original_message.content else '*No content*'}\n\n**Source**\n[Jump to message]({original_message.jump_url}) in {original_message.channel.mention}", color=disnake.Color.dark_grey())
       embed.set_author(name=f"{original_message.author.display_name} said:", icon_url=original_message.author.display_avatar.url)
       embed.timestamp = original_message.created_at
       await message.reply(embed=embed)

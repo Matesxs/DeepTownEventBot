@@ -35,6 +35,6 @@ def format_number(number: Union[int, float], precision: int=0, delim: str=" ", s
 
   result_string = f"{number:,.{precision}f}".replace(",", delim)
   if len(result_string) > scientific_notation_threshold:
-    result_string = f"{number:.{scientific_notation_precision}E}"
+    result_string = f"{number:.{scientific_notation_precision}E}".replace("+","")
 
   return result_string

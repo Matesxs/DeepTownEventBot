@@ -281,9 +281,9 @@ class PublicInterface(Base_Cog):
       event_participations_data = []
       for year, week, total, average, median, _, _ in all_guild_participations:
         best_participants = event_participation_repo.get_best_participants(guild.id, year, week, limit=1) if total != 0 else None
-        event_participations_data.append((year, week, (string_manipulation.truncate_string(best_participants[0][1], 14) if best_participants is not None else "*Unknown*"), string_manipulation.format_number(best_participants[0][4]) if best_participants else "0", string_manipulation.format_number(average, 1)))
+        event_participations_data.append((year, week, (string_manipulation.truncate_string(best_participants[0][1], 14) if best_participants is not None else "*Unknown*"), string_manipulation.format_number(best_participants[0][4]) if best_participants else "0", string_manipulation.format_number(average, 1), string_manipulation.format_number(median, 1)))
 
-      event_participations_strings = table2ascii(body=event_participations_data, header=["Year", "Week", "Top Member", "Top Donate", "Average"], alignments=[Alignment.RIGHT, Alignment.RIGHT, Alignment.LEFT, Alignment.RIGHT, Alignment.RIGHT]).split("\n")
+      event_participations_strings = table2ascii(body=event_participations_data, header=["Year", "Week", "Top Member", "Top Donate", "Average", "Median"], alignments=[Alignment.RIGHT, Alignment.RIGHT, Alignment.LEFT, Alignment.RIGHT, Alignment.RIGHT, Alignment.RIGHT]).split("\n")
       event_participations_page_strings = []
       while event_participations_strings:
         data_string, event_participations_strings = string_manipulation.add_string_until_length(event_participations_strings, 3000, "\n")

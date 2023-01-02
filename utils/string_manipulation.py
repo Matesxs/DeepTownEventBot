@@ -29,12 +29,12 @@ def split_to_parts(items: str, length: int) -> List[str]:
 
   return result
 
-def format_number(number: Union[int, float], precision: int=0, delim: str=" ", scientific_notation_threshold: int=7) -> str:
+def format_number(number: Union[int, float], precision: int=0, delim: str=" ", scientific_notation_threshold: int=7, scientific_notation_precision: int=2) -> str:
   if not isinstance(number, float):
     number = float(number)
 
   result_string = f"{number:,.{precision}f}".replace(",", delim)
   if len(result_string) > scientific_notation_threshold:
-    result_string = f"{number:.1E}"
+    result_string = f"{number:.{scientific_notation_precision}E}"
 
   return result_string

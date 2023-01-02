@@ -256,10 +256,10 @@ class PublicInterface(Base_Cog):
 
       guild_event_participations_stats_page = disnake.Embed(title=f"{guild.name} event participations stats", color=disnake.Color.dark_blue())
       message_utils.add_author_footer(guild_event_participations_stats_page, inter.author)
-      guild_event_participations_stats_page.add_field(name="Average donate per event", value=f"{string_manipulation.format_number(statistics.mean(all_guild_participation_amounts), 1)}", inline=False)
-      guild_event_participations_stats_page.add_field(name="Median donate per event", value=f"{string_manipulation.format_number(statistics.median([p for p in all_guild_participation_amounts if p > 0]), 1)}", inline=False)
-      guild_event_participations_stats_page.add_field(name="Average donate per event last year", value=f"{string_manipulation.format_number(statistics.mean(last_year_guild_participations_amounts), 1)}", inline=False)
-      guild_event_participations_stats_page.add_field(name="Median donate per event last year", value=f"{string_manipulation.format_number(statistics.median([p for p in last_year_guild_participations_amounts if p > 0]), 1)}", inline=False)
+      guild_event_participations_stats_page.add_field(name="Average donate per event", value=f"{string_manipulation.format_number(statistics.mean(all_guild_participation_amounts), 1, scientific_notation_threshold=10)}", inline=False)
+      guild_event_participations_stats_page.add_field(name="Median donate per event", value=f"{string_manipulation.format_number(statistics.median([p for p in all_guild_participation_amounts if p > 0]), 1, scientific_notation_threshold=10)}", inline=False)
+      guild_event_participations_stats_page.add_field(name="Average donate per event last year", value=f"{string_manipulation.format_number(statistics.mean(last_year_guild_participations_amounts), 1, scientific_notation_threshold=10)}", inline=False)
+      guild_event_participations_stats_page.add_field(name="Median donate per event last year", value=f"{string_manipulation.format_number(statistics.median([p for p in last_year_guild_participations_amounts if p > 0]), 1, scientific_notation_threshold=10)}", inline=False)
       guild_profile_lists.append(guild_event_participations_stats_page)
 
       # Event best contributors
@@ -383,10 +383,10 @@ class PublicInterface(Base_Cog):
       # Event participation stats
       user_event_participations_stats_page = disnake.Embed(title=f"{user.username} event participations stats", color=disnake.Color.dark_blue())
       message_utils.add_author_footer(user_event_participations_stats_page, inter.author)
-      user_event_participations_stats_page.add_field(name="Average donate", value=string_manipulation.format_number(statistics.mean(all_participations_amounts), 1))
-      user_event_participations_stats_page.add_field(name="Median donate", value=string_manipulation.format_number(statistics.median([p for p in all_participations_amounts if p > 0]), 1), inline=False)
-      user_event_participations_stats_page.add_field(name="Average donate last year", value=string_manipulation.format_number(statistics.mean(this_year_participations_amounts), 1))
-      user_event_participations_stats_page.add_field(name="Median donate last year", value=string_manipulation.format_number(statistics.median([p for p in this_year_participations_amounts if p > 0]), 1), inline=False)
+      user_event_participations_stats_page.add_field(name="Average donate", value=string_manipulation.format_number(statistics.mean(all_participations_amounts), 1, scientific_notation_threshold=10))
+      user_event_participations_stats_page.add_field(name="Median donate", value=string_manipulation.format_number(statistics.median([p for p in all_participations_amounts if p > 0]), 1, scientific_notation_threshold=10), inline=False)
+      user_event_participations_stats_page.add_field(name="Average donate last year", value=string_manipulation.format_number(statistics.mean(this_year_participations_amounts), 1, scientific_notation_threshold=10))
+      user_event_participations_stats_page.add_field(name="Median donate last year", value=string_manipulation.format_number(statistics.median([p for p in this_year_participations_amounts if p > 0]), 1, scientific_notation_threshold=10), inline=False)
       user_profile_lists.append(user_event_participations_stats_page)
 
       # Event participations

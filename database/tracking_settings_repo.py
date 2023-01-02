@@ -10,11 +10,12 @@ from utils.dt_helpers import DTGuildData
 def get_tracking_settings(guild_id: int, dt_guild_id: int) -> Optional[TrackingSettings]:
   return session.query(TrackingSettings).filter(TrackingSettings.guild_id == str(guild_id), TrackingSettings.dt_guild_id == dt_guild_id).one_or_none()
 
-def get_or_create_tracking_settings(guild: disnake.Guild, dt_guild_data: DTGuildData, announce_channel_id:Optional[int]=None) -> TrackingSettings:
+def get_or_create_tracking_settings(guild: disnake.Guild, dt_guild_data: DTGuildData, announce_channel_id:Optional[int]=None) -> Optional[TrackingSettings]:
   item = get_tracking_settings(guild.id, dt_guild_data.id)
   if item is None:
     get_or_create_guild_if_not_exist(guild)
-    get_and_update_dt_guild(dt_guild_data)
+    if get_and_update_dt_guild(dt_guild_data) is None:
+      return None
 
     item = TrackingSettings(guild_id=str(guild.id), dt_guild_id=dt_guild_data.id, announce_channel_id=str(announce_channel_id) if announce_channel_id is not None else None)
     session.add(item)

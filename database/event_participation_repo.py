@@ -6,7 +6,7 @@ from sqlalchemy import func
 from database import session
 from database.tables.event_participation import EventParticipation, EventSpecification, EventItem, DTItem
 from database.dt_guild_member_repo import get_and_update_dt_guild_members, create_dummy_dt_guild_member
-from database import dt_user_repo, dt_guild_repo
+from database import dt_user_repo, dt_guild_repo, dt_blacklist_repo
 from utils import dt_helpers
 
 def get_dt_item(name: str) -> Optional[DTItem]:
@@ -199,10 +199,12 @@ def get_recent_guild_event_participations(dt_guild_id: int) -> List[EventPartici
   return get_event_participations(guild_id=dt_guild_id, year=recent_year, week=recent_week, order_by=[EventParticipation.amount.desc()])
 
 
-def get_and_update_event_participation(user_id: int, guild_id: int, event_year: int, event_week: int, participation_amount: int) -> EventParticipation:
+def get_and_update_event_participation(user_id: int, guild_id: int, event_year: int, event_week: int, participation_amount: int) -> Optional[EventParticipation]:
   item = session.query(EventParticipation).filter(EventSpecification.event_year == event_year, EventSpecification.event_week == event_week, EventParticipation.dt_user_id == user_id, EventParticipation.dt_guild_id == guild_id).join(EventSpecification).one_or_none()
   if item is None:
-    create_dummy_dt_guild_member(user_id, guild_id)
+    if create_dummy_dt_guild_member(user_id, guild_id) is None:
+      return None
+
     specification = get_or_create_event_specification(event_year, event_week)
 
     item = EventParticipation(event_id=specification.event_id, dt_guild_id=guild_id, dt_user_id=user_id, amount=participation_amount)
@@ -212,8 +214,9 @@ def get_and_update_event_participation(user_id: int, guild_id: int, event_year: 
   return item
 
 
-def generate_or_update_event_participations(guild_data: dt_helpers.DTGuildData) -> List[EventParticipation]:
-  get_and_update_dt_guild_members(guild_data)
+def generate_or_update_event_participations(guild_data: dt_helpers.DTGuildData) -> Optional[List[EventParticipation]]:
+  if get_and_update_dt_guild_members(guild_data) is None:
+    return None
 
   event_year, event_week = dt_helpers.get_event_index(datetime.datetime.utcnow())
   prev_event_year, prev_event_week = dt_helpers.get_event_index(datetime.datetime.utcnow() - datetime.timedelta(days=7))
@@ -230,7 +233,9 @@ def generate_or_update_event_participations(guild_data: dt_helpers.DTGuildData) 
 
   participations = []
   for player_data in guild_data.players:
-    participations.append(get_and_update_event_participation(player_data.id, guild_data.id, event_year, event_week, player_data.last_event_contribution if updated else 0))
+    participation = get_and_update_event_participation(player_data.id, guild_data.id, event_year, event_week, player_data.last_event_contribution if updated else 0)
+    if participation is not None:
+      participations.append(participation)
   session.commit()
   return participations
 

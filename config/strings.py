@@ -169,3 +169,19 @@ class Strings(metaclass=Formatable):
   public_interface_event_leaderboard_specific_user_count_param_description = "Number of top users to display"
 
   public_interface_delete_bot_message_invalid_message = "This is not message of this bot!"
+
+  # Blacklist
+  blacklist_type_param_description = "Blacklist type"
+  blacklist_identifier_param_description = "ID of subject"
+
+  blacklist_add_description = "Add subject to blacklist"
+  blacklist_add_already_on_blacklist = "This subject is already on blacklist"
+  blacklist_add_invalid_type = "Invalid blacklist type"
+  blacklist_add_subject_not_found = "Subject is not in database"
+  blacklist_add_success = "Subject `{subject_name}` of type `{type}` added to blacklist and removed from records"
+
+  blacklist_remove_description = "Remove subject from blacklist"
+  blacklist_remove_success = "Removed subject with identifier `{identifier}` of type `{type}` from blacklist"
+  blacklist_remove_failed = "Subject with identifier `{identifier}` of type `{type}` is not on blacklist"
+
+  blacklist_list_description = "List all subjects on blacklist"

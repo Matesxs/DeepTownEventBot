@@ -346,7 +346,7 @@ class PublicInterface(Base_Cog):
     for user in matched_users:
       user_profile_lists = []
 
-      guild_data = await dt_helpers.get_dt_guild_data(self.bot, user.active_member.guild.id)
+      guild_data = (await dt_helpers.get_dt_guild_data(self.bot, user.active_member.guild.id)) if user.active_member else None
       if guild_data is not None:
         event_participation_repo.generate_or_update_event_participations(guild_data)
         user = dt_user_repo.get_dt_user(user.id)

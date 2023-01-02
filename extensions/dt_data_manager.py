@@ -340,6 +340,9 @@ class DTDataManager(Base_Cog):
           year = int(row["year"])
 
           member = dt_guild_member_repo.create_dummy_dt_guild_member(user_id, guild_id)
+          if member is None:
+            continue
+
           if "username" in row.keys():
             member.user.username = row["username"]
           if "guild_name" in row.keys():

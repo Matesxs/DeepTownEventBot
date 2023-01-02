@@ -14,9 +14,9 @@ from features.views.paginator import EmbedView
 
 logger = setup_custom_logger(__name__)
 
-class DTEventTracker(Base_Cog):
+class DTEventReportAnnouncer(Base_Cog):
   def __init__(self, bot):
-    super(DTEventTracker, self).__init__(bot, __file__)
+    super(DTEventReportAnnouncer, self).__init__(bot, __file__)
     if not self.result_announce_task.is_running():
       self.result_announce_task.start()
 
@@ -27,14 +27,14 @@ class DTEventTracker(Base_Cog):
   @commands.slash_command()
   @commands.check(permission_helper.is_administrator)
   @commands.guild_only()
-  async def tracker(self, inter: disnake.CommandInteraction):
+  async def announcer(self, inter: disnake.CommandInteraction):
     pass
 
-  @tracker.sub_command(name="add_or_modify", description=Strings.event_data_tracker_add_or_modify_tracker_description)
+  @announcer.sub_command(name="add_or_modify", description=Strings.event_report_announcer_add_or_modify_tracker_description)
   @cooldowns.default_cooldown
   async def add_or_modify_tracker(self, inter: disnake.CommandInteraction,
                                   guild_id: int=commands.Param(description=Strings.dt_guild_id_param_description),
-                                  announce_channel: disnake.TextChannel=commands.Param(description=Strings.event_data_tracker_add_or_modify_tracker_announce_channel_param_description)):
+                                  announce_channel: disnake.TextChannel=commands.Param(description=Strings.event_report_announcer_add_or_modify_tracker_announce_channel_param_description)):
     await inter.response.defer(with_message=True, ephemeral=True)
 
     existing_tracker = tracking_settings_repo.get_tracking_settings(inter.guild.id, guild_id)
@@ -42,11 +42,11 @@ class DTEventTracker(Base_Cog):
       all_trackers = tracking_settings_repo.get_all_guild_trackers(inter.guild.id)
       if self.bot.owner is None or inter.author.id != self.bot.owner.id:
         if len(all_trackers) >= config.event_tracker.tracker_limit_per_guild:
-          return await message_utils.generate_error_message(inter, Strings.event_data_tracker_add_or_modify_tracker_tracker_limit_reached(limit=config.event_data_tracker.tracker_limit_per_guild))
+          return await message_utils.generate_error_message(inter, Strings.event_report_announcer_add_or_modify_tracker_tracker_limit_reached(limit=config.event_report_announcer.tracker_limit_per_guild))
 
       data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
       if data is None:
-        return await message_utils.generate_error_message(inter, Strings.event_data_tracker_add_or_modify_tracker_failed_to_get_data)
+        return await message_utils.generate_error_message(inter, Strings.event_report_announcer_add_or_modify_tracker_failed_to_get_data)
 
       guild_name = data.name
 
@@ -57,9 +57,9 @@ class DTEventTracker(Base_Cog):
       existing_tracker.announce_channel_id = str(announce_channel.id)
       tracking_settings_repo.session.commit()
 
-    await message_utils.generate_success_message(inter, Strings.event_data_tracker_add_or_modify_tracker_success_with_channel(guild=guild_name, channel=announce_channel.name))
+    await message_utils.generate_success_message(inter, Strings.event_report_announcer_add_or_modify_tracker_success_with_channel(guild=guild_name, channel=announce_channel.name))
 
-  @tracker.sub_command(name="remove", description=Strings.event_data_tracker_remove_tracker_description)
+  @announcer.sub_command(name="remove", description=Strings.event_report_announcer_remove_tracker_description)
   @cooldowns.default_cooldown
   async def remove_tracker(self, inter: disnake.CommandInteraction,
                                  guild_id: int=commands.Param(description=Strings.dt_guild_id_param_description)):
@@ -67,18 +67,18 @@ class DTEventTracker(Base_Cog):
     guild_name = settings.dt_guild.name
 
     if tracking_settings_repo.remove_tracking_settings(inter.guild.id, guild_id):
-      await message_utils.generate_success_message(inter, Strings.event_data_tracker_remove_tracker_success(guild=guild_name))
+      await message_utils.generate_success_message(inter, Strings.event_report_announcer_remove_tracker_success(guild=guild_name))
     else:
-      await message_utils.generate_error_message(inter, Strings.event_data_tracker_remove_tracker_failed(guild_id=guild_id))
+      await message_utils.generate_error_message(inter, Strings.event_report_announcer_remove_tracker_failed(guild_id=guild_id))
 
-  @tracker.sub_command(name="list", description=Strings.event_data_tracker_list_trackers_description)
+  @announcer.sub_command(name="list", description=Strings.event_report_announcer_list_trackers_description)
   @cooldowns.default_cooldown
   async def list_guild_trackers(self, inter: disnake.CommandInteraction):
     guild_trackers = tracking_settings_repo.get_all_guild_trackers(inter.guild.id)
     number_of_trackers = len(guild_trackers)
 
     if number_of_trackers == 0:
-      return await message_utils.generate_error_message(inter, Strings.event_data_tracker_list_trackers_no_trackers)
+      return await message_utils.generate_error_message(inter, Strings.event_report_announcer_list_trackers_no_trackers)
 
     num_of_batches = math.ceil(number_of_trackers / 12)
     batches = [guild_trackers[i * 12:i * 12 + 12] for i in range(num_of_batches)]
@@ -99,20 +99,20 @@ class DTEventTracker(Base_Cog):
     embed_view = EmbedView(inter.author, pages, invisible=True)
     await embed_view.run(inter)
 
-  @tracker.sub_command(description=Strings.event_data_tracker_generate_announcements_description)
+  @announcer.sub_command(description=Strings.event_report_announcer_generate_announcements_description)
   @cooldowns.huge_cooldown
   async def generate_announcements(self, inter: disnake.CommandInteraction):
     await inter.response.defer(with_message=True, ephemeral=True)
 
     trackers = tracking_settings_repo.get_all_guild_trackers(inter.guild.id)
     if not trackers:
-      return await message_utils.generate_error_message(inter, Strings.event_data_tracker_generate_announcements_no_data)
+      return await message_utils.generate_error_message(inter, Strings.event_report_announcer_generate_announcements_no_data)
 
     for tracker in trackers:
       await self.send_tracker_text_announcement(tracker)
       await asyncio.sleep(0.1)
 
-    await message_utils.generate_success_message(inter, Strings.event_data_tracker_generate_announcements_success)
+    await message_utils.generate_success_message(inter, Strings.event_report_announcer_generate_announcements_success)
 
   async def send_tracker_text_announcement(self, tracker: tracking_settings_repo.TrackingSettings):
     announce_channel = await tracker.get_announce_channel(self.bot)
@@ -165,4 +165,4 @@ class DTEventTracker(Base_Cog):
     await asyncio.sleep(delta_to_next_monday.total_seconds())
 
 def setup(bot):
-  bot.add_cog(DTEventTracker(bot))
+  bot.add_cog(DTEventReportAnnouncer(bot))

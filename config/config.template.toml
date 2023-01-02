@@ -19,7 +19,7 @@ database_connect_string = "postgresql://postgres:postgres@db:5432/postgres" # Ex
 
 log_channel_id = -1
 
-default_loaded_extensions = ["common", "dt_data_manager", "dt_event_tracker", "public_interface", "better_message_links"]
+default_loaded_extensions = ["common", "dt_data_manager", "dt_report_announcer", "public_interface", "better_message_links"]
 
 [data_manager]
 ignore_empty_guilds = true

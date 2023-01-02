@@ -12,7 +12,7 @@ from features.base_cog import Base_Cog
 from features.base_bot import BaseAutoshardedBot
 from utils.logger import setup_custom_logger
 from config import cooldowns, Strings
-from utils import dt_helpers, dt_report_generators, message_utils, string_manipulation, permission_helper
+from utils import dt_helpers, dt_report_generators, message_utils, string_manipulation
 from features.views.paginator import EmbedView
 from features.views.paginator2d import EmbedView2D
 from database import event_participation_repo, dt_user_repo, dt_guild_repo, dt_guild_member_repo
@@ -60,7 +60,7 @@ async def send_event_leaderboards(inter: disnake.CommandInteraction, year: int, 
   participant_data_page_strings = []
   while participant_data_table_strings:
     data_string, participant_data_table_strings = string_manipulation.add_string_until_length(participant_data_table_strings, 1900, "\n")
-    participant_data_page_strings.append(f"```py\n{data_string}\n```")
+    participant_data_page_strings.append(f"```\n{data_string}\n```")
 
   for participant_data_page_string in participant_data_page_strings:
     await inter.send(participant_data_page_string)

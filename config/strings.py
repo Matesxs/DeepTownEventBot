@@ -115,24 +115,24 @@ class Strings(metaclass=Formatable):
   data_manager_dump_guild_participation_data_success = "Dump created"
 
   # Event Tracker
-  event_data_tracker_add_or_modify_tracker_description = "Add guild for tracking or modify existing announcement channel"
-  event_data_tracker_add_or_modify_tracker_failed_to_get_data = "Failed to get guild data"
-  event_data_tracker_add_or_modify_tracker_tracker_limit_reached = "Tracker limit ({limit} per guild) reached"
-  event_data_tracker_add_or_modify_tracker_success_with_channel = "Set tracking for guild `{guild}` and announcement to channel `{channel}`"
-  event_data_tracker_add_or_modify_tracker_announce_channel_param_description = "Channel for announcing results at the end of event"
+  event_report_announcer_add_or_modify_tracker_description = "Add guild for tracking or modify existing announcement channel"
+  event_report_announcer_add_or_modify_tracker_failed_to_get_data = "Failed to get guild data"
+  event_report_announcer_add_or_modify_tracker_tracker_limit_reached = "Tracker limit ({limit} per guild) reached"
+  event_report_announcer_add_or_modify_tracker_success_with_channel = "Set tracking for guild `{guild}` and announcement to channel `{channel}`"
+  event_report_announcer_add_or_modify_tracker_announce_channel_param_description = "Channel for announcing results at the end of event"
 
-  event_data_tracker_remove_tracker_description = "Remove event tracker and its announcement settings"
-  event_data_tracker_remove_tracker_success = "Removed tracking for guild `{guild}`"
-  event_data_tracker_remove_tracker_failed = "Can't find tracking settings for guild with id `{guild_id}`"
+  event_report_announcer_remove_tracker_description = "Remove event tracker and its announcement settings"
+  event_report_announcer_remove_tracker_success = "Removed tracking for guild `{guild}`"
+  event_report_announcer_remove_tracker_failed = "Can't find tracking settings for guild with id `{guild_id}`"
 
-  event_data_tracker_list_trackers_description = "List all active trackers for this discord guild"
-  event_data_tracker_list_trackers_no_trackers = "No trackers found"
+  event_report_announcer_list_trackers_description = "List all active trackers for this discord guild"
+  event_report_announcer_list_trackers_no_trackers = "No trackers found"
 
-  event_data_tracker_generate_announcements_description = "Generate announcements for tracked guild by current discord guild"
-  event_data_tracker_generate_announcements_no_data = "No data found"
-  event_data_tracker_generate_announcements_success = "Announcements generated"
+  event_report_announcer_generate_announcements_description = "Generate announcements for tracked guild by current discord guild"
+  event_report_announcer_generate_announcements_no_data = "No data found"
+  event_report_announcer_generate_announcements_success = "Announcements generated"
 
-  event_data_tracker_guild_report_description = "Generate Deep Town guild report"
+  event_report_announcer_guild_report_description = "Generate Deep Town guild report"
 
   # Public interface
   public_interface_guild_data_not_received = "No data retrieved from server for guild with identifier `{identifier}`"

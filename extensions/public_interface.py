@@ -141,8 +141,12 @@ class PublicInterface(Base_Cog):
 
       all_participation_amounts = [member_participation.amount for member_participation in member_participations]
       if not all_participation_amounts: all_participation_amounts = [0]
+      all_participations_amounts_no_zero = [p for p in all_participation_amounts if p > 0]
+      if not all_participations_amounts_no_zero: all_participations_amounts_no_zero = [0]
       this_year_participation_amounts = [p.amount for p in event_participation_repo.get_event_participations(user_id=dt_user.id, year=current_year)]
       if not this_year_participation_amounts: this_year_participation_amounts = [0]
+      this_year_participations_amounts_no_zero = [p for p in this_year_participation_amounts if p > 0]
+      if not this_year_participations_amounts_no_zero: this_year_participations_amounts_no_zero = [0]
 
       member_front_page = disnake.Embed(title=f"{string_manipulation.truncate_string(dt_user.username, 20)}", color=disnake.Color.dark_blue())
       message_utils.add_author_footer(member_front_page, inter.author)
@@ -155,9 +159,9 @@ class PublicInterface(Base_Cog):
 
       member_participation_stats_page = disnake.Embed(title=f"{string_manipulation.truncate_string(dt_user.username, 20)} event participations stats", color=disnake.Color.dark_blue())
       member_participation_stats_page.add_field(name="Average donate", value=f"{string_manipulation.format_number(statistics.mean(all_participation_amounts))}")
-      member_participation_stats_page.add_field(name="Median donate", value=f"{string_manipulation.format_number(statistics.median([p for p in all_participation_amounts if p > 0]))}", inline=False)
+      member_participation_stats_page.add_field(name="Median donate", value=f"{string_manipulation.format_number(statistics.median(all_participations_amounts_no_zero))}", inline=False)
       member_participation_stats_page.add_field(name="Average donate last year", value=f"{string_manipulation.format_number(statistics.mean(this_year_participation_amounts))}")
-      member_participation_stats_page.add_field(name="Median donate last year", value=f"{string_manipulation.format_number(statistics.median([p for p in this_year_participation_amounts if p > 0]))}", inline=False)
+      member_participation_stats_page.add_field(name="Median donate last year", value=f"{string_manipulation.format_number(statistics.median(this_year_participations_amounts_no_zero))}", inline=False)
       member_pages.append(member_participation_stats_page)
 
       participation_pages_data = dt_report_generators.generate_participations_page_strings(member_participations)
@@ -246,13 +250,17 @@ class PublicInterface(Base_Cog):
       if not all_guild_participation_amounts: all_guild_participation_amounts = [0]
       last_year_guild_participations_amounts = [p[2] for p in event_participation_repo.get_guild_event_participations_data(guild.id, current_year)]
       if not last_year_guild_participations_amounts: last_year_guild_participations_amounts = [0]
+      all_guild_participation_amounts_no_zero = [p for p in all_guild_participation_amounts if p > 0]
+      if not all_guild_participation_amounts_no_zero: all_guild_participation_amounts_no_zero = [0]
+      last_year_guild_participations_amounts_no_zero = [p for p in last_year_guild_participations_amounts if p > 0]
+      if not last_year_guild_participations_amounts_no_zero: last_year_guild_participations_amounts_no_zero = [0]
 
       guild_event_participations_stats_page = disnake.Embed(title=f"{string_manipulation.truncate_string(guild.name, 20)} event participations stats", color=disnake.Color.dark_blue())
       message_utils.add_author_footer(guild_event_participations_stats_page, inter.author)
       guild_event_participations_stats_page.add_field(name="Average donate per event", value=f"{string_manipulation.format_number(statistics.mean(all_guild_participation_amounts))}", inline=False)
-      guild_event_participations_stats_page.add_field(name="Median donate per event", value=f"{string_manipulation.format_number(statistics.median([p for p in all_guild_participation_amounts if p > 0]))}", inline=False)
+      guild_event_participations_stats_page.add_field(name="Median donate per event", value=f"{string_manipulation.format_number(statistics.median(all_guild_participation_amounts_no_zero))}", inline=False)
       guild_event_participations_stats_page.add_field(name="Average donate per event last year", value=f"{string_manipulation.format_number(statistics.mean(last_year_guild_participations_amounts))}", inline=False)
-      guild_event_participations_stats_page.add_field(name="Median donate per event last year", value=f"{string_manipulation.format_number(statistics.median([p for p in last_year_guild_participations_amounts if p > 0]))}", inline=False)
+      guild_event_participations_stats_page.add_field(name="Median donate per event last year", value=f"{string_manipulation.format_number(statistics.median(last_year_guild_participations_amounts_no_zero))}", inline=False)
       guild_profile_lists.append(guild_event_participations_stats_page)
 
       # Event best contributors
@@ -310,9 +318,9 @@ class PublicInterface(Base_Cog):
       event_participations_data = []
       for year, week, total, average, median, _, _ in all_guild_participations:
         best_participants = event_participation_repo.get_best_participants(guild.id, year, week, limit=1) if total != 0 else None
-        event_participations_data.append((year, week, (string_manipulation.truncate_string(best_participants[0][1], 14) if best_participants is not None else "*Unknown*"), string_manipulation.format_number(best_participants[0][4]) if best_participants else "0", string_manipulation.format_number(average), string_manipulation.format_number(median)))
+        event_participations_data.append((year, week, (string_manipulation.truncate_string(best_participants[0][1], 10) if best_participants is not None else "*Unknown*"), string_manipulation.format_number(best_participants[0][4]) if best_participants else "0", string_manipulation.format_number(average)))
 
-      event_participations_strings = table2ascii(body=event_participations_data, header=["Year", "Week", "Top Member", "Top Donate", "Average", "Median"], alignments=[Alignment.RIGHT, Alignment.RIGHT, Alignment.LEFT, Alignment.RIGHT, Alignment.RIGHT, Alignment.RIGHT]).split("\n")
+      event_participations_strings = table2ascii(body=event_participations_data, header=["Year", "Week", "Top Member", "Top Donate", "Average"], alignments=[Alignment.RIGHT, Alignment.RIGHT, Alignment.LEFT, Alignment.RIGHT, Alignment.RIGHT, Alignment.RIGHT]).split("\n")
       event_participations_page_strings = []
       while event_participations_strings:
         data_string, event_participations_strings = string_manipulation.add_string_until_length(event_participations_strings, 3000, "\n")
@@ -408,8 +416,12 @@ class PublicInterface(Base_Cog):
       all_participations = event_participation_repo.get_event_participations(user_id=user.id)
       all_participations_amounts = [p.amount for p in all_participations]
       if not all_participations_amounts: all_participations_amounts = [0]
+      all_participations_amounts_no_zero = [p for p in all_participations_amounts if p > 0]
+      if not all_participations_amounts_no_zero: all_participations_amounts_no_zero = [0]
       this_year_participations_amounts = [p.amount for p in event_participation_repo.get_event_participations(user_id=user.id, year=current_year)]
       if not this_year_participations_amounts: this_year_participations_amounts = [0]
+      this_year_participations_amounts_no_zero = [p for p in this_year_participations_amounts if p > 0]
+      if not this_year_participations_amounts_no_zero: this_year_participations_amounts_no_zero = [0]
 
       # Front page
       user_front_page = disnake.Embed(title=f"{string_manipulation.truncate_string(user.username, 20)}", color=disnake.Color.dark_blue())
@@ -438,9 +450,9 @@ class PublicInterface(Base_Cog):
       user_event_participations_stats_page = disnake.Embed(title=f"{string_manipulation.truncate_string(user.username, 20)} event participations stats", color=disnake.Color.dark_blue())
       message_utils.add_author_footer(user_event_participations_stats_page, inter.author)
       user_event_participations_stats_page.add_field(name="Average donate", value=string_manipulation.format_number(statistics.mean(all_participations_amounts)))
-      user_event_participations_stats_page.add_field(name="Median donate", value=string_manipulation.format_number(statistics.median([p for p in all_participations_amounts if p > 0])), inline=False)
+      user_event_participations_stats_page.add_field(name="Median donate", value=string_manipulation.format_number(statistics.median(all_participations_amounts_no_zero)), inline=False)
       user_event_participations_stats_page.add_field(name="Average donate last year", value=string_manipulation.format_number(statistics.mean(this_year_participations_amounts)))
-      user_event_participations_stats_page.add_field(name="Median donate last year", value=string_manipulation.format_number(statistics.median([p for p in this_year_participations_amounts if p > 0])), inline=False)
+      user_event_participations_stats_page.add_field(name="Median donate last year", value=string_manipulation.format_number(statistics.median(this_year_participations_amounts_no_zero)), inline=False)
       user_profile_lists.append(user_event_participations_stats_page)
 
       # Event participations

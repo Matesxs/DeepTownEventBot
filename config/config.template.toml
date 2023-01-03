@@ -37,3 +37,6 @@ tracker_limit_per_guild = 10
 announce_day_index = 0 # 0 - monday, 6 - sunday
 announce_time_hours = 10
 announce_time_minutes = 0
+
+[blacklist]
+report_channel_id = -1

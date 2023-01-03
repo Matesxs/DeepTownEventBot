@@ -136,7 +136,7 @@ class DTBlacklist(Base_Cog):
     if len(specifier) != 1 or not str(specifier[0]).isnumeric():
       return await message_utils.generate_error_message(inter, Strings.blacklist_report_invalid_identifier)
 
-    guild = dt_guild_repo.get_dt_guild(int(specifier[1]))
+    guild = dt_guild_repo.get_dt_guild(int(specifier[0]))
     if guild is None:
       return await message_utils.generate_error_message(inter, Strings.blacklist_report_guild_cheater_guild_not_found)
 

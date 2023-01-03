@@ -176,9 +176,10 @@ class Strings(metaclass=Formatable):
 
   # Blacklist
   blacklist_type_param_description = "Blacklist type"
-  blacklist_identifier_param_description = "ID of subject"
+  blacklist_identifier_param_description = "Identifier of subject"
 
   blacklist_add_description = "Add subject to blacklist"
+  blacklist_add_invalid_identifier = "Invalid identifier entered"
   blacklist_add_already_on_blacklist = "This subject is already on blacklist"
   blacklist_add_invalid_type = "Invalid blacklist type"
   blacklist_add_subject_not_found = "Subject is not in database"
@@ -190,14 +191,12 @@ class Strings(metaclass=Formatable):
 
   blacklist_list_description = "List all subjects on blacklist"
 
+  blacklist_report_cheater_description = "Report user cheater to bot administrator"
+  blacklist_report_cheater_invalid_report_type = "Invalid report type"
   blacklist_report_identifier_param_description = "Identifier of entity to report"
   blacklist_report_reason_param_description = "Optional reason why you think this entity is cheating"
   blacklist_report_report_channel_not_found = "Report channel not found, unable to report cheater"
   blacklist_report_invalid_identifier = "Invalid identifier entered"
   blacklist_report_success = "Report submited"
-
-  blacklist_report_user_cheater_description = "Report user cheater to bot administrator"
   blacklist_report_user_cheater_user_not_found = "User not found in database"
-
-  blacklist_report_guild_cheater_description = "Report guild cheater to bot administrator"
   blacklist_report_guild_cheater_guild_not_found = "Guild not found in database"

@@ -29,12 +29,22 @@ def split_to_parts(items: str, length: int) -> List[str]:
 
   return result
 
-def format_number(number: Union[int, float], precision: int=0, delim: str=" ", scientific_notation_threshold: int=7, scientific_notation_precision: int=2) -> str:
-  if not isinstance(number, float):
+def format_number(number: Union[int, float], precision: int=2) -> str:
+  if isinstance(number, int):
     number = float(number)
 
-  result_string = f"{number:,.{precision}f}".replace(",", delim)
-  if len(result_string) > scientific_notation_threshold:
-    result_string = f"{number:.{scientific_notation_precision}E}".replace("+","")
+  units = ""
+  if number / 1_000_000_000_000 >= 1:
+    number /= 1_000_000_000_000
+    units = "T"
+  elif number / 1_000_000_000 >= 1:
+    number /= 1_000_000_000
+    units = "G"
+  elif number / 1_000_000 >= 1:
+    number /= 1_000_000
+    units = "M"
+  elif number / 1_000 >= 1:
+    number /= 1_000
+    units = "k"
 
-  return result_string
+  return f"{number:.{precision}f}{units}"

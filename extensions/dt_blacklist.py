@@ -17,7 +17,8 @@ class DTBlacklist(Base_Cog):
   def __init__(self, bot):
     super(DTBlacklist, self).__init__(bot, __file__)
 
-    self.identificators = []
+    self.identificators = [f"USER {user.username} ({user.id})" for user in dt_user_repo.get_all_users()]
+    self.identificators.extend([f"GUILD {guild.name} ({guild.id})" for guild in dt_guild_repo.get_all_guilds()])
     if not self.update_identificators_task.is_running():
       self.update_identificators_task.start()
 
@@ -150,8 +151,10 @@ class DTBlacklist(Base_Cog):
 
   @tasks.loop(minutes=30)
   async def update_identificators_task(self):
-    self.identificators = [f"USER {user.username} ({user.id})" for user in dt_user_repo.get_all_users()]
-    self.identificators.extend([f"GUILD {guild.name} ({guild.id})" for guild in dt_guild_repo.get_all_guilds()])
+    await asyncio.sleep(30)
+    new_identificators = [f"USER {user.username} ({user.id})" for user in dt_user_repo.get_all_users()]
+    new_identificators.extend([f"GUILD {guild.name} ({guild.id})" for guild in dt_guild_repo.get_all_guilds()])
+    self.identificators = new_identificators
 
 def setup(bot):
   bot.add_cog(DTBlacklist(bot))

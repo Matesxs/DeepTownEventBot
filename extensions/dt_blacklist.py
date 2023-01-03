@@ -105,9 +105,8 @@ class DTBlacklist(Base_Cog):
       return await message_utils.generate_error_message(inter, "Report channel not found, unable to report cheater")
 
     specifier = id_in_identifier_regex.findall(identifier)
-    if len(specifier) != 1 or len(specifier[0]) != 1 or not str(specifier[0][0]).isnumeric():
+    if len(specifier) != 1 or not str(specifier[0]).isnumeric():
       return await message_utils.generate_error_message(inter, "Invalid identifier entered")
-    specifier = specifier[0]
 
     user = dt_user_repo.get_dt_user(int(specifier[0]))
     if user is None:
@@ -134,9 +133,8 @@ class DTBlacklist(Base_Cog):
       return await message_utils.generate_error_message(inter, "Report channel not found, unable to report cheater")
 
     specifier = id_in_identifier_regex.findall(identifier)
-    if len(specifier) != 1 or len(specifier[0]) != 1 or not str(specifier[0][0]).isnumeric():
+    if len(specifier) != 1 or not str(specifier[0]).isnumeric():
       return await message_utils.generate_error_message(inter, "Invalid identifier entered")
-    specifier = specifier[0]
 
     guild = dt_guild_repo.get_dt_guild(int(specifier[1]))
     if guild is None:

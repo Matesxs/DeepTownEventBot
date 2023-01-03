@@ -93,24 +93,24 @@ class DTBlacklist(Base_Cog):
     embed_view = EmbedView(inter.author, blacklist_pages)
     await embed_view.run(inter)
 
-  @blacklist_commands.sub_command(description="Report user cheater to bot administrator")
+  @blacklist_commands.sub_command(description=Strings.blacklist_report_user_cheater_description)
   @cooldowns.long_cooldown
   async def report_user_cheater(self, inter: disnake.CommandInteraction,
-                           identifier: str=commands.Param(description="Identifier of entity to report"),
-                           reason: Optional[str]=commands.Param(default=None, description="Optional reason why you think this entity is cheating", max_length=3000)):
+                           identifier: str=commands.Param(description=Strings.blacklist_report_identifier_param_description),
+                           reason: Optional[str]=commands.Param(default=None, description=Strings.blacklist_report_reason_param_description, max_length=3000)):
     await inter.response.defer(with_message=True, ephemeral=True)
 
     announce_channel = await object_getters.get_or_fetch_channel(self.bot, config.blacklist.report_channel_id)
     if announce_channel is None:
-      return await message_utils.generate_error_message(inter, "Report channel not found, unable to report cheater")
+      return await message_utils.generate_error_message(inter, Strings.blacklist_report_report_channel_not_found)
 
     specifier = id_in_identifier_regex.findall(identifier)
     if len(specifier) != 1 or not str(specifier[0]).isnumeric():
-      return await message_utils.generate_error_message(inter, "Invalid identifier entered")
+      return await message_utils.generate_error_message(inter, Strings.blacklist_report_invalid_identifier)
 
     user = dt_user_repo.get_dt_user(int(specifier[0]))
     if user is None:
-      return await message_utils.generate_error_message(inter, "User not found in database")
+      return await message_utils.generate_error_message(inter, Strings.blacklist_report_user_cheater_user_not_found)
 
     embed = disnake.Embed(title="User cheater report", color=disnake.Color.orange(), description=f"```\n{reason}\n```" if reason is not None else None)
     message_utils.add_author_footer(embed, inter.author)
@@ -119,26 +119,26 @@ class DTBlacklist(Base_Cog):
     embed.add_field(name="Guild", value=f"{user.active_member.guild.name}" if user.active_member is not None else "None")
 
     await announce_channel.send(embed=embed)
-    await message_utils.generate_success_message(inter, "Report submited")
+    await message_utils.generate_success_message(inter, Strings.blacklist_report_success)
 
-  @blacklist_commands.sub_command(description="Report guild cheater to bot administrator")
+  @blacklist_commands.sub_command(description=Strings.blacklist_report_guild_cheater_description)
   @cooldowns.long_cooldown
   async def report_guild_cheater(self, inter: disnake.CommandInteraction,
-                                identifier: str = commands.Param(description="Identifier of entity to report"),
-                                reason: Optional[str] = commands.Param(default=None, description="Optional reason why you think this entity is cheating", max_length=3000)):
+                                 identifier: str = commands.Param(description=Strings.blacklist_report_identifier_param_description),
+                                 reason: Optional[str] = commands.Param(default=None, description=Strings.blacklist_report_reason_param_description, max_length=3000)):
     await inter.response.defer(with_message=True, ephemeral=True)
 
     announce_channel = await object_getters.get_or_fetch_channel(self.bot, config.blacklist.report_channel_id)
     if announce_channel is None:
-      return await message_utils.generate_error_message(inter, "Report channel not found, unable to report cheater")
+      return await message_utils.generate_error_message(inter, Strings.blacklist_report_report_channel_not_found)
 
     specifier = id_in_identifier_regex.findall(identifier)
     if len(specifier) != 1 or not str(specifier[0]).isnumeric():
-      return await message_utils.generate_error_message(inter, "Invalid identifier entered")
+      return await message_utils.generate_error_message(inter, Strings.blacklist_report_invalid_identifier)
 
     guild = dt_guild_repo.get_dt_guild(int(specifier[1]))
     if guild is None:
-      return await message_utils.generate_error_message(inter, "Guild not found in database")
+      return await message_utils.generate_error_message(inter, Strings.blacklist_report_guild_cheater_guild_not_found)
 
     embed = disnake.Embed(title="Guild cheater report", color=disnake.Color.orange(), description=f"```\n{reason}\n```" if reason is not None else None)
     message_utils.add_author_footer(embed, inter.author)
@@ -146,7 +146,7 @@ class DTBlacklist(Base_Cog):
     embed.add_field(name="ID", value=str(guild.id))
 
     await announce_channel.send(embed=embed)
-    await message_utils.generate_success_message(inter, "Report submited")
+    await message_utils.generate_success_message(inter, Strings.blacklist_report_success)
 
   @report_user_cheater.autocomplete("identifier")
   async def autocomplete_identifier_user(self, _, string: str):

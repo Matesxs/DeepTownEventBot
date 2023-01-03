@@ -1,4 +1,5 @@
 from typing import Optional, List, Tuple
+from sqlalchemy import or_
 
 from database import session
 from database.tables.dt_guild import DTGuild
@@ -10,7 +11,10 @@ def get_dt_guild(guild_id:int) -> Optional[DTGuild]:
 
 def get_all_guilds(search: Optional[str]=None, limit: int=25) -> List[DTGuild]:
   if search is not None:
-    return session.query(DTGuild).filter(DTGuild.name.ilike(f"%{search}%")).limit(limit).all()
+    if search.isnumeric():
+      return session.query(DTGuild).filter(or_(DTGuild.name.ilike(f"%{search}%"), DTGuild.id == int(search))).limit(limit).all()
+    else:
+      return session.query(DTGuild).filter(DTGuild.name.ilike(f"%{search}%")).limit(limit).all()
   return session.query(DTGuild).limit(limit).all()
 
 def get_dt_guilds_by_identifier(identifier: str) -> List[DTGuild]:

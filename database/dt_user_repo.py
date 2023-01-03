@@ -8,8 +8,13 @@ from database import dt_blacklist_repo
 def get_dt_user(user_id: int) -> Optional[DTUser]:
   return session.query(DTUser).filter(DTUser.id == user_id).one_or_none()
 
-def get_users_by_username(username: str) -> List[DTUser]:
-  return session.query(DTUser).filter(DTUser.username.ilike(username)).all()
+def get_users_by_identifier(identifier: str) -> List[DTUser]:
+  if identifier.isnumeric():
+    results = session.query(DTUser).filter(DTUser.id == int(identifier)).all()
+    if results:
+      return results
+
+  return session.query(DTUser).filter(DTUser.username.ilike(identifier)).all()
 
 def create_dummy_dt_user(id: int) -> Optional[DTUser]:
   item = get_dt_user(id)

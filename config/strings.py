@@ -56,7 +56,7 @@ class Strings(metaclass=Formatable):
   # Global Deep Town stuff
   dt_guild_identifier_param_description = "Deep Town Guild Name or ID"
   dt_guild_id_param_description = "Deep Town Guild ID"
-  dt_user_name_param_description = "Deep Town User Name"
+  dt_user_identifier_param_description = "Deep Town user username or ID"
 
   # Data manager
   data_manager_update_guild_description = "Update data of selected guild in database"
@@ -137,6 +137,7 @@ class Strings(metaclass=Formatable):
   # Public interface
   public_interface_guild_data_not_received = "No data retrieved from server for guild with identifier `{identifier}`"
   public_interface_guild_data_not_found = "No data found in database for guild with identifier `{identifier}`"
+  public_interface_user_profile_no_users = "No users found with identifier `{identifier}`"
 
   public_interface_guild_report_description = "Generate report for specific Deep Town guild"
   public_interface_guild_report_tight_format_param_description = "Tight format of table (default: False)"
@@ -155,7 +156,6 @@ class Strings(metaclass=Formatable):
   public_interface_guild_profile_no_guilds = "No guilds found for guild identifier `{identifier}`"
 
   public_interface_user_profile_description = "Show Deep Town user profile"
-  public_interface_user_profile_no_users = "No users found with username `{username}`"
 
   public_interface_event_help_description = "Show items for current item"
   public_interface_event_help_no_items = "Items not set for this event"

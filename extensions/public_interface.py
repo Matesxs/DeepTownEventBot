@@ -22,7 +22,7 @@ logger = setup_custom_logger(__name__)
 
 async def grab_recent_guild_event_participations(bot: BaseAutoshardedBot, inter: disnake.CommandInteraction, identifier: Union[int, str]) -> Optional[List[event_participation_repo.EventParticipation]]:
   if isinstance(identifier, str):
-    guilds = dt_guild_repo.get_dt_guilds_by_name(identifier)
+    guilds = dt_guild_repo.get_dt_guilds_by_identifier(identifier)
     if guilds:
       guild_data = event_participation_repo.get_recent_guild_event_participations(guilds[0].id)
 
@@ -119,17 +119,13 @@ class PublicInterface(Base_Cog):
                           identifier: str = commands.Param(description=Strings.dt_guild_identifier_param_description)):
     await inter.response.defer(with_message=True)
 
-    if identifier.isnumeric():
-      guild = dt_guild_repo.get_dt_guild(int(identifier))
-    else:
-      guild = None
-      guilds = dt_guild_repo.get_dt_guilds_by_name(identifier)
-      if guilds:
-        guild = guilds[0]
+    guilds = dt_guild_repo.get_dt_guilds_by_identifier(identifier)
 
-    if guild is None:
+    if not guilds:
       await message_utils.generate_error_message(inter, Strings.public_interface_guild_data_not_found(identifier=identifier))
       return None
+
+    guild = guilds[0]
 
     participations_per_user = []
     for member in guild.active_members:
@@ -199,19 +195,14 @@ class PublicInterface(Base_Cog):
   async def guild_profile(self, inter: disnake.CommandInteraction, identifier: str = commands.Param(description=Strings.dt_guild_identifier_param_description)):
     await inter.response.defer(with_message=True)
 
-    matched_guilds = []
-    if identifier.isnumeric():
-      guild = dt_guild_repo.get_dt_guild(int(identifier))
-      if guild is not None:
-        matched_guilds.append(guild)
-    else:
-      matched_guilds = dt_guild_repo.get_dt_guilds_by_name(identifier)
+    guilds = dt_guild_repo.get_dt_guilds_by_identifier(identifier)
 
-    if not matched_guilds:
-      return await message_utils.generate_error_message(inter, Strings.public_interface_guild_profile_no_guilds(identifier=identifier))
+    if not guilds:
+      await message_utils.generate_error_message(inter, Strings.public_interface_guild_data_not_found(identifier=identifier))
+      return None
 
     guild_profiles = []
-    for guild in matched_guilds:
+    for guild in guilds:
       guild_profile_lists = []
 
       guild_data = await dt_helpers.get_dt_guild_data(self.bot, guild.id)
@@ -301,6 +292,43 @@ class PublicInterface(Base_Cog):
     embed_view = EmbedView2D(inter.author, guild_profiles, invert_list_dir=True)
     await embed_view.run(inter)
 
+  @guild_commands.sub_command(name="event_participations", description=Strings.public_interface_guild_participations_description)
+  @cooldowns.default_cooldown
+  async def guild_event_participations(self, inter: disnake.CommandInteraction, identifier: str = commands.Param(description=Strings.dt_guild_identifier_param_description)):
+    await inter.response.defer(with_message=True)
+
+    guilds = dt_guild_repo.get_dt_guilds_by_identifier(identifier)
+
+    if not guilds:
+      await message_utils.generate_error_message(inter, Strings.public_interface_guild_data_not_found(identifier=identifier))
+      return None
+
+    pages = []
+    for guild in guilds:
+      all_guild_participations = event_participation_repo.get_guild_event_participations_data(guild.id, ignore_zero_participation_median=True)
+
+      event_participations_data = []
+      for year, week, total, average, median, _, _ in all_guild_participations:
+        best_participants = event_participation_repo.get_best_participants(guild.id, year, week, limit=1) if total != 0 else None
+        event_participations_data.append((year, week, (string_manipulation.truncate_string(best_participants[0][1], 14) if best_participants is not None else "*Unknown*"), string_manipulation.format_number(best_participants[0][4]) if best_participants else "0", string_manipulation.format_number(average, 1), string_manipulation.format_number(median, 1)))
+
+      event_participations_strings = table2ascii(body=event_participations_data, header=["Year", "Week", "Top Member", "Top Donate", "Average", "Median"], alignments=[Alignment.RIGHT, Alignment.RIGHT, Alignment.LEFT, Alignment.RIGHT, Alignment.RIGHT, Alignment.RIGHT]).split("\n")
+      event_participations_page_strings = []
+      while event_participations_strings:
+        data_string, event_participations_strings = string_manipulation.add_string_until_length(event_participations_strings, 3000, "\n")
+        event_participations_page_strings.append(data_string)
+
+      guild_participation_pages = []
+      for event_participations_page_string in event_participations_page_strings:
+        event_participation_page = disnake.Embed(title=f"{string_manipulation.truncate_string(guild.name, 20)} event participations", color=disnake.Color.dark_blue(), description=f"```\n{event_participations_page_string}\n```")
+        message_utils.add_author_footer(event_participation_page, inter.author)
+        guild_participation_pages.append(event_participation_page)
+
+      pages.append(guild_participation_pages)
+
+    embed_view = EmbedView2D(inter.author, pages, invert_list_dir=True)
+    await embed_view.run(inter)
+
   @guild_commands.sub_command(name="leaderboard", description=Strings.public_interface_guild_leaderboard_description)
   @cooldowns.default_cooldown
   async def guild_leaderboard(self, inter: disnake.CommandInteraction):
@@ -332,9 +360,11 @@ class PublicInterface(Base_Cog):
   async def user_command(self, inter: disnake.CommandInteraction):
     pass
 
-  @user_command.sub_command(name="event_participations", description="Event participations")
+  @user_command.sub_command(name="event_participations", description=Strings.public_interface_user_event_participations_description)
   @cooldowns.default_cooldown
   async def user_event_participations(self, inter: disnake.CommandInteraction, identifier: str=commands.Param(description=Strings.dt_user_identifier_param_description)):
+    await inter.response.defer(with_message=True)
+
     matched_users = dt_user_repo.get_users_by_identifier(identifier)
     if not matched_users:
       return await message_utils.generate_error_message(inter, Strings.public_interface_user_profile_no_users(username=identifier))

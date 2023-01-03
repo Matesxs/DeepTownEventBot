@@ -10,9 +10,9 @@ def get_dt_user(user_id: int) -> Optional[DTUser]:
 
 def get_users_by_identifier(identifier: str) -> List[DTUser]:
   if identifier.isnumeric():
-    results = session.query(DTUser).filter(DTUser.id == int(identifier)).all()
-    if results:
-      return results
+    result = get_dt_user(int(identifier))
+    if result is not None:
+      return [result]
 
   return session.query(DTUser).filter(DTUser.username.ilike(identifier)).all()
 

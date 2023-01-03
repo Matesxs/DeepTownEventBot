@@ -142,6 +142,8 @@ class Strings(metaclass=Formatable):
   public_interface_guild_report_description = "Generate report for specific Deep Town guild"
   public_interface_guild_report_tight_format_param_description = "Tight format of table (default: False)"
 
+  public_interface_guild_participations_description = "Guild event participations"
+
   public_interface_guild_members_description = "List current members of specific Deep Town guild"
 
   public_interface_guild_leaderboard_description = "Leaderboard of guilds by level (if multiple guild have same level then sorted by name)"
@@ -156,6 +158,8 @@ class Strings(metaclass=Formatable):
   public_interface_guild_profile_no_guilds = "No guilds found for guild identifier `{identifier}`"
 
   public_interface_user_profile_description = "Show Deep Town user profile"
+
+  public_interface_user_event_participations_description = "User event participations"
 
   public_interface_event_help_description = "Show items for current item"
   public_interface_event_help_no_items = "Items not set for this event"

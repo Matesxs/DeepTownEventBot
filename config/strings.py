@@ -55,9 +55,10 @@ class Strings(metaclass=Formatable):
 
   # Global Deep Town stuff
   dt_guild_identifier_param_description = "Deep Town Guild identifier"
-  dt_guild_id_param_description = "Deep Town Guild ID"
   dt_user_identifier_param_description = "Deep Town User identifier"
   dt_invalid_identifier = "Invalid identifier entered"
+  dt_guild_data_not_found = "Deep Town guild with identifier `{identifier}` not found in database"
+  dt_user_profile_no_users = "Deep Town user with identifier `{identifier}` not found in database"
 
   # Data manager
   data_manager_update_guild_description = "Update data of selected guild in database"
@@ -117,14 +118,13 @@ class Strings(metaclass=Formatable):
 
   # Event Tracker
   event_report_announcer_add_or_modify_tracker_description = "Add guild for tracking or modify existing announcement channel"
-  event_report_announcer_add_or_modify_tracker_failed_to_get_data = "Failed to get guild data"
   event_report_announcer_add_or_modify_tracker_tracker_limit_reached = "Tracker limit ({limit} per guild) reached"
   event_report_announcer_add_or_modify_tracker_success_with_channel = "Set tracking for guild `{guild}` and announcement to channel `{channel}`"
   event_report_announcer_add_or_modify_tracker_announce_channel_param_description = "Channel for announcing results at the end of event"
 
   event_report_announcer_remove_tracker_description = "Remove event tracker and its announcement settings"
   event_report_announcer_remove_tracker_success = "Removed tracking for guild `{guild}`"
-  event_report_announcer_remove_tracker_failed = "Can't find tracking settings for guild with id `{guild_id}`"
+  event_report_announcer_remove_tracker_failed = "Can't find tracking settings for guild with identifier `{identifier}`"
 
   event_report_announcer_list_trackers_description = "List all active trackers for this discord guild"
   event_report_announcer_list_trackers_no_trackers = "No trackers found"
@@ -136,10 +136,6 @@ class Strings(metaclass=Formatable):
   event_report_announcer_guild_report_description = "Generate Deep Town guild report"
 
   # Public interface
-  public_interface_guild_data_not_received = "No data retrieved from server for guild with identifier `{identifier}`"
-  public_interface_guild_data_not_found = "No data found in database for guild with identifier `{identifier}`"
-  public_interface_user_profile_no_users = "No users found with identifier `{identifier}`"
-
   public_interface_guild_report_description = "Generate report for specific Deep Town guild"
   public_interface_guild_report_tight_format_param_description = "Tight format of table (default: False)"
 

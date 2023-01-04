@@ -7,7 +7,7 @@ import humanize
 
 from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
-from utils import dt_helpers, dt_report_generators, message_utils, permission_helper
+from utils import dt_helpers, dt_report_generators, message_utils, permission_helper, dt_identifier_autocomplete
 from database import event_participation_repo, tracking_settings_repo
 from config import Strings, cooldowns, config
 from features.views.paginator import EmbedView
@@ -33,43 +33,48 @@ class DTEventReportAnnouncer(Base_Cog):
   @announcer.sub_command(name="add_or_modify", description=Strings.event_report_announcer_add_or_modify_tracker_description)
   @cooldowns.default_cooldown
   async def add_or_modify_tracker(self, inter: disnake.CommandInteraction,
-                                  guild_id: int=commands.Param(description=Strings.dt_guild_id_param_description),
+                                  identifier: str=commands.Param(description=Strings.dt_guild_identifier_param_description, autocomp=dt_identifier_autocomplete.autocomplete_identifier_guild),
                                   announce_channel: disnake.TextChannel=commands.Param(description=Strings.event_report_announcer_add_or_modify_tracker_announce_channel_param_description)):
     await inter.response.defer(with_message=True, ephemeral=True)
 
-    existing_tracker = tracking_settings_repo.get_tracking_settings(inter.guild.id, guild_id)
+    specifier = dt_identifier_autocomplete.identifier_to_specifier(identifier)
+    if specifier is None:
+      return await message_utils.generate_error_message(inter, Strings.dt_invalid_identifier)
+
+    existing_tracker = tracking_settings_repo.get_tracking_settings(inter.guild.id, specifier[1])
     if not existing_tracker:
-      all_trackers = tracking_settings_repo.get_all_guild_trackers(inter.guild.id)
       if self.bot.owner is None or inter.author.id != self.bot.owner.id:
+        all_trackers = tracking_settings_repo.get_all_guild_trackers(inter.guild.id)
         if len(all_trackers) >= config.event_tracker.tracker_limit_per_guild:
           return await message_utils.generate_error_message(inter, Strings.event_report_announcer_add_or_modify_tracker_tracker_limit_reached(limit=config.event_report_announcer.tracker_limit_per_guild))
 
-      data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
-      if data is None:
-        return await message_utils.generate_error_message(inter, Strings.event_report_announcer_add_or_modify_tracker_failed_to_get_data)
-
-      guild_name = data.name
-
-      event_participation_repo.generate_or_update_event_participations(data)
-      tracking_settings_repo.get_or_create_tracking_settings(inter.guild, data, announce_channel.id)
+      existing_tracker = tracking_settings_repo.get_or_create_tracking_settings(inter.guild, specifier[1], announce_channel.id)
+      if existing_tracker is None:
+        return await message_utils.generate_error_message(inter, Strings.dt_guild_data_not_found(identifier=identifier))
     else:
-      guild_name = existing_tracker.dt_guild.name
       existing_tracker.announce_channel_id = str(announce_channel.id)
       tracking_settings_repo.session.commit()
 
-    await message_utils.generate_success_message(inter, Strings.event_report_announcer_add_or_modify_tracker_success_with_channel(guild=guild_name, channel=announce_channel.name))
+    await message_utils.generate_success_message(inter, Strings.event_report_announcer_add_or_modify_tracker_success_with_channel(guild=existing_tracker.dt_guild.name, channel=announce_channel.name))
 
   @announcer.sub_command(name="remove", description=Strings.event_report_announcer_remove_tracker_description)
   @cooldowns.default_cooldown
   async def remove_tracker(self, inter: disnake.CommandInteraction,
-                                 guild_id: int=commands.Param(description=Strings.dt_guild_id_param_description)):
-    settings = tracking_settings_repo.get_tracking_settings(inter.guild.id, guild_id)
+                                 identifier: str=commands.Param(description=Strings.dt_guild_identifier_param_description, autocomp=dt_identifier_autocomplete.autocomplete_identifier_guild)):
+    specifier = dt_identifier_autocomplete.identifier_to_specifier(identifier)
+    if specifier is None:
+      return await message_utils.generate_error_message(inter, Strings.dt_invalid_identifier)
+
+    settings = tracking_settings_repo.get_tracking_settings(inter.guild.id, specifier[1])
+    if settings is None:
+      return await message_utils.generate_error_message(inter, Strings.event_report_announcer_remove_tracker_failed(identifier=specifier[1]))
+
     guild_name = settings.dt_guild.name
 
-    if tracking_settings_repo.remove_tracking_settings(inter.guild.id, guild_id):
+    if tracking_settings_repo.remove_tracking_settings(inter.guild.id, specifier[1]):
       await message_utils.generate_success_message(inter, Strings.event_report_announcer_remove_tracker_success(guild=guild_name))
     else:
-      await message_utils.generate_error_message(inter, Strings.event_report_announcer_remove_tracker_failed(guild_id=guild_id))
+      await message_utils.generate_error_message(inter, Strings.event_report_announcer_remove_tracker_failed(identifier=specifier[1]))
 
   @announcer.sub_command(name="list", description=Strings.event_report_announcer_list_trackers_description)
   @cooldowns.default_cooldown

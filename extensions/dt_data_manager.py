@@ -162,7 +162,7 @@ class DTDataManager(Base_Cog):
 
   @data_manager.sub_command(description=Strings.data_manager_dump_guild_participation_data_description)
   @cooldowns.huge_cooldown
-  async def dump_guild_participation_data(self, inter: disnake.CommandInteraction, guild_id: Optional[int]=commands.Param(default=None, description=Strings.dt_guild_id_param_description)):
+  async def dump_guild_participation_data(self, inter: disnake.CommandInteraction, guild_id: Optional[int]=commands.Param(default=None)): # TODO: Replace guild id param
     await inter.response.defer(with_message=True, ephemeral=True)
 
     dump_data = event_participation_repo.dump_guild_event_participation_data(guild_id)

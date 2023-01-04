@@ -251,6 +251,7 @@ def dump_guild_event_participation_data(guild_id: Optional[int] = None) -> List[
     dt_user_repo.DTUser.username,
     EventParticipation.amount
   )\
+    .select_from(EventSpecification)\
     .join(EventParticipation)\
     .join(dt_user_repo.DTUser)\
     .join(dt_guild_repo.DTGuild)\

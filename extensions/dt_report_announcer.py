@@ -90,7 +90,7 @@ class DTEventReportAnnouncer(Base_Cog):
 
     pages = []
     for batch in batches:
-      page = disnake.Embed(title="Tracker list", color=disnake.Color.dark_blue())
+      page = disnake.Embed(title="Announce list", color=disnake.Color.dark_blue())
       message_utils.add_author_footer(page, inter.author)
 
       for setting in batch:

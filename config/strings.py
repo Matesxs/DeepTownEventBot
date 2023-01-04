@@ -64,7 +64,6 @@ class Strings(metaclass=Formatable):
   data_manager_update_guild_description = "Update data of selected guild in database"
   data_manager_update_guild_get_failed = "Failed to get guild data for guild with identifier `{identifier}`"
   data_manager_update_guild_success = "Data for guild `{guild}` fetched and updated"
-  data_manager_update_guild_success_multiple = "Data of {number} guild fetched and updated"
 
   data_manager_update_all_guilds_description = "Update data of all guilds in database"
   data_manager_update_all_guilds_success_with_periodic_update = "Data update started"
@@ -112,7 +111,7 @@ class Strings(metaclass=Formatable):
   data_manager_load_data_loaded = "New data loaded, `{count}` rows\nIf some data are missing then file was in invalid format or data keys were missing"
 
   data_manager_dump_guild_participation_data_description = "Dump Deep Town guild event participation data"
-  data_manager_dump_guild_participation_data_no_data = "No data found for guild with id `{guild_id}`"
+  data_manager_dump_guild_participation_data_no_data = "No data found for guild with id `{identifier}`"
   data_manager_dump_guild_participation_data_no_data_no_guild_id = "No data found"
   data_manager_dump_guild_participation_data_success = "Dump created"
 

@@ -10,7 +10,7 @@ from table2ascii import table2ascii
 from table2ascii.alignment import Alignment
 
 from features.base_cog import Base_Cog
-from utils import dt_helpers, message_utils, string_manipulation
+from utils import dt_helpers, message_utils, string_manipulation, dt_identifier_autocomplete
 from utils.logger import setup_custom_logger
 from config import cooldowns, Strings, config
 from database import event_participation_repo, tracking_settings_repo, dt_guild_repo, dt_guild_member_repo, guilds_repo
@@ -49,32 +49,21 @@ class DTDataManager(Base_Cog):
   @data_manager.sub_command(description=Strings.data_manager_update_guild_description)
   @cooldowns.long_cooldown
   @commands.is_owner()
-  async def update_guild(self, inter: disnake.CommandInteraction, identifier: str=commands.Param(description=Strings.dt_guild_identifier_param_description)):
+  async def update_guild(self, inter: disnake.CommandInteraction,
+                         identifier: str=commands.Param(description=Strings.dt_guild_identifier_param_description, autocomp=dt_identifier_autocomplete.autocomplete_identifier_guild)):
     await inter.response.defer(with_message=True, ephemeral=True)
 
-    if identifier.isnumeric():
-      data = await dt_helpers.get_dt_guild_data(self.bot, int(identifier))
-      if data is None:
-        return await message_utils.generate_error_message(inter, Strings.data_manager_update_guild_get_failed(identifier=identifier))
+    specifier = dt_identifier_autocomplete.identifier_to_specifier(identifier)
+    if specifier is None:
+      return await message_utils.generate_error_message(inter, Strings.dt_invalid_identifier)
 
-      event_participation_repo.generate_or_update_event_participations(data)
+    data = await dt_helpers.get_dt_guild_data(self.bot, specifier[1])
+    if data is None:
+      return await message_utils.generate_error_message(inter, Strings.data_manager_update_guild_get_failed(identifier=specifier[1]))
 
-      await message_utils.generate_success_message(inter, Strings.data_manager_update_guild_success(guild=data.name))
-    else:
-      matched_guilds = await dt_helpers.get_guild_info(self.bot, identifier)
-      if matched_guilds is None or not matched_guilds:
-        return await message_utils.generate_error_message(inter, Strings.data_manager_update_guild_get_failed(identifier=identifier))
+    event_participation_repo.generate_or_update_event_participations(data)
 
-      guild_ids = [d[0] for d in matched_guilds]
-      updated_guilds = 0
-      for guild_id in guild_ids:
-        data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
-        if data is None: continue
-
-        updated_guilds += 1
-        event_participation_repo.generate_or_update_event_participations(data)
-
-      await message_utils.generate_success_message(inter, Strings.data_manager_update_guild_success_multiple(number=updated_guilds))
+    await message_utils.generate_success_message(inter, Strings.data_manager_update_guild_success(guild=data.name))
 
   @data_manager.sub_command(description=Strings.data_manager_update_all_guilds_description)
   @cooldowns.long_cooldown
@@ -162,14 +151,23 @@ class DTDataManager(Base_Cog):
 
   @data_manager.sub_command(description=Strings.data_manager_dump_guild_participation_data_description)
   @cooldowns.huge_cooldown
-  async def dump_guild_participation_data(self, inter: disnake.CommandInteraction, guild_id: Optional[int]=commands.Param(default=None)): # TODO: Replace guild id param
+  async def dump_guild_participation_data(self, inter: disnake.CommandInteraction,
+                                          identifier: Optional[str]=commands.Param(default=None, description=Strings.dt_guild_identifier_param_description, autocomp=dt_identifier_autocomplete.autocomplete_identifier_guild)):
     await inter.response.defer(with_message=True, ephemeral=True)
 
-    dump_data = event_participation_repo.dump_guild_event_participation_data(guild_id)
-    if not dump_data:
-      if guild_id is not None:
-        return await message_utils.generate_error_message(inter, Strings.data_manager_dump_guild_participation_data_no_data(guild_id=guild_id))
-      else:
+    if identifier is not None:
+      specifier = dt_identifier_autocomplete.identifier_to_specifier(identifier)
+      if specifier is None:
+        return await message_utils.generate_error_message(inter, Strings.dt_invalid_identifier)
+
+      dump_data = event_participation_repo.dump_guild_event_participation_data(specifier[1])
+
+      if not dump_data:
+        return await message_utils.generate_error_message(inter, Strings.data_manager_dump_guild_participation_data_no_data(identifier=specifier[1]))
+    else:
+      dump_data = event_participation_repo.dump_guild_event_participation_data()
+
+      if not dump_data:
         return await message_utils.generate_error_message(inter, Strings.data_manager_dump_guild_participation_data_no_data_no_guild_id)
 
     dataframe = pd.DataFrame(dump_data, columns=["year", "week", "guild_id", "guild_name", "user_id", "username", "amount"], index=None)

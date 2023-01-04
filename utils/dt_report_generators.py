@@ -95,7 +95,7 @@ async def send_text_guild_event_participation_report(report_channel: Union[disna
 
   description_strings = (f"{guild.name} - ID: {guild.id} - Level: {guild.level}\nYear: {participations[0].event_specification.event_year} Week: {participations[0].event_specification.event_week}\n" +
                          (("\nEvent items:\n" + event_items_table + "\n\n") if show_event_items and event_items_table is not None else "") +
-                         f"Donate - Median: {string_manipulation.format_number(statistics.median(non_zero_participation_amounts), 1)} Average: {string_manipulation.format_number(statistics.mean(participation_amounts), 1)}, Total: {string_manipulation.format_number(sum(participation_amounts))}\nActivity: {active_players}/{all_players}\n").split("\n")
+                         f"Donate - Median: {string_manipulation.format_number(statistics.median(non_zero_participation_amounts), 3)} Average: {string_manipulation.format_number(statistics.mean(participation_amounts), 3)}, Total: {string_manipulation.format_number(sum(participation_amounts), 3)}\nActivity: {active_players}/{all_players}\n").split("\n")
 
   strings = [*description_strings]
   strings.extend(generate_participation_strings(participations, colms, colm_padding))

@@ -175,6 +175,7 @@ class Strings(metaclass=Formatable):
   blacklist_add_invalid_type = "Invalid blacklist type"
   blacklist_add_subject_not_found = "Subject is not in database"
   blacklist_add_success = "Subject `{subject_name}` of type `{type}` added to blacklist and removed from records"
+  blacklist_msg_com_add_invalid_target = "Invalid target message"
 
   blacklist_remove_description = "Remove subject from blacklist"
   blacklist_remove_success = "Removed subject with identifier `{identifier}` of type `{type}` from blacklist"

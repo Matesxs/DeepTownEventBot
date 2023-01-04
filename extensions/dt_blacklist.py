@@ -18,6 +18,31 @@ class DTBlacklist(Base_Cog):
   async def blacklist_commands(self, inter: disnake.CommandInteraction):
     pass
 
+  @staticmethod
+  async def add_to_blacklist(inter, block_type: dt_blacklist_repo.BlacklistType, entity_id: int):
+    if dt_blacklist_repo.get_blacklist_item(block_type, entity_id) is not None:
+      return await message_utils.generate_error_message(inter, Strings.blacklist_add_already_on_blacklist)
+
+    if block_type == dt_blacklist_repo.BlacklistType.USER:
+      subject = dt_user_repo.get_dt_user(entity_id)
+      subject_name = subject.username if subject is not None else None
+    else:
+      subject = dt_guild_repo.get_dt_guild(entity_id)
+      subject_name = subject.name if subject is not None else None
+
+    if subject is None:
+      return await message_utils.generate_error_message(inter, Strings.blacklist_add_subject_not_found)
+
+    dt_blacklist_repo.create_blacklist_item(block_type, entity_id, subject_name)
+    await asyncio.sleep(0.1)
+
+    if block_type == dt_blacklist_repo.BlacklistType.USER:
+      dt_user_repo.remove_user(entity_id)
+    elif block_type == dt_blacklist_repo.BlacklistType.GUILD:
+      dt_guild_repo.remove_guild(entity_id)
+
+    await message_utils.generate_success_message(inter, Strings.blacklist_add_success(subject_name=subject_name, type=block_type))
+
   @blacklist_commands.sub_command(name="add", description=Strings.blacklist_add_description)
   @cooldowns.default_cooldown
   @commands.is_owner()
@@ -37,28 +62,35 @@ class DTBlacklist(Base_Cog):
     else:
       return await message_utils.generate_error_message(inter, Strings.blacklist_add_invalid_type)
 
-    if dt_blacklist_repo.get_blacklist_item(block_type, entity_id) is not None:
-      return await message_utils.generate_error_message(inter, Strings.blacklist_add_already_on_blacklist)
+    await self.add_to_blacklist(inter, block_type, entity_id)
 
-    if type == dt_blacklist_repo.BlacklistType.USER:
-      subject = dt_user_repo.get_dt_user(entity_id)
-      subject_name = subject.username if subject is not None else None
+  @commands.message_command(name="Add to Blacklist")
+  @cooldowns.short_cooldown
+  @commands.is_owner()
+  async def msg_com_add_to_blacklist(self, inter: disnake.MessageCommandInteraction):
+    target_message = inter.target
+
+    if len(target_message.embeds) != 1 or target_message.author.id != self.bot.user.id:
+      return await message_utils.generate_error_message(inter, Strings.blacklist_msg_com_add_invalid_target)
+
+    report_embed = target_message.embeds[0]
+
+    if not "report" in report_embed.title.lower():
+      return await message_utils.generate_error_message(inter, Strings.blacklist_msg_com_add_invalid_target)
+
+    if "user" in report_embed.title.lower():
+      blacklist_type = dt_blacklist_repo.BlacklistType.USER
+    elif "guild" in report_embed.title.lower():
+      blacklist_type = dt_blacklist_repo.BlacklistType.GUILD
     else:
-      subject = dt_guild_repo.get_dt_guild(entity_id)
-      subject_name = subject.name if subject is not None else None
+      return await message_utils.generate_error_message(inter, Strings.blacklist_msg_com_add_invalid_target)
 
-    if subject is None:
-      return await message_utils.generate_error_message(inter, Strings.blacklist_add_subject_not_found)
+    for field in report_embed.fields:
+      if "id" in field.name.lower() and field.value.isnumeric():
+        entity_id = int(field.value)
+        return await self.add_to_blacklist(inter, blacklist_type, entity_id)
 
-    dt_blacklist_repo.create_blacklist_item(block_type, entity_id, subject_name)
-    await asyncio.sleep(0.1)
-
-    if type == dt_blacklist_repo.BlacklistType.USER:
-      dt_user_repo.remove_user(entity_id)
-    elif type == dt_blacklist_repo.BlacklistType.GUILD:
-      dt_guild_repo.remove_guild(entity_id)
-
-    await message_utils.generate_success_message(inter, Strings.blacklist_add_success(subject_name=subject_name, type=type))
+    return await message_utils.generate_error_message(inter, Strings.blacklist_msg_com_add_invalid_target)
 
   @blacklist_commands.sub_command(name="remove", description=Strings.blacklist_remove_description)
   @cooldowns.default_cooldown

@@ -71,6 +71,7 @@ class PublicInterface(Base_Cog):
       this_year_participations_amounts_no_zero = [p for p in this_year_participation_amounts if p > 0]
       if not this_year_participations_amounts_no_zero: this_year_participations_amounts_no_zero = [0]
 
+      # Front page
       member_front_page = disnake.Embed(title=f"{string_manipulation.truncate_string(member.user.username, 20)}", color=disnake.Color.dark_blue())
       message_utils.add_author_footer(member_front_page, inter.author)
       member_front_page.add_field(name="ID", value=str(member.dt_user_id))
@@ -80,6 +81,20 @@ class PublicInterface(Base_Cog):
       member_front_page.add_field(name="Current guild", value=f"{member.guild.name}({member.guild.level})", inline=False)
       member_pages.append(member_front_page)
 
+      # Buildings page
+      user_buildings_page = disnake.Embed(title=f"{string_manipulation.truncate_string(member.user.username, 20)} buildings", color=disnake.Color.dark_blue())
+      message_utils.add_author_footer(user_buildings_page, inter.author)
+      user_buildings_page.add_field(name="Mines", value=str(member.user.mines))
+      user_buildings_page.add_field(name="Chemical mines", value=str(member.user.chem_mines))
+      user_buildings_page.add_field(name="Oil mines", value=str(member.user.oil_mines))
+      user_buildings_page.add_field(name="Crafters", value=str(member.user.crafters))
+      user_buildings_page.add_field(name="Smelters", value=str(member.user.smelters))
+      user_buildings_page.add_field(name="Jewel stations", value=str(member.user.jewel_stations))
+      user_buildings_page.add_field(name="Chemical stations", value=str(member.user.chem_stations))
+      user_buildings_page.add_field(name="Green houses", value=str(member.user.green_houses))
+      member_pages.append(user_buildings_page)
+
+      # Event participation stats
       member_participation_stats_page = disnake.Embed(title=f"{string_manipulation.truncate_string(member.user.username, 20)} event participations stats", color=disnake.Color.dark_blue())
       member_participation_stats_page.add_field(name="Average donate", value=f"{string_manipulation.format_number(statistics.mean(all_participation_amounts), 4)}")
       member_participation_stats_page.add_field(name="Median donate", value=f"{string_manipulation.format_number(statistics.median(all_participations_amounts_no_zero), 4)}", inline=False)
@@ -87,12 +102,12 @@ class PublicInterface(Base_Cog):
       member_participation_stats_page.add_field(name="Median donate last year", value=f"{string_manipulation.format_number(statistics.median(this_year_participations_amounts_no_zero), 4)}", inline=False)
       member_pages.append(member_participation_stats_page)
 
+      # Event participations
       participation_pages_data = dt_report_generators.generate_participations_page_strings(participations)
       for participation_page_data in participation_pages_data:
         participation_page = disnake.Embed(title=f"{string_manipulation.truncate_string(member.user.username, 20)} event participations", description=f"```\n{participation_page_data}\n```", color=disnake.Color.dark_blue())
         message_utils.add_author_footer(participation_page, inter.author)
         member_pages.append(participation_page)
-
       users_embeds.append(member_pages)
 
     embed_view = EmbedView2D(inter.author, users_embeds, invert_list_dir=True)

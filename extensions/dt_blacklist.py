@@ -111,7 +111,7 @@ class DTBlacklist(Base_Cog):
 
     specifier = dt_identifier_autocomplete.identifier_to_specifier(identifier)
     if specifier is None:
-      return await message_utils.generate_error_message(inter, Strings.blacklist_report_invalid_identifier)
+      return await message_utils.generate_error_message(inter, Strings.dt_invalid_identifier)
 
     report_type, entity_id = specifier
 

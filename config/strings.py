@@ -54,9 +54,10 @@ class Strings(metaclass=Formatable):
   common_invite_brief = "Send invite link of the bot"
 
   # Global Deep Town stuff
-  dt_guild_identifier_param_description = "Deep Town Guild Name or ID"
+  dt_guild_identifier_param_description = "Deep Town Guild identifier"
   dt_guild_id_param_description = "Deep Town Guild ID"
-  dt_user_identifier_param_description = "Deep Town user username or ID"
+  dt_user_identifier_param_description = "Deep Town User identifier"
+  dt_invalid_identifier = "Invalid identifier entered"
 
   # Data manager
   data_manager_update_guild_description = "Update data of selected guild in database"
@@ -149,11 +150,6 @@ class Strings(metaclass=Formatable):
   public_interface_guild_leaderboard_description = "Leaderboard of guilds by level (if multiple guild have same level then sorted by name)"
   public_interface_guild_leaderboard_no_guilds = "No guilds found in database"
 
-  public_interface_search_guilds_description = "List Deep Town guilds or find specific one"
-  public_interface_search_guilds_guild_name_param_description = "Guild name to search"
-  public_interface_search_guilds_sort_by_param_description = "Attribute to sort guilds by"
-  public_interface_search_guilds_order_mode_param_description = "Order method of attribute"
-
   public_interface_guild_profile_description = "Show Deep Town guild profile"
   public_interface_guild_profile_no_guilds = "No guilds found for guild identifier `{identifier}`"
 
@@ -196,7 +192,6 @@ class Strings(metaclass=Formatable):
   blacklist_report_identifier_param_description = "Identifier of entity to report"
   blacklist_report_reason_param_description = "Optional reason why you think this entity is cheating"
   blacklist_report_report_channel_not_found = "Report channel not found, unable to report cheater"
-  blacklist_report_invalid_identifier = "Invalid identifier entered"
   blacklist_report_success = "Report submited"
   blacklist_report_user_cheater_user_not_found = "User not found in database"
   blacklist_report_guild_cheater_guild_not_found = "Guild not found in database"

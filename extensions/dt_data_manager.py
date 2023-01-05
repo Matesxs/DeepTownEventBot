@@ -13,7 +13,7 @@ from features.base_cog import Base_Cog
 from utils import dt_helpers, message_utils, string_manipulation, dt_identifier_autocomplete
 from utils.logger import setup_custom_logger
 from config import cooldowns, Strings, config
-from database import event_participation_repo, tracking_settings_repo, dt_guild_repo, dt_guild_member_repo, guilds_repo
+from database import event_participation_repo, tracking_settings_repo, dt_guild_repo, dt_guild_member_repo, guilds_repo, dt_items_repo
 from features.views.paginator import EmbedView
 
 logger = setup_custom_logger(__name__)
@@ -33,7 +33,7 @@ class DTDataManager(Base_Cog):
       if not self.data_update_task.is_running():
         self.data_update_task.start()
 
-    self.all_item_names = event_participation_repo.get_all_dt_item_names()
+    self.all_item_names = dt_items_repo.get_all_dt_item_names()
 
   def cog_unload(self):
     if self.cleanup_task.is_running():
@@ -188,8 +188,8 @@ class DTDataManager(Base_Cog):
                         name: str=commands.Param(description=Strings.data_manager_add_remove_dt_item_name_param_description),
                         value: float=commands.Param(default=0.0, description=Strings.data_manager_add_dt_item_value_param_description, min_value=0.0)):
     await inter.response.defer(with_message=True, ephemeral=True)
-    event_participation_repo.set_dt_item(name, value)
-    self.all_item_names = event_participation_repo.get_all_dt_item_names()
+    dt_items_repo.set_dt_item(name, value)
+    self.all_item_names = dt_items_repo.get_all_dt_item_names()
     await message_utils.generate_success_message(inter, Strings.data_manager_add_dt_item_success(name=name, value=value))
 
   @data_manager.sub_command(description=Strings.data_manager_remove_dt_item_description)
@@ -198,8 +198,8 @@ class DTDataManager(Base_Cog):
   async def remove_dt_item(self, inter: disnake.CommandInteraction,
                            name: str=commands.Param(description=Strings.data_manager_add_remove_dt_item_name_param_description)):
     await inter.response.defer(with_message=True, ephemeral=True)
-    if event_participation_repo.remove_dt_item(name):
-      self.all_item_names = event_participation_repo.get_all_dt_item_names()
+    if dt_items_repo.remove_dt_item(name):
+      self.all_item_names = dt_items_repo.get_all_dt_item_names()
       await message_utils.generate_success_message(inter, Strings.data_manager_remove_dt_item_success(name=name))
     else:
       await message_utils.generate_error_message(inter, Strings.data_manager_remove_dt_item_failed(name=name))
@@ -209,7 +209,7 @@ class DTDataManager(Base_Cog):
   async def list_dt_items(self, inter: disnake.CommandInteraction):
     await inter.response.defer(with_message=True)
 
-    items = event_participation_repo.get_all_dt_items()
+    items = dt_items_repo.get_all_dt_items()
     if not items:
       return await message_utils.generate_error_message(inter, Strings.data_manager_list_dt_items_no_items)
 
@@ -245,29 +245,30 @@ class DTDataManager(Base_Cog):
     if event_year is None or event_week is None:
       event_year, event_week = dt_helpers.get_event_index(datetime.datetime.utcnow())
 
-    if event_participation_repo.get_dt_item(item1) is None:
+    if dt_items_repo.get_dt_item(item1) is None:
       return await message_utils.generate_error_message(inter, Strings.data_manager_set_event_items_item_not_in_database(item=item1))
 
-    if event_participation_repo.get_dt_item(item2) is None:
+    if dt_items_repo.get_dt_item(item2) is None:
       return await message_utils.generate_error_message(inter, Strings.data_manager_set_event_items_item_not_in_database(item=item2))
 
-    if event_participation_repo.get_dt_item(item3) is None:
+    if dt_items_repo.get_dt_item(item3) is None:
       return await message_utils.generate_error_message(inter, Strings.data_manager_set_event_items_item_not_in_database(item=item3))
 
-    if event_participation_repo.get_dt_item(item4) is None:
+    if dt_items_repo.get_dt_item(item4) is None:
       return await message_utils.generate_error_message(inter, Strings.data_manager_set_event_items_item_not_in_database(item=item4))
 
     unique_item_names = list(set(list([item1, item2, item3, item4])))
     if len(unique_item_names) != 4:
       return await message_utils.generate_error_message(inter, Strings.data_manager_set_event_items_repeated_items)
 
-    event_participation_repo.remove_event_participation_items(event_year, event_week)
+    dt_items_repo.remove_event_participation_items(event_year, event_week)
+    await asyncio.sleep(0.05)
 
-    event_participation_repo.set_event_item(event_year, event_week, item1, base_amount1, commit=False)
-    event_participation_repo.set_event_item(event_year, event_week, item2, base_amount2, commit=False)
-    event_participation_repo.set_event_item(event_year, event_week, item3, base_amount3, commit=False)
-    event_participation_repo.set_event_item(event_year, event_week, item4, base_amount4, commit=False)
-    event_participation_repo.session.commit()
+    dt_items_repo.set_event_item(event_year, event_week, item1, base_amount1, commit=False)
+    dt_items_repo.set_event_item(event_year, event_week, item2, base_amount2, commit=False)
+    dt_items_repo.set_event_item(event_year, event_week, item3, base_amount3, commit=False)
+    dt_items_repo.set_event_item(event_year, event_week, item4, base_amount4, commit=False)
+    dt_items_repo.session.commit()
 
     await message_utils.generate_success_message(inter, Strings.data_manager_set_event_items_success(event_year=event_year,
                                                                                                      event_week=event_week,
@@ -291,7 +292,7 @@ class DTDataManager(Base_Cog):
     if event_year is None or event_week is None:
       event_year, event_week = dt_helpers.get_event_index(datetime.datetime.utcnow())
 
-    if event_participation_repo.remove_event_participation_items(event_year, event_week):
+    if dt_items_repo.remove_event_participation_items(event_year, event_week):
       await message_utils.generate_success_message(inter, Strings.data_manager_remove_event_items_success(event_year=event_year, event_week=event_week))
     else:
       await message_utils.generate_error_message(inter, Strings.data_manager_remove_event_items_failed(event_year=event_year, event_week=event_week))

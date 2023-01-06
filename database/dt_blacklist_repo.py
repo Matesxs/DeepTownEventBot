@@ -6,6 +6,9 @@ from database.tables.dt_blacklist import BlacklistType, DTBlacklistItem
 def get_blacklist_item(bl_type: BlacklistType, identifier: int) -> Optional[DTBlacklistItem]:
   return session.query(DTBlacklistItem).filter(DTBlacklistItem.bl_type == BlacklistType(bl_type), DTBlacklistItem.identifier == identifier).one_or_none()
 
+def is_on_blacklist(bl_type: BlacklistType, identifier: int) -> bool:
+  return session.query(DTBlacklistItem.identifier).filter(DTBlacklistItem.bl_type == BlacklistType(bl_type), DTBlacklistItem.identifier == identifier).one_or_none() is not None
+
 def get_blacklist_items(bl_type: Optional[BlacklistType]=None) -> List[DTBlacklistItem]:
   if bl_type is not None:
     return session.query(DTBlacklistItem).filter(DTBlacklistItem.bl_type == BlacklistType(bl_type)).all()

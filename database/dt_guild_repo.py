@@ -28,7 +28,7 @@ def get_dt_guilds_by_identifier(identifier: str) -> List[DTGuild]:
 def create_dummy_dt_guild(id: int) -> Optional[DTGuild]:
   item = get_dt_guild(id)
   if item is None:
-    if dt_blacklist_repo.get_blacklist_item(dt_blacklist_repo.BlacklistType.GUILD, id) is not None:
+    if dt_blacklist_repo.is_on_blacklist(dt_blacklist_repo.BlacklistType.GUILD, id):
       return None
 
     item = DTGuild(id=id, name="Unknown", level=-1)
@@ -39,7 +39,7 @@ def create_dummy_dt_guild(id: int) -> Optional[DTGuild]:
 def get_and_update_dt_guild(guild_data: DTGuildData) -> Optional[DTGuild]:
   item = get_dt_guild(guild_data.id)
   if item is None:
-    if dt_blacklist_repo.get_blacklist_item(dt_blacklist_repo.BlacklistType.GUILD, guild_data.id) is not None:
+    if dt_blacklist_repo.is_on_blacklist(dt_blacklist_repo.BlacklistType.GUILD, guild_data.id):
       return None
 
     item = DTGuild(id=guild_data.id, name=guild_data.name, level=guild_data.level)

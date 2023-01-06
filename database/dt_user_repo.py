@@ -28,7 +28,7 @@ def get_users_by_identifier(identifier: str) -> List[DTUser]:
 def create_dummy_dt_user(id: int) -> Optional[DTUser]:
   item = get_dt_user(id)
   if item is None:
-    if dt_blacklist_repo.get_blacklist_item(dt_blacklist_repo.BlacklistType.USER, id) is not None:
+    if dt_blacklist_repo.is_on_blacklist(dt_blacklist_repo.BlacklistType.USER, id):
       return None
 
     item = DTUser(id=id, username="Unknown", level=-1, depth=-1)
@@ -44,7 +44,7 @@ def remove_user(id: int) -> bool:
 def get_and_update_dt_user(user_data: DTUserData) -> Optional[DTUser]:
   item = get_dt_user(user_data.id)
   if item is None:
-    if dt_blacklist_repo.get_blacklist_item(dt_blacklist_repo.BlacklistType.USER, user_data.id) is not None:
+    if dt_blacklist_repo.is_on_blacklist(dt_blacklist_repo.BlacklistType.USER, user_data.id):
       return None
 
     item = DTUser.from_DTUserData(user_data)

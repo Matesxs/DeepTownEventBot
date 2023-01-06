@@ -20,7 +20,7 @@ class DTBlacklist(Base_Cog):
 
   @staticmethod
   async def add_to_blacklist(inter, block_type: dt_blacklist_repo.BlacklistType, entity_id: int) -> bool:
-    if dt_blacklist_repo.get_blacklist_item(block_type, entity_id) is not None:
+    if dt_blacklist_repo.is_on_blacklist(block_type, entity_id):
       await message_utils.generate_error_message(inter, Strings.blacklist_add_already_on_blacklist)
       return False
 

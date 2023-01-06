@@ -78,7 +78,7 @@ def generate_participation_strings(participations: List[EventParticipation], col
 
   return table2ascii(body=data_list, header=colms, alignments=alligments, cell_padding=colm_padding, first_col_heading="No°" in colms).split("\n")
 
-async def send_text_guild_event_participation_report(report_channel: Union[disnake.TextChannel, disnake.Thread, disnake.VoiceChannel, disnake.PartialMessageable, disnake.ApplicationCommandInteraction, commands.Context], guild: DTGuild, participations: List[EventParticipation], colms: Optional[List[str]]=None, colm_padding: int=0, show_event_items: bool=True):
+async def send_text_guild_event_participation_report(report_channel: Union[disnake.TextChannel, disnake.Thread, disnake.VoiceChannel, disnake.PartialMessageable, disnake.ApplicationCommandInteraction, commands.Context], guild: DTGuild, participations: List[EventParticipation], colms: Optional[List[str]]=None, colm_padding: int=1, show_event_items: bool=True):
   if not participations: return
   if colms is None:
     colms = ["No°", "Name", "Level", "Donate"]
@@ -91,7 +91,7 @@ async def send_text_guild_event_participation_report(report_channel: Union[disna
   if not participation_amounts: participation_amounts = [0]
   if not non_zero_participation_amounts: non_zero_participation_amounts = [0]
 
-  event_items_table = get_event_items_table(participations[0].event_specification)
+  event_items_table = get_event_items_table(participations[0].event_specification, colm_padding=colm_padding)
 
   description_strings = (f"{guild.name} - ID: {guild.id} - Level: {guild.level}\nYear: {participations[0].event_specification.event_year} Week: {participations[0].event_specification.event_week}\n" +
                          (("\nEvent items:\n" + event_items_table + "\n\n") if show_event_items and event_items_table is not None else "") +
@@ -119,10 +119,10 @@ def generate_participations_page_strings(participations: List[EventParticipation
 
   return output_pages
 
-def get_event_items_table(event_specification: EventSpecification) -> Optional[str]:
+def get_event_items_table(event_specification: EventSpecification, colm_padding: int=1) -> Optional[str]:
   if event_specification is None: return None
   if not event_specification.participation_items: return None
 
   event_items_data = [(string_manipulation.truncate_string(eitem.item.name, 20), f"{string_manipulation.format_number(eitem.item.value, 2)}", f"{string_manipulation.format_number(eitem.item.value / eitem.item.cumulative_crafting_time, 2) if eitem.item.cumulative_crafting_time > 0 else '-'}", f"{string_manipulation.format_number(eitem.item.cumulative_efficency * 100, 2)}") for eitem in event_specification.participation_items]
-  event_items_table = table2ascii(["Name", "Value", "Value/s", "Efficiency"], event_items_data, alignments=[Alignment.LEFT, Alignment.RIGHT, Alignment.RIGHT, Alignment.RIGHT])
+  event_items_table = table2ascii(["Name", "Value", "Value/s", "Efficiency"], event_items_data, alignments=[Alignment.LEFT, Alignment.RIGHT, Alignment.RIGHT, Alignment.RIGHT], cell_padding=colm_padding)
   return event_items_table

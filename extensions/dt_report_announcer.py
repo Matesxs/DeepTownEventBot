@@ -129,7 +129,7 @@ class DTEventReportAnnouncer(Base_Cog):
     participations = event_participation_repo.get_recent_guild_event_participations(tracker.dt_guild_id)
     if not participations: return
 
-    await dt_report_generators.send_text_guild_event_participation_report(announce_channel, tracker.dt_guild, participations)
+    await dt_report_generators.send_text_guild_event_participation_report(announce_channel, tracker.dt_guild, participations, colm_padding=0)
 
   @tasks.loop(hours=24*7)
   async def result_announce_task(self):

@@ -1,13 +1,88 @@
-from sqlalchemy import Column, ForeignKey, String, Float, Integer
+import enum
+from sqlalchemy import Column, ForeignKey, String, Float, Integer, Enum
 from sqlalchemy.orm import relationship
 
 from database import database, BigIntegerType
+
+class DTItemComponentMapping(database.base):
+  __tablename__ = "dt_item_component_mapping"
+
+  target_item_name = Column(ForeignKey("dt_items.name", ondelete="CASCADE"), primary_key=True)
+  component_item_name = Column(ForeignKey("dt_items.name", ondelete="CASCADE"), primary_key=True)
+
+  component = relationship("DTItem", primaryjoin="DTItemComponentMapping.component_item_name==DTItem.name", uselist=False)
+  amount = Column(Float, default=0)
+
+class ItemType(enum.Enum):
+  RAW = 0
+  CRAFTABLE = 1
+
+  def __str__(self):
+    return self.name
+
+class ItemSource(enum.Enum):
+  MINING = 0
+  CHEM_MINING = 1
+  OIL_MINING = 2
+  WATER_COLLECTOR = 3
+  URANIUM_ENRICHMENT = 4
+  CRAFTING = 5
+  SMELTING = 6
+  CHEMISTRY = 7
+  JEWEL_CRAFTING = 8
+  GREENHOUSE = 9
+  BUY = 10
+  OTHER = 11
+
+  def __str__(self):
+    return self.name
 
 class DTItem(database.base):
   __tablename__ = "dt_items"
 
   name = Column(String, primary_key=True)
-  value = Column(Float, nullable=False, default=0)
+  item_type = Column(Enum(ItemType))
+  item_source = Column(Enum(ItemSource))
+  value = Column(Float, default=0)
+  crafting_time = Column(Float, default=0)
+
+  components_data = relationship("DTItemComponentMapping", primaryjoin="DTItem.name==DTItemComponentMapping.target_item_name", uselist=True)
+
+  @property
+  def cumulative_crafting_time(self) -> float:
+    crafting_time = self.crafting_time
+
+    if self.item_type == ItemType.CRAFTABLE:
+      for component_data in self.components_data:
+        crafting_time += (component_data.component.cumulative_crafting_time * component_data.amount)
+
+    return crafting_time
+
+  @property
+  def component_value(self) -> float:
+    value = 0
+    if self.item_type == ItemType.CRAFTABLE:
+      for component_data in self.components_data:
+        value += (component_data.component.value * component_data.amount)
+
+    return value
+
+  @property
+  def efficiency(self) -> float:
+    if self.item_type == ItemType.CRAFTABLE:
+      return self.value / self.component_value
+    else:
+      return 1.0
+
+  @property
+  def cumulative_efficency(self) -> float:
+    efficiency = self.efficiency
+
+    if self.item_type == ItemType.CRAFTABLE:
+      for component_data in self.components_data:
+        efficiency *= component_data.component.efficiency
+
+    return efficiency
 
   def __repr__(self):
     return f"{self.name}: {self.value}"

@@ -46,5 +46,13 @@ def format_number(number: Union[int, float], precision: int=2) -> str:
   elif number / 1_000 >= 1:
     number /= 1_000
     units = "k"
+  elif number >= 1:
+    pass
+  elif number * 1_000 >= 1:
+    number *= 1_000
+    units = "m"
+  elif number * 1_000_000 >= 1:
+    number *= 1_000_000
+    units = "u"
 
   return f"{number:.{precision}f}{units}"

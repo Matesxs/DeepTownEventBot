@@ -7,6 +7,9 @@ class BlacklistType(enum.Enum):
   USER = 1
   GUILD = 2
 
+  def __str__(self):
+    return self.name
+
 class DTBlacklistItem(database.base):
   __tablename__ = "dt_blacklist"
 

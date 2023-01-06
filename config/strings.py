@@ -81,8 +81,12 @@ class Strings(metaclass=Formatable):
   data_manager_add_remove_dt_item_name_param_description = "Deep Town item name"
 
   data_manager_add_dt_item_description = "Create Deep Town item"
+  data_manager_add_dt_item_type_param_description = "Type of item"
+  data_manager_add_dt_item_source_param_description = "Source of item"
   data_manager_add_dt_item_value_param_description = "Event value of one item"
-  data_manager_add_dt_item_success = "Set value of item `{name}` to value `{value}`"
+  data_manager_add_dt_item_crafting_time_param_description = "Crafting time of item if craftable"
+  data_manager_add_dt_item_success_craftable = "Set item `{item_type}` `{name}` to value `{value}` and crafting time `{crafting_time}`"
+  data_manager_add_dt_item_success_noncraftable = "Set item `{item_type}` `{name}` to value `{value}`"
 
   data_manager_remove_dt_item_description = "Remove Deep Town item"
   data_manager_remove_dt_item_success = "Item `{name}` removed from database"
@@ -90,6 +94,23 @@ class Strings(metaclass=Formatable):
 
   data_manager_list_dt_items_description = "List all Deep Town items"
   data_manager_list_dt_items_no_items = "No Deep Town items in database"
+
+  data_manager_target_item_not_found = "Target item not found in database"
+
+  data_manager_modify_dt_item_component_description = "Modify component of item"
+  data_manager_modify_dt_item_component_target_item_param_description = "Item for which modify component"
+  data_manager_modify_dt_item_component_component_item_param_description = "Item component"
+  data_manager_modify_dt_item_component_amount_param_description = "Number of components to craft target item (0 to remove) (can be floating point)"
+  data_manager_modify_dt_item_component_target_not_craftable = "Target item is not craftable"
+  data_manager_modify_dt_item_component_component_not_found = "Component item not found in database"
+  data_manager_modify_dt_item_component_removed = "Removed `{component_item}` as component of `{target_item}`"
+  data_manager_modify_dt_item_component_remove_failed = "Component `{component_item}` is not component of `{target_item}`"
+  data_manager_modify_dt_item_component_added = "Added `{amount}x {component_item}` as component of `{target_item}`"
+
+  data_manager_remove_dt_item_components_description = "Remove all components of item"
+  data_manager_remove_dt_item_components_target_item_param_description = "Item for which remove components"
+  data_manager_remove_dt_item_components_removed = "Removed all components of `{target_item}`"
+  data_manager_remove_dt_item_components_failed = "Target item `{target_item}` have no components"
 
   data_manager_set_remove_event_items_year_param_description = "Event year"
   data_manager_set_remove_event_items_week_param_description = "Event week"

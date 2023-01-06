@@ -123,6 +123,6 @@ def get_event_items_table(event_specification: EventSpecification) -> Optional[s
   if event_specification is None: return None
   if not event_specification.participation_items: return None
 
-  event_items_data = [(eitem.item.name, f"{string_manipulation.format_number(eitem.item.value, 3)}") for eitem in event_specification.participation_items]
-  event_items_table = table2ascii(["Name", "Value"], event_items_data, alignments=[Alignment.LEFT, Alignment.RIGHT])
+  event_items_data = [(string_manipulation.truncate_string(eitem.item.name, 20), f"{string_manipulation.format_number(eitem.item.value, 2)}", f"{string_manipulation.format_number(eitem.item.value / eitem.item.cumulative_crafting_time, 2) if eitem.item.cumulative_crafting_time > 0 else '-'}", f"{string_manipulation.format_number(eitem.item.cumulative_efficency * 100, 2)}") for eitem in event_specification.participation_items]
+  event_items_table = table2ascii(["Name", "Value", "Value/s", "Efficiency"], event_items_data, alignments=[Alignment.LEFT, Alignment.RIGHT, Alignment.RIGHT, Alignment.RIGHT])
   return event_items_table

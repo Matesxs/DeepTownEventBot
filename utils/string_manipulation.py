@@ -13,7 +13,9 @@ def add_string_until_length(strings:List[str], max_length:int, sep:str) -> Tuple
     output = tmp_output
   return output, strings
 
-def truncate_string(string: str, limit: int, ellipsis :str="…", from_beginning: bool=False) -> str:
+def truncate_string(string: str, limit: int, ellipsis :str="…", from_beginning: bool=False, strip: bool=True) -> str:
+  if strip:
+    string = string.strip()
   if len(string) <= limit: return string
 
   if from_beginning:

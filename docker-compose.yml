@@ -12,8 +12,8 @@ services:
     bot:
         build: .
         container_name: deep-town-event-bot
-        volumes:
-            -   .:/bot/
+        # volumes:
+        #    -   .:/bot/
         depends_on:
             - db
         restart: on-failure

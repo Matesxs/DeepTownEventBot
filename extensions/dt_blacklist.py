@@ -126,7 +126,7 @@ class DTBlacklist(Base_Cog):
 
     blacklist_items = dt_blacklist_repo.get_blacklist_items(type)
 
-    blacklist_data = [(bitem.identifier, bitem.bl_type, bitem.additional_data) for bitem in blacklist_items]
+    blacklist_data = [(bitem.identifier, bitem.bl_type, string_manipulation.truncate_string(bitem.additional_data, 20)) for bitem in blacklist_items]
     blacklist_table_lines = table2ascii(["Identifier", "Type", "Specific Data"], blacklist_data, alignments=[Alignment.LEFT, Alignment.LEFT, Alignment.LEFT]).split("\n")
 
     blacklist_pages = []

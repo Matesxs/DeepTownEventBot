@@ -12,10 +12,10 @@ def get_dt_user(user_id: int) -> Optional[DTUser]:
 def get_all_users(search: Optional[str]=None, limit: int=25) -> List[DTUser]:
   if search is not None:
     if search.isnumeric():
-      return session.query(DTUser).filter(or_(DTUser.username.ilike(f"%{search}%"), DTUser.id == int(search))).limit(limit).all()
+      return session.query(DTUser).filter(or_(DTUser.username.ilike(f"%{search}%"), DTUser.id == int(search))).order_by(DTUser.username).limit(limit).all()
     else:
-      return session.query(DTUser).filter(DTUser.username.ilike(f"%{search}%")).limit(limit).all()
-  return session.query(DTUser).limit(limit).all()
+      return session.query(DTUser).filter(DTUser.username.ilike(f"%{search}%")).order_by(DTUser.username).limit(limit).all()
+  return session.query(DTUser).order_by(DTUser.username).limit(limit).all()
 
 def get_users_by_identifier(identifier: str) -> List[DTUser]:
   if identifier.isnumeric():

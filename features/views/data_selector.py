@@ -4,14 +4,12 @@ from typing import List, Optional
 from utils import message_utils
 
 class DataSelectorDropdown(disnake.ui.Select):
-  def __init__(self, view: disnake.ui.View, author: disnake.User, not_selected: List[str], selected: List[str], min_selected: int=1, max_selected: Optional[int]=None):
+  def __init__(self, author: disnake.User, not_selected: List[str], selected: List[str], min_selected: int=1, max_selected: Optional[int]=None):
     all_options_number = len(not_selected) + len(selected)
 
     assert all_options_number <= 25, "Too much data to select"
 
-    self._view = view
     self.author = author
-    self.message = None
 
     if max_selected is None:
       max_selected = all_options_number
@@ -45,7 +43,7 @@ class DataSelector(disnake.ui.View):
 
     self.result = selected
 
-    self.selector = DataSelectorDropdown(self, author, not_selected, selected, min_selected, max_selected)
+    self.selector = DataSelectorDropdown(author, not_selected, selected, min_selected, max_selected)
     self.add_item(self.selector)
 
   async def run(self, ctx):
@@ -54,7 +52,6 @@ class DataSelector(disnake.ui.View):
       self.message = await ctx.original_message()
     else:
       self.message = await ctx.send(view=self)
-    self.selector.message = self.message
 
   def get_results(self):
     return [colm for colm in self.available_colms if colm in self.result]

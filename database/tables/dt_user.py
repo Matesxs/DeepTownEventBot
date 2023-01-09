@@ -54,8 +54,10 @@ class DTUser(database.base):
     self.depth = data.depth
     self.last_online = data.last_online
 
-    self.donated = data.donated
-    self.received = data.received
+    if data.donated != -1:
+      self.donated = data.donated
+    if data.received != -1:
+      self.received = data.received
 
     self.mines = data.mines
     self.chem_mines = data.chem_mines

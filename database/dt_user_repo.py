@@ -31,7 +31,7 @@ def create_dummy_dt_user(id: int) -> Optional[DTUser]:
     if dt_blacklist_repo.is_on_blacklist(dt_blacklist_repo.BlacklistType.USER, id):
       return None
 
-    item = DTUser(id=id, username="Unknown", level=-1, depth=-1)
+    item = DTUser(id=id, username="Unknown", level=-1, depth=-1, received=-1, donated=-1)
     session.add(item)
     session.commit()
   return item

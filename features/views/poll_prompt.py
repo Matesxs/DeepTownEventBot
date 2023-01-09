@@ -8,9 +8,9 @@ reaction_ids = ["vote:zero", "vote:one", "vote:two", "vote:three", "vote:four", 
 reactions = ["0️⃣", "1️⃣", "2️⃣", "3️⃣", "4️⃣", "5️⃣", "6️⃣", "7️⃣", "8️⃣", "9️⃣"]
 reaction_buttons = [disnake.ui.Button(emoji=f"{reactions[i]}", custom_id=rid,style=disnake.ButtonStyle.primary) for i, rid in enumerate(reaction_ids)]
 
-class PoolView(disnake.ui.View):
+class PollView(disnake.ui.View):
   def __init__(self, author: disnake.User, description: str, choices: List[str], duration_seconds: int, color: disnake.Color=disnake.Color.dark_blue()):
-    super(PoolView, self).__init__(timeout=duration_seconds)
+    super(PollView, self).__init__(timeout=duration_seconds)
 
     self.message: Optional[Union[disnake.Message, disnake.ApplicationCommandInteraction, disnake.ModalInteraction, disnake.MessageCommandInteraction]] = None
     self.choices = choices
@@ -27,7 +27,7 @@ class PoolView(disnake.ui.View):
       self.add_item(reaction_buttons[i])
 
   def generate_embed(self):
-    embed = disnake.Embed(title="Pool", description=string_manipulation.truncate_string(self.description, 4000), color=self.color)
+    embed = disnake.Embed(title="Poll", description=string_manipulation.truncate_string(self.description, 4000), color=self.color)
     for idx, (reaction_id, choice) in enumerate(zip(reaction_ids, self.choices)):
       embed.add_field(name=f"{reactions[idx]}: {self.results[idx]}", value=string_manipulation.truncate_string(choice, 1000))
 
@@ -47,7 +47,7 @@ class PoolView(disnake.ui.View):
 
   async def interaction_check(self, interaction: disnake.MessageInteraction):
     if interaction.author.id in self.participants:
-      await message_utils.generate_error_message(interaction, "You already participated in this pool")
+      await message_utils.generate_error_message(interaction, "You already participated in this poll")
       return False
 
     self.participants.append(interaction.author.id)
@@ -73,7 +73,7 @@ class PoolView(disnake.ui.View):
     return True
 
   async def stop(self) -> None:
-    super(PoolView, self).stop()
+    super(PollView, self).stop()
     await self.on_timeout()
 
   async def on_timeout(self):
@@ -86,7 +86,7 @@ class PoolView(disnake.ui.View):
     max_res = max(self.results)
 
     if max_res == 0:
-      embed = disnake.Embed(title="Pool results", description=f"There is no winner", color=disnake.Color.orange())
+      embed = disnake.Embed(title="Poll results", description=f"There is no winner", color=disnake.Color.orange())
     else:
       res_indexes = []
       for idx, result in enumerate(self.results):
@@ -95,7 +95,7 @@ class PoolView(disnake.ui.View):
 
       res_reactions = [reaction for idx, reaction in enumerate(reactions) if idx in res_indexes]
       res_choices, _ = string_manipulation.add_string_until_length([choice for idx, choice in enumerate(self.choices) if idx in res_indexes], 3000, "\n")
-      embed = disnake.Embed(title="Pool results", description=f"{', '.join(res_reactions)} {'choice' if len(res_indexes) == 1 else 'choices'} won:\n`{res_choices}`\n[Link]({self.message.jump_url})", color=self.color)
+      embed = disnake.Embed(title="Poll results", description=f"{', '.join(res_reactions)} {'choice' if len(res_indexes) == 1 else 'choices'} won:\n`{res_choices}`\n[Link]({self.message.jump_url})", color=self.color)
 
     try:
       await self.message.reply(embed=embed)

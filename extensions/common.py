@@ -6,7 +6,8 @@ import humanize
 
 from config import cooldowns, Strings, config
 from features.base_cog import Base_Cog
-from utils import message_utils, permission_helper
+from features.modals.pool_modal import PoolModal
+from utils import message_utils
 
 class Common(Base_Cog):
   def __init__(self, bot):
@@ -48,14 +49,10 @@ class Common(Base_Cog):
 
     await ctx.send(embed=embed)
 
-  @commands.message_command(name="Delete Bot Message")
-  @cooldowns.short_cooldown
-  @commands.check(permission_helper.is_administrator)
-  async def delete_bot_message(self, inter: disnake.MessageCommandInteraction):
-    if inter.target.author == self.bot.user.id:
-      return await inter.target.delete()
-    return await message_utils.generate_error_message(inter, Strings.public_interface_delete_bot_message_invalid_message)
-
+  @commands.slash_command(name="pool", description=Strings.common_pool_description)
+  @cooldowns.long_cooldown
+  async def create_pool(self, inter: disnake.CommandInteraction, duration: int=commands.Param(description=Strings.common_pool_duration_param_description)):
+    await inter.response.send_modal(PoolModal(author=inter.author, pool_duration_seconds=duration * 60))
 
 def setup(bot):
   bot.add_cog(Common(bot))

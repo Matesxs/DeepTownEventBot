@@ -1,5 +1,5 @@
 import datetime
-from sqlalchemy import Column, ForeignKey, Integer, DateTime, UniqueConstraint, String, Float
+from sqlalchemy import Column, ForeignKey, Integer, DateTime, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from database import database, BigIntegerType
@@ -39,6 +39,8 @@ class EventParticipation(database.base):
                       self.dt_user.depth,
                       self.dt_user.last_online,
                       self.amount,
+                      self.dt_user.received,
+                      self.dt_user.donated,
                       self.dt_user.mines,
                       self.dt_user.chem_mines,
                       self.dt_user.oil_mines,

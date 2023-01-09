@@ -492,7 +492,7 @@ class DTDataManager(Base_Cog):
 
         data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
 
-        await asyncio.sleep(1)
+        await asyncio.sleep(2)
         if data is None:
           not_updated.append(guild_id)
           continue
@@ -521,7 +521,7 @@ class DTDataManager(Base_Cog):
 
           data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
 
-          await asyncio.sleep(1)
+          await asyncio.sleep(2)
           if data is None:
             continue
 

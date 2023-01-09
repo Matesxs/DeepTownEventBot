@@ -378,6 +378,8 @@ class PublicInterface(Base_Cog):
     user_front_page.add_field(name="Depth", value=str(user.depth))
     user_front_page.add_field(name="Online", value=humanize.naturaltime(current_time - user.last_online) if user.last_online is not None else "Never")
     user_front_page.add_field(name="Current guild", value=f"{user.active_member.guild.name}({user.active_member.guild.level})" if user.active_member is not None else "None", inline=False)
+    user_front_page.add_field(name="Donations", value=string_manipulation.format_number(user.donated, 3))
+    user_front_page.add_field(name="Received donations", value=string_manipulation.format_number(user.received, 3))
     user_profile_lists.append(user_front_page)
 
     # Buildings page

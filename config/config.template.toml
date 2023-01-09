@@ -35,8 +35,8 @@ pull_data_startup_delay_seconds = 60
 tracker_limit_per_guild = 10
 
 announce_day_index = 0 # 0 - monday, 6 - sunday
-announce_time_hours = 10
-announce_time_minutes = 0
+announce_time_hours = 8
+announce_time_minutes = 30
 
 [blacklist]
 report_channel_id = -1

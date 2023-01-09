@@ -13,6 +13,9 @@ class DTUser(database.base):
   depth = Column(Integer)
   last_online = Column(DateTime, nullable=True)
 
+  donated = Column(BigIntegerType, default=0)
+  received = Column(BigIntegerType, default=0)
+
   mines = Column(Integer, default=0)
   chem_mines = Column(Integer, default=0)
   oil_mines = Column(Integer, default=0)
@@ -34,6 +37,8 @@ class DTUser(database.base):
       level=data.level,
       depth=data.depth,
       last_online=data.last_online,
+      donated=data.donated,
+      received=data.received,
       mines=data.mines,
       chem_mines=data.chem_mines,
       oil_mines=data.oil_mines,
@@ -48,6 +53,9 @@ class DTUser(database.base):
     self.level = data.level
     self.depth = data.depth
     self.last_online = data.last_online
+
+    self.donated = data.donated
+    self.received = data.received
 
     self.mines = data.mines
     self.chem_mines = data.chem_mines

@@ -90,7 +90,7 @@ class DTDataManager(Base_Cog):
             await inter.edit_original_response(f"```\nGuild {idx+1}/{len(guild_ids)}\n```")
             last_update = datetime.datetime.utcnow()
 
-          await asyncio.sleep(0.2)
+          await asyncio.sleep(0.5)
           if data is None: continue
 
           event_participation_repo.generate_or_update_event_participations(data)
@@ -124,7 +124,7 @@ class DTDataManager(Base_Cog):
           await inter.edit_original_response(f"```\nGuild {idx + 1}/{len(guild_ids)}\n```")
           last_update = datetime.datetime.utcnow()
 
-        await asyncio.sleep(0.2)
+        await asyncio.sleep(0.5)
         if data is None: continue
 
         event_participation_repo.generate_or_update_event_participations(data)

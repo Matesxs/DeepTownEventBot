@@ -432,6 +432,10 @@ class PublicInterface(Base_Cog):
 
     await inter.send(f"```\nYear: {year} Week: {week}\n{item_table}\n```")
 
+    event_items_scaling_table = dt_report_generators.get_event_items_scaling_table(event_specification)
+    if event_items_scaling_table is not None:
+      await inter.send(f"```\n{event_items_scaling_table}\n```")
+
   @event_commands.sub_command_group(name="leaderboard")
   async def event_leaderboard(self, inter: disnake.CommandInteraction):
     pass

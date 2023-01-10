@@ -76,6 +76,7 @@ async def get_dt_guild_data(bot: BaseAutoshardedBot, guild_id:int) -> Optional[D
 
     try:
       donations_data = await response.json(content_type="text/html")
+      donations_data = {d[0]: (d[1], d[2]) for d in donations_data["data"]}
     except Exception:
       logger.error(traceback.format_exc())
       return None
@@ -95,8 +96,6 @@ async def get_dt_guild_data(bot: BaseAutoshardedBot, guild_id:int) -> Optional[D
   if config.data_manager.ignore_empty_guilds:
     if len(guild_data_json["players"]["data"]) == 0:
       return None
-
-  donations_data = {d[0]: (d[1], d[2]) for d in donations_data["data"]}
 
   players = []
   for player_data in guild_data_json["players"]["data"]:

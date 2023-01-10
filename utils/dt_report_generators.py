@@ -136,5 +136,16 @@ def get_event_items_table(event_specification: EventSpecification, colm_padding:
   if not event_specification.participation_items: return None
 
   event_items_data = [(string_manipulation.truncate_string(eitem.item.name, 20), f"{string_manipulation.format_number(eitem.item.value, 2)}", f"{string_manipulation.format_number(eitem.item.value / eitem.item.cumulative_crafting_time, 2) if eitem.item.cumulative_crafting_time > 0 else '-'}", f"{string_manipulation.format_number(eitem.item.cumulative_efficency * 100, 2)}") for eitem in event_specification.participation_items]
-  event_items_table = table2ascii(["Name", "Value", "Value/s", "Efficiency"], event_items_data, alignments=[Alignment.LEFT, Alignment.RIGHT, Alignment.RIGHT, Alignment.RIGHT], cell_padding=colm_padding)
-  return event_items_table
+  return table2ascii(["Name", "Value", "Value/s", "Efficiency"], event_items_data, alignments=[Alignment.LEFT, Alignment.RIGHT, Alignment.RIGHT, Alignment.RIGHT], cell_padding=colm_padding)
+
+def get_event_items_scaling_table(event_specification: EventSpecification, levels: int=30, colm_padding: int=1) -> Optional[str]:
+  if event_specification is None: return None
+  if not event_specification.participation_items: return None
+
+  event_items = [ei for ei in event_specification.participation_items if ei.base_amount is not None]
+  if not event_items: return None
+
+  colm_names = ["Level", *[string_manipulation.truncate_string(ei.item.name, 20) for ei in event_items]]
+  scaling_data = [(idx + 1, *scalings) for idx, scalings in enumerate(zip(*[ei.get_event_amount_scaling(levels=levels) for ei in event_items]))]
+
+  return table2ascii(colm_names, scaling_data, alignments=[Alignment.RIGHT] * len(colm_names), cell_padding=colm_padding)

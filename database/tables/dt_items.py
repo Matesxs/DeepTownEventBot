@@ -1,6 +1,7 @@
 import enum
 from sqlalchemy import Column, ForeignKey, String, Float, Integer, Enum
 from sqlalchemy.orm import relationship
+import math
 
 from database import database, BigIntegerType
 
@@ -92,7 +93,12 @@ class EventItem(database.base):
 
   event_id = Column(BigIntegerType, ForeignKey("event_specifications.event_id", ondelete="CASCADE"), primary_key=True)
   item_name = Column(String, ForeignKey("dt_items.name", ondelete="CASCADE"), primary_key=True)
-  base_amount = Column(Integer, nullable=False, default=0)
+  base_amount = Column(Integer)
 
   item = relationship("DTItem", uselist=False)
   event_specification = relationship("EventSpecification", uselist=False, back_populates="participation_items")
+
+  def get_event_amount_scaling(self, levels: int=30):
+    if self.base_amount is None: return None
+    levels = max(levels, 0)
+    return [math.floor(self.base_amount * 0.9202166811 * math.exp(level / 8)) for level in range(1, levels + 1)]

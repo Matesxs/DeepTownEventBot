@@ -434,7 +434,10 @@ class PublicInterface(Base_Cog):
 
     event_items_scaling_table = dt_report_generators.get_event_items_scaling_table(event_specification)
     if event_items_scaling_table is not None:
-      await inter.send(f"```\n{event_items_scaling_table}\n```")
+      event_items_scaling_table_lines = event_items_scaling_table.split("\n")
+      while event_items_scaling_table_lines:
+        final_string, event_items_scaling_table_lines = string_manipulation.add_string_until_length(event_items_scaling_table_lines, 1800, "\n")
+        await inter.send(f"```\n{final_string}\n```")
 
   @event_commands.sub_command_group(name="leaderboard")
   async def event_leaderboard(self, inter: disnake.CommandInteraction):

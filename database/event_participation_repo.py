@@ -86,7 +86,7 @@ def get_event_participants_data(guild_id: Optional[int] = None, year: Optional[i
       additional_data = session.query(
         func.avg(EventParticipation.amount),
         func.percentile_cont(0.5).within_group(EventParticipation.amount))\
-        .filter(*filters, EventParticipation.dt_user_id == user_id, EventParticipation.dt_guild_id == guild_id).one_or_none()
+        .filter(*filters, EventParticipation.dt_user_id == user_id, EventParticipation.dt_guild_id == guild_id, EventParticipation.amount > 0).one_or_none()
 
       ignore_zero_average, ignore_zero_median = 0, 0
       if all(additional_data):

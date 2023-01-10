@@ -118,8 +118,8 @@ class PublicInterface(Base_Cog):
   @cooldowns.default_cooldown
   async def guild_report(self, inter: disnake.CommandInteraction,
                          identifier: str = commands.Param(description=Strings.dt_guild_identifier_param_description, autocomp=dt_identifier_autocomplete.autocomplete_identifier_guild),
-                         year: Optional[int] = commands.Param(description=Strings.dt_event_year_param_description),
-                         week: Optional[int] = commands.Param(min_value=1, description=Strings.dt_event_year_param_description),
+                         year: Optional[int] = commands.Param(default=None, description=Strings.dt_event_year_param_description),
+                         week: Optional[int] = commands.Param(default=None, min_value=1, description=Strings.dt_event_year_param_description),
                          tight_format: bool = commands.Param(default=False, description=Strings.public_interface_guild_report_tight_format_param_description)):
     await inter.response.defer(with_message=True)
 
@@ -427,8 +427,8 @@ class PublicInterface(Base_Cog):
   @event_commands.sub_command(name="help", description=Strings.public_interface_event_help_description)
   @cooldowns.default_cooldown
   async def event_help(self, inter: disnake.CommandInteraction,
-                       year: Optional[int] = commands.Param(description=Strings.dt_event_year_param_description),
-                       week: Optional[int] = commands.Param(min_value=1, description=Strings.dt_event_year_param_description)):
+                       year: Optional[int] = commands.Param(default=None, description=Strings.dt_event_year_param_description),
+                       week: Optional[int] = commands.Param(default=None, min_value=1, description=Strings.dt_event_year_param_description)):
     await inter.response.defer(with_message=True)
 
     if year is None or week is None:
@@ -454,8 +454,8 @@ class PublicInterface(Base_Cog):
   @event_commands.sub_command(name="leaderboard", description=Strings.public_interface_event_leaderboard_specific_description)
   @cooldowns.default_cooldown
   async def global_event_leaderboard(self, inter: disnake.CommandInteraction,
-                                             year: Optional[int]=commands.Param(description=Strings.dt_event_year_param_description),
-                                             week: Optional[int]=commands.Param(min_value=1, description=Strings.dt_event_year_param_description),
+                                             year: Optional[int]=commands.Param(default=None, description=Strings.dt_event_year_param_description),
+                                             week: Optional[int]=commands.Param(default=None, min_value=1, description=Strings.dt_event_year_param_description),
                                              user_count: int = commands.Param(default=20, min_value=1, max_value=200, description=Strings.public_interface_event_leaderboard_specific_user_count_param_description)):
     await inter.response.defer(with_message=True)
     if year is None or week is None:

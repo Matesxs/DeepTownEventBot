@@ -1,3 +1,4 @@
+import asyncio
 import statistics
 import disnake
 from disnake.ext import commands
@@ -6,6 +7,7 @@ from functools import partial
 import humanize
 from table2ascii import table2ascii, Alignment
 from typing import Optional
+import sqlalchemy
 
 from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
@@ -206,35 +208,44 @@ class PublicInterface(Base_Cog):
     guild_event_participations_stats_page.add_field(name="Median donate per event last year", value=f"{string_manipulation.format_number(statistics.median(last_year_guild_participations_amounts_no_zero))}", inline=False)
     guild_profile_lists.append(guild_event_participations_stats_page)
 
+    await asyncio.sleep(0.1)
+
     # Event best contributors
-    top_event_contributors = event_participation_repo.get_best_participants(guild.id, limit=10, ignore_zero_participation_median=True)
+    top_event_contributors = event_participation_repo.get_event_participants_data(guild.id, limit=10, ignore_zero_participation_median=True, only_current_members=True, order_by=[sqlalchemy.func.avg(event_participation_repo.EventParticipation.amount).desc()])
     top_event_contributors_data = [(idx + 1, string_manipulation.truncate_string(contributor[1], 14), string_manipulation.format_number(contributor[4]), string_manipulation.format_number(contributor[5]), string_manipulation.format_number(contributor[6])) for idx, contributor in enumerate(top_event_contributors)]
-    event_best_contributos_table_strings = table2ascii(body=top_event_contributors_data, header=["No°", "Name", "Total", "Average", "Median"], alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.RIGHT, Alignment.RIGHT, Alignment.RIGHT], first_col_heading=True).split("\n")
+    event_best_contributors_table_strings = table2ascii(body=top_event_contributors_data, header=["No°", "Name", "Total", "Average", "Median"], alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.RIGHT, Alignment.RIGHT, Alignment.RIGHT], first_col_heading=True).split("\n")
 
-    event_best_contributos_page_strings = []
-    while event_best_contributos_table_strings:
-      data_string, event_participations_strings = string_manipulation.add_string_until_length(event_best_contributos_table_strings, 3000, "\n")
-      event_best_contributos_page_strings.append(data_string)
-
-    for event_best_contributos_page_string in event_best_contributos_page_strings:
-      best_event_contributors_page = disnake.Embed(title=f"{string_manipulation.truncate_string(guild.name, 20)} best event contributors", color=disnake.Color.dark_blue(), description=f"```\n{event_best_contributos_page_string}\n```")
+    while event_best_contributors_table_strings:
+      data_string, event_best_contributors_table_strings = string_manipulation.add_string_until_length(event_best_contributors_table_strings, 3000, "\n")
+      best_event_contributors_page = disnake.Embed(title=f"{string_manipulation.truncate_string(guild.name, 20)} best event contributors", color=disnake.Color.dark_blue(), description=f"```\n{data_string}\n```")
       message_utils.add_author_footer(best_event_contributors_page, inter.author)
       guild_profile_lists.append(best_event_contributors_page)
+
+    await asyncio.sleep(0.1)
+
+    # Worst event contributors
+    worst_event_contributors = event_participation_repo.get_event_participants_data(guild.id, limit=10, ignore_zero_participation_median=True, only_current_members=True, order_by=[sqlalchemy.func.avg(event_participation_repo.EventParticipation.amount)])
+    worst_event_contributors_data = [(idx + 1, string_manipulation.truncate_string(contributor[1], 14), string_manipulation.format_number(contributor[4]), string_manipulation.format_number(contributor[5]), string_manipulation.format_number(contributor[6])) for idx, contributor in enumerate(worst_event_contributors)]
+    event_worst_contributors_table_strings = table2ascii(body=worst_event_contributors_data, header=["No°", "Name", "Total", "Average", "Median"], alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.RIGHT, Alignment.RIGHT, Alignment.RIGHT], first_col_heading=True).split("\n")
+
+    while event_worst_contributors_table_strings:
+      data_string, event_worst_contributors_table_strings = string_manipulation.add_string_until_length(event_worst_contributors_table_strings, 3000, "\n")
+      worst_event_contributors_page = disnake.Embed(title=f"{string_manipulation.truncate_string(guild.name, 20)} worst event contributors", color=disnake.Color.dark_blue(), description=f"```\n{data_string}\n```")
+      message_utils.add_author_footer(worst_event_contributors_page, inter.author)
+      guild_profile_lists.append(worst_event_contributors_page)
+
+    await asyncio.sleep(0.1)
 
     # Event participations
     event_participations_data = []
     for year, week, total, average, median, _, _ in all_guild_participations:
-      best_participants = event_participation_repo.get_best_participants(guild.id, year, week, limit=1) if total != 0 else None
+      best_participants = event_participation_repo.get_event_participants_data(guild.id, year, week, limit=1) if total != 0 else None
       event_participations_data.append((year, week, (string_manipulation.truncate_string(best_participants[0][1], 10) if best_participants is not None else "*Unknown*"), string_manipulation.format_number(best_participants[0][4]) if best_participants else "0", string_manipulation.format_number(average), string_manipulation.format_number(median)))
 
     event_participations_strings = table2ascii(body=event_participations_data, header=["Year", "Week", "Top Member", "Top Donate", "Average", "Median"], alignments=[Alignment.RIGHT, Alignment.RIGHT, Alignment.LEFT, Alignment.RIGHT, Alignment.RIGHT, Alignment.RIGHT]).split("\n")
-    event_participations_page_strings = []
     while event_participations_strings:
       data_string, event_participations_strings = string_manipulation.add_string_until_length(event_participations_strings, 3000, "\n")
-      event_participations_page_strings.append(data_string)
-
-    for event_participations_page_string in event_participations_page_strings:
-      event_participation_page = disnake.Embed(title=f"{string_manipulation.truncate_string(guild.name, 20)} event participations", color=disnake.Color.dark_blue(), description=f"```\n{event_participations_page_string}\n```")
+      event_participation_page = disnake.Embed(title=f"{string_manipulation.truncate_string(guild.name, 20)} event participations", color=disnake.Color.dark_blue(), description=f"```\n{data_string}\n```")
       message_utils.add_author_footer(event_participation_page, inter.author)
       guild_profile_lists.append(event_participation_page)
 
@@ -259,7 +270,7 @@ class PublicInterface(Base_Cog):
 
     event_participations_data = []
     for year, week, total, average, median, _, _ in all_guild_participations:
-      best_participants = event_participation_repo.get_best_participants(guild.id, year, week, limit=1) if total != 0 else None
+      best_participants = event_participation_repo.get_event_participants_data(guild.id, year, week, limit=1) if total != 0 else None
       event_participations_data.append((year, week, (string_manipulation.truncate_string(best_participants[0][1], 10) if best_participants is not None else "*Unknown*"), string_manipulation.format_number(best_participants[0][4]) if best_participants else "0", string_manipulation.format_number(average), string_manipulation.format_number(median)))
 
     event_participations_strings = table2ascii(body=event_participations_data, header=["Year", "Week", "Top Member", "Top Donate", "Average", "Median"], alignments=[Alignment.RIGHT, Alignment.RIGHT, Alignment.LEFT, Alignment.RIGHT, Alignment.RIGHT, Alignment.RIGHT]).split("\n")
@@ -461,7 +472,7 @@ class PublicInterface(Base_Cog):
       if week is None:
         week = c_week
 
-    global_best_participants = event_participation_repo.get_best_participants(year=year, week=week, limit=user_count)
+    global_best_participants = event_participation_repo.get_event_participants_data(year=year, week=week, limit=user_count)
     if not global_best_participants:
       return await message_utils.generate_error_message(inter, Strings.dt_event_data_not_found(year=year, week=week))
 

@@ -104,33 +104,6 @@ class DTEventReportAnnouncer(Base_Cog):
     embed_view = EmbedView(inter.author, pages, invisible=True)
     await embed_view.run(inter)
 
-  @announcer.sub_command(description=Strings.event_report_announcer_generate_announcements_description)
-  @cooldowns.huge_cooldown
-  async def generate_announcements(self, inter: disnake.CommandInteraction):
-    await inter.response.defer(with_message=True, ephemeral=True)
-
-    trackers = tracking_settings_repo.get_all_guild_trackers(inter.guild.id)
-    if not trackers:
-      return await message_utils.generate_error_message(inter, Strings.event_report_announcer_generate_announcements_no_data)
-
-    for tracker in trackers:
-      await self.send_tracker_text_announcement(tracker)
-      await asyncio.sleep(0.1)
-
-    await message_utils.generate_success_message(inter, Strings.event_report_announcer_generate_announcements_success)
-
-  async def send_tracker_text_announcement(self, tracker: tracking_settings_repo.TrackingSettings):
-    announce_channel = await tracker.get_announce_channel(self.bot)
-    if announce_channel is None:
-      # Announce channel not found so the tracker is not valid anymore
-      tracking_settings_repo.session.delete(tracker)
-      return
-
-    participations = event_participation_repo.get_recent_guild_event_participations(tracker.dt_guild_id)
-    if not participations: return
-
-    await dt_report_generators.send_text_guild_event_participation_report(announce_channel, tracker.dt_guild, participations, colm_padding=0)
-
   @tasks.loop(hours=24*7)
   async def result_announce_task(self):
     logger.info("Update before announcement starting")
@@ -147,10 +120,21 @@ class DTEventReportAnnouncer(Base_Cog):
         event_participation_repo.generate_or_update_event_participations(data)
     logger.info("Update before announcement finished")
 
+    year, week = dt_helpers.get_event_index(datetime.datetime.utcnow())
+
     logger.info("Starting Announcement")
     trackers = tracking_settings_repo.get_all_trackers()
     for tracker in trackers:
-      await self.send_tracker_text_announcement(tracker)
+      announce_channel = await tracker.get_announce_channel(self.bot)
+      if announce_channel is None:
+        # Announce channel not found so the tracker is not valid anymore
+        tracking_settings_repo.session.delete(tracker)
+        continue
+
+      participations = event_participation_repo.get_event_participations(guild_id=int(tracker.guild_id), year=year, week=week, order_by=[event_participation_repo.EventParticipation.amount.desc()])
+      if not participations: return
+
+      await dt_report_generators.send_text_guild_event_participation_report(announce_channel, tracker.dt_guild, participations, colm_padding=0)
       await asyncio.sleep(0.25)
     logger.info(f"Announcements send, next announcement {datetime.datetime.utcnow() + datetime.timedelta(days=7)}")
 

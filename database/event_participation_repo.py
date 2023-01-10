@@ -1,12 +1,12 @@
 import datetime
 import statistics
 from typing import Optional, List, Tuple, Any
-from sqlalchemy import func
+from sqlalchemy import func, and_
 
 from database import session
 from database.tables.event_participation import EventParticipation, EventSpecification
 from database.dt_guild_member_repo import get_and_update_dt_guild_members, create_dummy_dt_guild_member
-from database import dt_user_repo, dt_guild_repo
+from database import dt_user_repo, dt_guild_repo, dt_guild_member_repo
 from utils import dt_helpers
 
 def get_event_specification(year: int, week: int) -> Optional[EventSpecification]:
@@ -37,14 +37,16 @@ def get_event_participations(user_id: Optional[int] = None, guild_id: Optional[i
   return session.query(EventParticipation).join(EventSpecification).filter(*filters).order_by(*order_by).limit(limit).all()
 
 
-def get_best_participants(guild_id: Optional[int] = None, year: Optional[int] = None, week: Optional[int] = None, limit: int = 10, ignore_zero_participation_median: bool=False, ignore_zero_participation_average: bool=False) -> List[Tuple[int, str, int, str, int, float, float]]:
+def get_event_participants_data(guild_id: Optional[int] = None, year: Optional[int] = None, week: Optional[int] = None, limit: int = 10, order_by: Optional[List[Any]]=None, ignore_zero_participation_median: bool=False, ignore_zero_participation_average: bool=False, only_current_members: bool=False) -> List[Tuple[int, str, int, str, int, float, float]]:
   """
   :param guild_id: Deep Town Guild ID
   :param year: Event year
   :param week: Event week
   :param limit: Limit of retrieved data rows
+  :param order_by: Order in which retrieve data
   :param ignore_zero_participation_median: Ignore zero participations for calculation of median
   :param ignore_zero_participation_average: Ignore zero participations for calculation of average
+  :param only_current_members: Get stats only from current members
   :return: user id, username, guild id, guild name, total, average, median
   """
   filters = []
@@ -55,7 +57,10 @@ def get_best_participants(guild_id: Optional[int] = None, year: Optional[int] = 
   if week is not None:
     filters.append(EventSpecification.event_week == week)
 
-  data = session.query(
+  if order_by is None:
+    order_by = [func.avg(EventParticipation.amount).desc()]
+
+  data_query = session.query(
     dt_user_repo.DTUser.id,
     dt_user_repo.DTUser.username,
     dt_guild_repo.DTGuild.id,
@@ -63,10 +68,16 @@ def get_best_participants(guild_id: Optional[int] = None, year: Optional[int] = 
     func.sum(EventParticipation.amount),
     func.avg(EventParticipation.amount),
     func.percentile_cont(0.5).within_group(EventParticipation.amount))\
-    .join(EventSpecification)\
-    .filter(*filters).join(dt_user_repo.DTUser, dt_guild_repo.DTGuild)\
+    .join(EventSpecification) \
+    .join(dt_guild_repo.DTGuild)\
+    .join(dt_guild_member_repo.DTGuildMember, and_(dt_guild_member_repo.DTGuildMember.dt_user_id == EventParticipation.dt_user_id, dt_guild_member_repo.DTGuildMember.dt_guild_id == dt_guild_repo.DTGuild.id)) \
+    .join(dt_user_repo.DTUser)\
+    .filter(*filters, *([dt_guild_member_repo.DTGuildMember.current_member == True] if only_current_members else []))\
     .group_by(dt_user_repo.DTUser.id, dt_user_repo.DTUser.username, dt_guild_repo.DTGuild.id, dt_guild_repo.DTGuild.name)\
-    .order_by(func.sum(EventParticipation.amount).desc()).limit(limit).all()
+    .order_by(*order_by).limit(limit)
+
+  # print(data_query)
+  data = data_query.all()
 
   if ignore_zero_participation_average or ignore_zero_participation_median:
     output_data = []
@@ -135,18 +146,6 @@ def get_guild_event_participations_data(guild_id: int, year: Optional[int] = Non
 
     return output_data
   return data
-
-def get_recent_guild_event_participations(dt_guild_id: int) -> List[EventParticipation]:
-  recent_year_results = session.query(func.max(EventSpecification.event_year)).one_or_none()
-  if recent_year_results is None: return []
-  recent_year = recent_year_results[0]
-
-  recent_week_results = session.query(func.max(EventSpecification.event_week)).filter(EventSpecification.event_year == recent_year).one_or_none()
-  if recent_week_results is None: return []
-  recent_week = recent_week_results[0]
-
-  return get_event_participations(guild_id=dt_guild_id, year=recent_year, week=recent_week, order_by=[EventParticipation.amount.desc()])
-
 
 def get_and_update_event_participation(user_id: int, guild_id: int, event_year: int, event_week: int, participation_amount: int) -> Optional[EventParticipation]:
   item = session.query(EventParticipation).filter(EventSpecification.event_year == event_year, EventSpecification.event_week == event_week, EventParticipation.dt_user_id == user_id, EventParticipation.dt_guild_id == guild_id).join(EventSpecification).one_or_none()

@@ -62,6 +62,8 @@ class Strings(metaclass=Formatable):
   dt_invalid_identifier = "Invalid identifier entered"
   dt_guild_data_not_found = "Deep Town guild with identifier `{identifier}` not found in database"
   dt_user_profile_no_users = "Deep Town user with identifier `{identifier}` not found in database"
+  dt_event_year_param_description = "Event year"
+  dt_event_week_param_description = "Event week"
 
   # Data manager
   data_manager_update_guild_description = "Update data of selected guild in database"
@@ -114,9 +116,6 @@ class Strings(metaclass=Formatable):
   data_manager_remove_dt_item_components_target_item_param_description = "Item for which remove components"
   data_manager_remove_dt_item_components_removed = "Removed all components of `{target_item}`"
   data_manager_remove_dt_item_components_failed = "Target item `{target_item}` have no components"
-
-  data_manager_set_remove_event_items_year_param_description = "Event year"
-  data_manager_set_remove_event_items_week_param_description = "Event week"
 
   data_manager_set_event_items_description = "Set Deep Town items in event"
   data_manager_set_event_items_item_name_param_description = "Event Deep Town Item {number}"
@@ -179,12 +178,7 @@ class Strings(metaclass=Formatable):
   public_interface_event_help_description = "Show items for current item"
   public_interface_event_help_no_items = "Items not set for this event"
 
-  public_interface_event_leaderboard_current_description = "Show leaderboard of participants in current event"
-  public_interface_event_leaderboard_current_user_count_param_description = "Number of top users to display"
-
   public_interface_event_leaderboard_specific_description = "Show leaderboard of participants in specific event"
-  public_interface_event_leaderboard_specific_year_param_description = "Year of event"
-  public_interface_event_leaderboard_specific_week_param_description = "Week of event"
   public_interface_event_leaderboard_specific_user_count_param_description = "Number of top users to display"
 
   public_interface_delete_bot_message_invalid_message = "This is not message of this bot!"

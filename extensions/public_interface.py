@@ -5,6 +5,7 @@ import datetime
 from functools import partial
 import humanize
 from table2ascii import table2ascii, Alignment
+from typing import Optional
 
 from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
@@ -117,14 +118,19 @@ class PublicInterface(Base_Cog):
   @cooldowns.default_cooldown
   async def guild_report(self, inter: disnake.CommandInteraction,
                          identifier: str = commands.Param(description=Strings.dt_guild_identifier_param_description, autocomp=dt_identifier_autocomplete.autocomplete_identifier_guild),
+                         year: Optional[int] = commands.Param(description=Strings.dt_event_year_param_description),
+                         week: Optional[int] = commands.Param(min_value=1, description=Strings.dt_event_year_param_description),
                          tight_format: bool = commands.Param(default=False, description=Strings.public_interface_guild_report_tight_format_param_description)):
     await inter.response.defer(with_message=True)
+
+    if year is None or week is None:
+      year, week = dt_helpers.get_event_index(datetime.datetime.utcnow())
 
     specifier = dt_identifier_autocomplete.identifier_to_specifier(identifier)
     if specifier is None:
       return await message_utils.generate_error_message(inter, Strings.dt_invalid_identifier)
 
-    guild_data = event_participation_repo.get_recent_guild_event_participations(specifier[1])
+    guild_data = event_participation_repo.get_event_participations(guild_id=specifier[1], year=year, week=week, order_by=[event_participation_repo.EventParticipation.amount.desc()])
 
     if not guild_data:
       return await message_utils.generate_error_message(inter, Strings.dt_guild_data_not_found(identifier=specifier[1]))
@@ -420,10 +426,14 @@ class PublicInterface(Base_Cog):
 
   @event_commands.sub_command(name="help", description=Strings.public_interface_event_help_description)
   @cooldowns.default_cooldown
-  async def event_help(self, inter: disnake.CommandInteraction):
+  async def event_help(self, inter: disnake.CommandInteraction,
+                       year: Optional[int] = commands.Param(description=Strings.dt_event_year_param_description),
+                       week: Optional[int] = commands.Param(min_value=1, description=Strings.dt_event_year_param_description)):
     await inter.response.defer(with_message=True)
 
-    year, week = dt_helpers.get_event_index(datetime.datetime.utcnow())
+    if year is None or week is None:
+      year, week = dt_helpers.get_event_index(datetime.datetime.utcnow())
+
     event_specification = event_participation_repo.get_or_create_event_specification(year, week)
 
     item_table = dt_report_generators.get_event_items_table(event_specification)
@@ -439,25 +449,15 @@ class PublicInterface(Base_Cog):
         final_string, event_items_scaling_table_lines = string_manipulation.add_string_until_length(event_items_scaling_table_lines, 1800, "\n")
         await inter.send(f"```\n{final_string}\n```")
 
-  @event_commands.sub_command_group(name="leaderboard")
-  async def event_leaderboard(self, inter: disnake.CommandInteraction):
-    pass
-
-  @event_leaderboard.sub_command(name="current", description=Strings.public_interface_event_leaderboard_current_description)
+  @event_commands.sub_command(name="leaderboard", description=Strings.public_interface_event_leaderboard_specific_description)
   @cooldowns.default_cooldown
-  async def global_event_current_leaderboard(self, inter: disnake.CommandInteraction,
-                                             user_count: int=commands.Param(default=20, min_value=1, max_value=200, description=Strings.public_interface_event_leaderboard_current_user_count_param_description)):
-    await inter.response.defer(with_message=True)
-    event_year, event_week = dt_helpers.get_event_index(datetime.datetime.utcnow())
-    await send_event_leaderboards(inter, event_year, event_week, user_count)
-
-  @event_leaderboard.sub_command(name="specific", description=Strings.public_interface_event_leaderboard_specific_description)
-  @cooldowns.default_cooldown
-  async def global_event_current_leaderboard(self, inter: disnake.CommandInteraction,
-                                             year: int=commands.Param(description=Strings.public_interface_event_leaderboard_specific_year_param_description),
-                                             week: int=commands.Param(min_value=1, description=Strings.public_interface_event_leaderboard_specific_week_param_description),
+  async def global_event_leaderboard(self, inter: disnake.CommandInteraction,
+                                             year: Optional[int]=commands.Param(description=Strings.dt_event_year_param_description),
+                                             week: Optional[int]=commands.Param(min_value=1, description=Strings.dt_event_year_param_description),
                                              user_count: int = commands.Param(default=20, min_value=1, max_value=200, description=Strings.public_interface_event_leaderboard_specific_user_count_param_description)):
     await inter.response.defer(with_message=True)
+    if year is None or week is None:
+      year, week = dt_helpers.get_event_index(datetime.datetime.utcnow())
     await send_event_leaderboards(inter, year, week, user_count)
 
 def setup(bot):

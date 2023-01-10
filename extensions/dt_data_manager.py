@@ -295,8 +295,8 @@ class DTDataManager(Base_Cog):
   @cooldowns.short_cooldown
   @commands.is_owner()
   async def set_event_items(self, inter: disnake.CommandInteraction,
-                            event_year: Optional[int]=commands.Param(default=None, min_value=0, description=Strings.data_manager_set_remove_event_items_year_param_description),
-                            event_week: Optional[int]=commands.Param(default=None, min_value=0, description=Strings.data_manager_set_remove_event_items_week_param_description),
+                            event_year: Optional[int]=commands.Param(default=None, min_value=0, description=Strings.dt_event_year_param_description),
+                            event_week: Optional[int]=commands.Param(default=None, min_value=0, description=Strings.dt_event_week_param_description),
                             item1: str=commands.Param(description=Strings.data_manager_set_event_items_item_name_param_description(number=1)),
                             item2: str=commands.Param(description=Strings.data_manager_set_event_items_item_name_param_description(number=2)),
                             item3: str=commands.Param(description=Strings.data_manager_set_event_items_item_name_param_description(number=3)),
@@ -350,8 +350,8 @@ class DTDataManager(Base_Cog):
   @cooldowns.short_cooldown
   @commands.is_owner()
   async def remove_event_items(self, inter: disnake.CommandInteraction,
-                               event_year: Optional[int]=commands.Param(default=None, min_value=0, description=Strings.data_manager_set_remove_event_items_year_param_description),
-                               event_week: Optional[int]=commands.Param(default=None, min_value=0, description=Strings.data_manager_set_remove_event_items_week_param_description)):
+                               event_year: Optional[int]=commands.Param(default=None, min_value=0, description=Strings.dt_event_year_param_description),
+                               event_week: Optional[int]=commands.Param(default=None, min_value=0, description=Strings.dt_event_week_param_description)):
     await inter.response.defer(with_message=True, ephemeral=True)
 
     if event_year is None or event_week is None:

@@ -29,6 +29,7 @@ def get_and_update_dt_guild_members(guild_data: DTGuildData) -> Optional[List[DT
     return None
 
   dt_members = []
+  current_user_ids = []
   for player_data in guild_data.players:
     if get_and_update_dt_user(player_data) is None:
       continue
@@ -41,10 +42,17 @@ def get_and_update_dt_guild_members(guild_data: DTGuildData) -> Optional[List[DT
     else:
       item.current_member = True
 
+    # If this user is marked as current member somewhere else remove it
     session.query(DTGuildMember).filter(DTGuildMember.dt_user_id == player_data.id, DTGuildMember.dt_guild_id != guild_data.id).update({"current_member": False})
     session.commit()
 
     dt_members.append(item)
+    current_user_ids.append(player_data.id)
+
+  # Remove all users that are not in current guild data and are marked currently as current member
+  session.query(DTGuildMember).filter(DTGuildMember.dt_guild_id == guild_data.id, DTGuildMember.current_member == True, DTGuildMember.dt_user_id.notin_(current_user_ids)).update({"current_member": False})
+  session.commit()
+
   return dt_members
 
 def get_number_of_members(guild_id: int) -> int:

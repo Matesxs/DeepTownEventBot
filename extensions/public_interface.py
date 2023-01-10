@@ -18,20 +18,6 @@ from features.views.data_selector import DataSelector
 
 logger = setup_custom_logger(__name__)
 
-async def send_event_leaderboards(inter: disnake.CommandInteraction, year: int, week: int, limit: int):
-  global_best_participants = event_participation_repo.get_best_participants(year=year, week=week, limit=limit)
-
-  participant_data = [(idx + 1, string_manipulation.truncate_string(username, 20), string_manipulation.truncate_string(guild_name, 20), string_manipulation.format_number(total_contribution)) for idx, (_, username, _, guild_name, total_contribution, _, _) in enumerate(global_best_participants)]
-  participant_data_table_strings = (f"Year: {year} Week: {week}\n" + table2ascii(header=["No°", "Username", "Guild", "Donate"], body=participant_data, first_col_heading=True, alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.LEFT, Alignment.RIGHT])).split("\n")
-
-  participant_data_page_strings = []
-  while participant_data_table_strings:
-    data_string, participant_data_table_strings = string_manipulation.add_string_until_length(participant_data_table_strings, 1900, "\n")
-    participant_data_page_strings.append(f"```\n{data_string}\n```")
-
-  for participant_data_page_string in participant_data_page_strings:
-    await inter.send(participant_data_page_string)
-
 class PublicInterface(Base_Cog):
   def __init__(self, bot):
     super(PublicInterface, self).__init__(bot, __file__)
@@ -133,11 +119,11 @@ class PublicInterface(Base_Cog):
     guild_data = event_participation_repo.get_event_participations(guild_id=specifier[1], year=year, week=week, order_by=[event_participation_repo.EventParticipation.amount.desc()])
 
     if not guild_data:
-      return await message_utils.generate_error_message(inter, Strings.dt_event_data_not_found(identifier=specifier[1], year=year, week=week))
+      return await message_utils.generate_error_message(inter, Strings.dt_event_data_not_found(year=year, week=week))
 
     send_report_function = partial(dt_report_generators.send_text_guild_event_participation_report, inter, guild_data[0].dt_guild, guild_data, colm_padding=0 if tight_format else 1)
 
-    reporter_settings = DataSelector(inter.author, ["ID", "Depth", "Online", "Standing"], ["No°", "Name", "Level", "Donate"], invisible=True)
+    reporter_settings = DataSelector(inter.author, ["ID", "Level", "Depth", "Online", "Standing"], ["No°", "Name", "Donate"], invisible=True)
     await reporter_settings.run(inter)
     ret = await reporter_settings.wait()
 
@@ -460,7 +446,17 @@ class PublicInterface(Base_Cog):
     await inter.response.defer(with_message=True)
     if year is None or week is None:
       year, week = dt_helpers.get_event_index(datetime.datetime.utcnow())
-    await send_event_leaderboards(inter, year, week, user_count)
+
+    global_best_participants = event_participation_repo.get_best_participants(year=year, week=week, limit=user_count)
+    if not global_best_participants:
+      return await message_utils.generate_error_message(inter, Strings.dt_event_data_not_found(year=year, week=week))
+
+    participant_data = [(idx + 1, string_manipulation.truncate_string(username, 20), string_manipulation.truncate_string(guild_name, 20), string_manipulation.format_number(total_contribution)) for idx, (_, username, _, guild_name, total_contribution, _, _) in enumerate(global_best_participants)]
+    participant_data_table_strings = (f"Year: {year} Week: {week}\n" + table2ascii(header=["No°", "Username", "Guild", "Donate"], body=participant_data, first_col_heading=True, alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.LEFT, Alignment.RIGHT])).split("\n")
+
+    while participant_data_table_strings:
+      data_string, participant_data_table_strings = string_manipulation.add_string_until_length(participant_data_table_strings, 1900, "\n")
+      await inter.send(f"```\n{data_string}\n```")
 
 def setup(bot):
   bot.add_cog(PublicInterface(bot))

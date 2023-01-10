@@ -62,7 +62,7 @@ class Strings(metaclass=Formatable):
   dt_invalid_identifier = "Invalid identifier entered"
   dt_guild_not_found = "Deep Town guild with identifier `{identifier}` not found in database"
   dt_user_not_found = "Deep Town user with identifier `{identifier}` not found in database"
-  dt_event_data_not_found = "Not found event data for guild `{identifier}` for event `{year}` `{week}`"
+  dt_event_data_not_found = "Not found event data for event `{year}` `{week}`"
   dt_event_year_param_description = "Event year"
   dt_event_week_param_description = "Event week"
 

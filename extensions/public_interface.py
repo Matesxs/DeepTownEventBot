@@ -53,7 +53,7 @@ class PublicInterface(Base_Cog):
     guild = dt_guild_repo.get_dt_guild(specifier[1])
 
     if not guild:
-      return await message_utils.generate_error_message(inter, Strings.dt_guild_data_not_found(identifier=identifier))
+      return await message_utils.generate_error_message(inter, Strings.dt_guild_not_found(identifier=identifier))
 
     current_time = datetime.datetime.utcnow()
     current_year, _ = dt_helpers.get_event_index(current_time)
@@ -133,7 +133,7 @@ class PublicInterface(Base_Cog):
     guild_data = event_participation_repo.get_event_participations(guild_id=specifier[1], year=year, week=week, order_by=[event_participation_repo.EventParticipation.amount.desc()])
 
     if not guild_data:
-      return await message_utils.generate_error_message(inter, Strings.dt_guild_data_not_found(identifier=specifier[1]))
+      return await message_utils.generate_error_message(inter, Strings.dt_event_data_not_found(identifier=specifier[1], year=year, week=week))
 
     send_report_function = partial(dt_report_generators.send_text_guild_event_participation_report, inter, guild_data[0].dt_guild, guild_data, colm_padding=0 if tight_format else 1)
 
@@ -156,7 +156,7 @@ class PublicInterface(Base_Cog):
 
     guild = dt_guild_repo.get_dt_guild(specifier[1])
     if not guild:
-      return await message_utils.generate_error_message(inter, Strings.dt_guild_data_not_found(identifier=identifier))
+      return await message_utils.generate_error_message(inter, Strings.dt_guild_not_found(identifier=identifier))
 
     guild_profile_lists = []
 
@@ -261,7 +261,7 @@ class PublicInterface(Base_Cog):
 
     guild = dt_guild_repo.get_dt_guild(specifier[1])
     if not guild:
-      return await message_utils.generate_error_message(inter, Strings.dt_guild_data_not_found(identifier=identifier))
+      return await message_utils.generate_error_message(inter, Strings.dt_guild_not_found(identifier=identifier))
 
     all_guild_participations = event_participation_repo.get_guild_event_participations_data(guild.id, ignore_zero_participation_median=True)
 
@@ -328,7 +328,7 @@ class PublicInterface(Base_Cog):
 
     user = dt_user_repo.get_dt_user(specifier[1])
     if not user:
-      return await message_utils.generate_error_message(inter, Strings.dt_user_profile_no_users(identifier=identifier))
+      return await message_utils.generate_error_message(inter, Strings.dt_user_not_found(identifier=identifier))
 
     all_participations = event_participation_repo.get_event_participations(user_id=user.id)
 
@@ -354,7 +354,7 @@ class PublicInterface(Base_Cog):
 
     user = dt_user_repo.get_dt_user(specifier[1])
     if not user:
-      return await message_utils.generate_error_message(inter, Strings.dt_user_profile_no_users(identifier=identifier))
+      return await message_utils.generate_error_message(inter, Strings.dt_user_not_found(identifier=identifier))
 
     current_time = datetime.datetime.utcnow()
     current_year, _ = dt_helpers.get_event_index(current_time)
@@ -434,7 +434,9 @@ class PublicInterface(Base_Cog):
     if year is None or week is None:
       year, week = dt_helpers.get_event_index(datetime.datetime.utcnow())
 
-    event_specification = event_participation_repo.get_or_create_event_specification(year, week)
+    event_specification = event_participation_repo.get_event_specification(year, week)
+    if event_specification is None:
+      return await message_utils.generate_error_message(inter, Strings.public_interface_event_help_no_items)
 
     item_table = dt_report_generators.get_event_items_table(event_specification)
     if item_table is None:

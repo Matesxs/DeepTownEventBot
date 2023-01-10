@@ -50,7 +50,7 @@ class DTEventReportAnnouncer(Base_Cog):
 
       existing_tracker = tracking_settings_repo.get_or_create_tracking_settings(inter.guild, specifier[1], announce_channel.id)
       if existing_tracker is None:
-        return await message_utils.generate_error_message(inter, Strings.dt_guild_data_not_found(identifier=identifier))
+        return await message_utils.generate_error_message(inter, Strings.dt_guild_not_found(identifier=identifier))
     else:
       existing_tracker.announce_channel_id = str(announce_channel.id)
       tracking_settings_repo.session.commit()

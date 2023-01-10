@@ -66,6 +66,8 @@ class PublicInterface(Base_Cog):
       member_front_page.add_field(name="Depth", value=str(member.user.depth))
       member_front_page.add_field(name="Online", value=humanize.naturaltime(current_time - member.user.last_online) if member.user.last_online is not None else "Never")
       member_front_page.add_field(name="Current guild", value=f"{member.guild.name}({member.guild.level})", inline=False)
+      member_front_page.add_field(name="Donations", value=string_manipulation.format_number(member.user.donated, 3))
+      member_front_page.add_field(name="Received donations", value=string_manipulation.format_number(member.user.received, 3))
       member_pages.append(member_front_page)
 
       # Buildings page
@@ -110,7 +112,11 @@ class PublicInterface(Base_Cog):
     await inter.response.defer(with_message=True)
 
     if year is None or week is None:
-      year, week = dt_helpers.get_event_index(datetime.datetime.utcnow())
+      c_year, c_week = dt_helpers.get_event_index(datetime.datetime.utcnow())
+      if year is None:
+        year = c_year
+      if week is None:
+        week = c_week
 
     specifier = dt_identifier_autocomplete.identifier_to_specifier(identifier)
     if specifier is None:
@@ -418,7 +424,11 @@ class PublicInterface(Base_Cog):
     await inter.response.defer(with_message=True)
 
     if year is None or week is None:
-      year, week = dt_helpers.get_event_index(datetime.datetime.utcnow())
+      c_year, c_week = dt_helpers.get_event_index(datetime.datetime.utcnow())
+      if year is None:
+        year = c_year
+      if week is None:
+        week = c_week
 
     event_specification = event_participation_repo.get_event_specification(year, week)
     if event_specification is None:
@@ -445,7 +455,11 @@ class PublicInterface(Base_Cog):
                                              user_count: int = commands.Param(default=20, min_value=1, max_value=200, description=Strings.public_interface_event_leaderboard_specific_user_count_param_description)):
     await inter.response.defer(with_message=True)
     if year is None or week is None:
-      year, week = dt_helpers.get_event_index(datetime.datetime.utcnow())
+      c_year, c_week = dt_helpers.get_event_index(datetime.datetime.utcnow())
+      if year is None:
+        year = c_year
+      if week is None:
+        week = c_week
 
     global_best_participants = event_participation_repo.get_best_participants(year=year, week=week, limit=user_count)
     if not global_best_participants:

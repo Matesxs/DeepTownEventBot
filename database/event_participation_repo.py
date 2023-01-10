@@ -36,7 +36,6 @@ def get_event_participations(user_id: Optional[int] = None, guild_id: Optional[i
 
   return session.query(EventParticipation).join(EventSpecification).filter(*filters).order_by(*order_by).limit(limit).all()
 
-
 def get_event_participants_data(guild_id: Optional[int] = None, year: Optional[int] = None, week: Optional[int] = None, limit: int = 10, order_by: Optional[List[Any]]=None, ignore_zero_participation_median: bool=False, ignore_zero_participation_average: bool=False, only_current_members: bool=False) -> List[Tuple[int, str, int, str, int, float, float]]:
   """
   :param guild_id: Deep Town Guild ID
@@ -95,10 +94,52 @@ def get_event_participants_data(guild_id: Optional[int] = None, year: Optional[i
       output_data.append((user_id, username, guild_id, guild_name, total, ignore_zero_average if ignore_zero_participation_average else average, ignore_zero_median if ignore_zero_participation_median else median))
 
     return output_data
-  return data
+  return data[0], data[1], data[2], data[3], data[4], data[5], data[6] if data[6] is not None else 0
 
+def get_event_participation_stats(guild_id: Optional[int]=None, user_id: Optional[int]=None, year: Optional[int]=None, ignore_zero_participation_median: bool=False, ignore_zero_participation_average: bool=False) -> Tuple[int, float, float]:
+  """
+  :param guild_id: Deep Town Guild ID
+  :param user_id: Deep Town User ID
+  :param year: Event year
+  :param ignore_zero_participation_median: Ignore zero participations for calculation of median
+  :param ignore_zero_participation_average: Ignore zero participations for calculation of average
+  :return: total, average, median
+  """
 
-def get_guild_event_participations_data(guild_id: int, year: Optional[int] = None, week: Optional[int] = None, limit: int = 500, ignore_zero_participation_median: bool=False, ignore_zero_participation_average: bool=False) -> List[Tuple[int, int, int, float, float, int, int]]:
+  filters = []
+  if guild_id is not None:
+    filters.append(EventParticipation.dt_guild_id == guild_id)
+  if user_id is not None:
+    filters.append(EventParticipation.dt_user_id == user_id)
+  if year is not None:
+    filters.append(EventSpecification.event_year == year)
+
+  data = session.query(
+    func.sum(EventParticipation.amount),
+    func.avg(EventParticipation.amount),
+    func.percentile_cont(0.5).within_group(EventParticipation.amount)
+  )\
+    .join(EventSpecification)\
+    .filter(*filters)\
+    .one()
+
+  if ignore_zero_participation_average or ignore_zero_participation_median:
+    additional_data = session.query(
+      func.avg(EventParticipation.amount),
+      func.percentile_cont(0.5).within_group(EventParticipation.amount)
+    ) \
+      .join(EventSpecification) \
+      .filter(*filters, EventParticipation.amount > 0) \
+      .one()
+
+    if not all(additional_data):
+      additional_data = 0, 0
+
+    median = additional_data[1] if ignore_zero_participation_median else data[2]
+    return data[0], additional_data[0] if ignore_zero_participation_average else data[1], median if median is not None else 0
+  return data[0], data[1], data[2] if data[2] is not None else 0
+
+def get_guild_event_participations_data(guild_id: int, year: Optional[int] = None, week: Optional[int] = None, limit: int = 500, ignore_zero_participation_median: bool=False, ignore_zero_participation_average: bool=False) -> List[Tuple[int, int, int, float, float]]:
   """
   :param guild_id: Deep Town Guild ID
   :param year: Event year
@@ -106,7 +147,7 @@ def get_guild_event_participations_data(guild_id: int, year: Optional[int] = Non
   :param limit: Limit of retrieved data rows
   :param ignore_zero_participation_median: Ignore zero participations for calculation of median
   :param ignore_zero_participation_average: Ignore zero participations for calculation of average
-  :return: event_year, event_week, total, average, median, active_players, all_players
+  :return: event_year, event_week, total, average, median
   """
   filters = [EventParticipation.dt_guild_id == guild_id]
   if year is not None:
@@ -119,9 +160,7 @@ def get_guild_event_participations_data(guild_id: int, year: Optional[int] = Non
       EventSpecification.event_week,
       func.sum(EventParticipation.amount),
       func.avg(EventParticipation.amount),
-      func.percentile_cont(0.5).within_group(EventParticipation.amount),
-      func.count(func.nullif(EventParticipation.amount, 0)),
-      func.count(EventParticipation.amount))\
+      func.percentile_cont(0.5).within_group(EventParticipation.amount))\
       .join(EventParticipation)\
       .filter(*filters)\
       .order_by(EventSpecification.event_year.desc(), EventSpecification.event_week.desc())\
@@ -131,7 +170,7 @@ def get_guild_event_participations_data(guild_id: int, year: Optional[int] = Non
   if ignore_zero_participation_average or ignore_zero_participation_median:
     output_data = []
 
-    for year, week, total, average, median, active_count, total_count in data:
+    for year, week, total, average, median in data:
       additional_data = session.query(
         func.avg(EventParticipation.amount),
         func.percentile_cont(0.5).within_group(EventParticipation.amount))\
@@ -142,10 +181,10 @@ def get_guild_event_participations_data(guild_id: int, year: Optional[int] = Non
       if all(additional_data):
         ignore_zero_average, ignore_zero_median = float(additional_data[0]), float(additional_data[1])
 
-      output_data.append((year, week, total, ignore_zero_average if ignore_zero_participation_average else average, ignore_zero_median if ignore_zero_participation_median else median, active_count, total_count))
+      output_data.append((year, week, total, ignore_zero_average if ignore_zero_participation_average else average, ignore_zero_median if ignore_zero_participation_median else median))
 
     return output_data
-  return data
+  return data[0], data[1], data[2], data[3], data[4] if data[4] is not None else 0
 
 def get_and_update_event_participation(user_id: int, guild_id: int, event_year: int, event_week: int, participation_amount: int) -> Optional[EventParticipation]:
   item = session.query(EventParticipation).filter(EventSpecification.event_year == event_year, EventSpecification.event_week == event_week, EventParticipation.dt_user_id == user_id, EventParticipation.dt_guild_id == guild_id).join(EventSpecification).one_or_none()

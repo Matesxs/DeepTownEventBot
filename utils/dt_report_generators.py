@@ -126,7 +126,7 @@ def generate_participations_page_strings(participations: List[EventParticipation
 
   output_pages = []
   while participation_table_lines:
-    data_string, participation_table_lines = string_manipulation.add_string_until_length(participation_table_lines, 1500, "\n")
+    data_string, participation_table_lines = string_manipulation.add_string_until_length(participation_table_lines, 1200, "\n")
     output_pages.append(data_string)
 
   return output_pages

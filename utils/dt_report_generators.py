@@ -148,4 +148,4 @@ def get_event_items_scaling_table(event_specification: EventSpecification, level
   colm_names = ["Level", *[string_manipulation.truncate_string(ei.item.name, 20) for ei in event_items]]
   scaling_data = [(idx + 1, *scalings) for idx, scalings in enumerate(zip(*[ei.get_event_amount_scaling(levels=levels) for ei in event_items]))]
 
-  return table2ascii(colm_names, scaling_data, alignments=[Alignment.RIGHT] * len(colm_names), cell_padding=colm_padding)
+  return table2ascii(colm_names, scaling_data, alignments=[Alignment.RIGHT] * len(colm_names), cell_padding=colm_padding, first_col_heading=True, footer=["Sum", *[ei.get_event_amount_sum(levels=levels) for ei in event_items]])

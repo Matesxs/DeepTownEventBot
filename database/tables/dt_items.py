@@ -102,3 +102,8 @@ class EventItem(database.base):
     if self.base_amount is None: return None
     levels = max(levels, 1)
     return [self.base_amount, *[math.floor(self.base_amount * 0.9202166811 * math.exp(level / 8)) for level in range(2, levels + 1)]]
+
+  def get_event_amount_sum(self, levels: int=30):
+    amounts = self.get_event_amount_scaling(levels)
+    if amounts is None: return None
+    return sum(amounts)

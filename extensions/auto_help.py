@@ -99,6 +99,7 @@ class AutoHelp(Base_Cog):
   @question_and_answer.sub_command_group(name="whitelist")
   @commands.guild_only()
   @commands.check(permission_helper.is_administrator)
+  @cooldowns.default_cooldown
   async def question_and_answer_whitelist(self, inter: disnake.CommandInteraction):
     pass
 

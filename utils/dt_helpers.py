@@ -70,7 +70,7 @@ def get_event_index(date:datetime.datetime):
   return event_year, week_number
 
 async def get_dt_guild_data(guild_id:int) -> Optional[DTGuildData]:
-  async with ClientSession(timeout=ClientTimeout(total=30)) as session:
+  async with ClientSession(timeout=ClientTimeout(total=60)) as session:
     async with session.get(f"http://dtat.hampl.space/data/donations/current/guild/id/{guild_id}") as response:
       if response.status != 200:
         logger.error(f"Guild donations response: {response.status}")

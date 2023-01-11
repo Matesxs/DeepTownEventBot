@@ -154,39 +154,6 @@ class DTDataManager(Base_Cog):
     else:
       await message_utils.generate_error_message(inter, Strings.data_manager_skip_data_update_failed)
 
-  @data_manager.sub_command(description=Strings.data_manager_dump_guild_participation_data_description)
-  @cooldowns.huge_cooldown
-  async def dump_guild_participation_data(self, inter: disnake.CommandInteraction,
-                                          identifier: Optional[str]=commands.Param(default=None, description=Strings.dt_guild_identifier_param_description, autocomp=dt_identifier_autocomplete.autocomplete_identifier_guild)):
-    await inter.response.defer(with_message=True, ephemeral=True)
-
-    specifier = None
-    if identifier is not None:
-      specifier = dt_identifier_autocomplete.identifier_to_specifier(identifier)
-      if specifier is None:
-        return await message_utils.generate_error_message(inter, Strings.dt_invalid_identifier)
-
-      dump_data = event_participation_repo.dump_guild_event_participation_data(specifier[1])
-
-      if not dump_data:
-        return await message_utils.generate_error_message(inter, Strings.data_manager_dump_guild_participation_data_no_data(identifier=specifier[1]))
-    else:
-      dump_data = event_participation_repo.dump_guild_event_participation_data()
-
-      if not dump_data:
-        return await message_utils.generate_error_message(inter, Strings.data_manager_dump_guild_participation_data_no_data_no_guild_id)
-
-    dataframe = pd.DataFrame(dump_data, columns=["year", "week", "guild_id", "guild_name", "user_id", "username", "amount"] if identifier is None else ["year", "week", "user_id", "username", "amount"], index=None)
-
-    data = io.BytesIO()
-    dataframe.to_csv(data, sep=";", index=False)
-
-    data.seek(0)
-    discord_file = disnake.File(data, filename="participations_dump_all.csv" if specifier is None else f"participations_guild_{specifier[1]}_dump.csv")
-
-    await message_utils.generate_success_message(inter, Strings.data_manager_dump_guild_participation_data_success)
-    await inter.send(file=discord_file)
-
   @data_manager.sub_command_group(name="item")
   async def item_commands(self, inter: disnake.CommandInteraction):
     pass
@@ -483,6 +450,32 @@ class DTDataManager(Base_Cog):
         await message_utils.generate_success_message(message, Strings.data_manager_load_data_loaded(count=updated_rows))
     except:
       pass
+
+  @data_manager.sub_command(description=Strings.data_manager_dump_guild_participation_data_description)
+  @cooldowns.huge_cooldown
+  async def dump_guild_participation_data(self, inter: disnake.CommandInteraction,
+                                          identifier: str = commands.Param(description=Strings.dt_guild_identifier_param_description, autocomp=dt_identifier_autocomplete.autocomplete_identifier_guild)):
+    await inter.response.defer(with_message=True, ephemeral=True)
+
+    specifier = dt_identifier_autocomplete.identifier_to_specifier(identifier)
+    if specifier is None:
+      return await message_utils.generate_error_message(inter, Strings.dt_invalid_identifier)
+
+    dump_data = event_participation_repo.dump_guild_event_participation_data(specifier[1])
+
+    if not dump_data:
+      return await message_utils.generate_error_message(inter, Strings.data_manager_dump_guild_participation_data_no_data(identifier=specifier[1]))
+
+    dataframe = pd.DataFrame(dump_data, columns=["year", "week", "user_id", "username", "amount"], index=None)
+
+    data = io.BytesIO()
+    dataframe.to_csv(data, sep=";", index=False)
+
+    data.seek(0)
+    discord_file = disnake.File(data, filename=f"participations_guild_{specifier[1]}_dump.csv")
+
+    await message_utils.generate_success_message(inter, Strings.data_manager_dump_guild_participation_data_success)
+    await inter.send(file=discord_file)
 
   @tasks.loop(hours=config.data_manager.cleanup_rate_days * 24)
   async def cleanup_task(self):

@@ -3,10 +3,10 @@ import datetime
 import dataclasses
 from typing import List, Optional, Tuple
 import traceback
+from aiohttp import ClientSession, ClientTimeout
 from aiohttp.client_exceptions import InvalidURL
 
 from config import config
-from features.base_bot import BaseAutoshardedBot
 from utils.logger import setup_custom_logger
 
 logger = setup_custom_logger(__name__)
@@ -69,29 +69,32 @@ def get_event_index(date:datetime.datetime):
 
   return event_year, week_number
 
-async def get_dt_guild_data(bot: BaseAutoshardedBot, guild_id:int) -> Optional[DTGuildData]:
-  async with bot.http_session.get(f"http://dtat.hampl.space/data/donations/current/guild/id/{guild_id}") as response:
-    if response.status != 200:
-      return None
+async def get_dt_guild_data(guild_id:int) -> Optional[DTGuildData]:
+  async with ClientSession(timeout=ClientTimeout(total=30)) as session:
+    async with session.get(f"http://dtat.hampl.space/data/donations/current/guild/id/{guild_id}") as response:
+      if response.status != 200:
+        logger.error(f"Guild donations response: {response.status}")
+        return None
 
-    try:
-      donations_data = await response.json(content_type="text/html")
-      donations_data = {d[0]: (d[1], d[2]) for d in donations_data["data"]}
-    except Exception:
-      logger.error(traceback.format_exc())
-      return None
+      try:
+        donations_data = await response.json(content_type="text/html")
+        donations_data = {d[0]: (d[1], d[2]) for d in donations_data["data"]}
+      except Exception:
+        logger.error(traceback.format_exc())
+        return None
 
-  await asyncio.sleep(0.1)
+    await asyncio.sleep(0.1)
 
-  async with bot.http_session.get(f"http://dtat.hampl.space/data/guild/id/{guild_id}/data") as response:
-    if response.status != 200:
-      return None
+    async with session.get(f"http://dtat.hampl.space/data/guild/id/{guild_id}/data") as response:
+      if response.status != 200:
+        logger.error(f"Guild data response: {response.status}")
+        return None
 
-    try:
-      guild_data_json = await response.json(content_type="text/html")
-    except Exception:
-      logger.error(traceback.format_exc())
-      return None
+      try:
+        guild_data_json = await response.json(content_type="text/html")
+      except Exception:
+        logger.error(traceback.format_exc())
+        return None
 
   if config.data_manager.ignore_empty_guilds:
     if len(guild_data_json["players"]["data"]) == 0:
@@ -104,26 +107,11 @@ async def get_dt_guild_data(bot: BaseAutoshardedBot, guild_id:int) -> Optional[D
 
   return DTGuildData(guild_data_json["name"] if guild_data_json["name"] is not None else "*Unknown*", guild_data_json["id"], guild_data_json["level"], players)
 
-async def get_ids_of_all_guilds(bot: BaseAutoshardedBot) -> Optional[List[int]]:
-  async with bot.http_session.get("http://dtat.hampl.space/data/guild/name") as response:
-    if response.status != 200:
-      return None
-
-    try:
-      json_data = await response.json(content_type="text/html")
-    except Exception:
-      logger.error(traceback.format_exc())
-      return None
-
-    ids = []
-    for guild_data in json_data["data"]:
-      ids.append(guild_data[0])
-    return ids
-
-async def get_guild_info(bot: BaseAutoshardedBot, guild_name: Optional[str]=None) -> Optional[List[Tuple[int, str, int]]]:
-  try:
-    async with bot.http_session.get("http://dtat.hampl.space/data/guild/name" + ("" if guild_name is None else f"/{guild_name.replace(' ', '_')}")) as response:
+async def get_ids_of_all_guilds() -> Optional[List[int]]:
+  async with ClientSession(timeout=ClientTimeout(total=30)) as session:
+    async with session.get("http://dtat.hampl.space/data/guild/name") as response:
       if response.status != 200:
+        logger.error(f"Guild ids response: {response.status}")
         return None
 
       try:
@@ -132,9 +120,28 @@ async def get_guild_info(bot: BaseAutoshardedBot, guild_name: Optional[str]=None
         logger.error(traceback.format_exc())
         return None
 
-      data = []
-      for guild_data in json_data["data"]:
-        data.append(tuple(guild_data))
-      return data
+  ids = []
+  for guild_data in json_data["data"]:
+    ids.append(guild_data[0])
+  return ids
+
+async def get_guild_info(guild_name: Optional[str]=None) -> Optional[List[Tuple[int, str, int]]]:
+  try:
+    async with ClientSession(timeout=ClientTimeout(total=30)) as session:
+      async with session.get("http://dtat.hampl.space/data/guild/name" + ("" if guild_name is None else f"/{guild_name.replace(' ', '_')}")) as response:
+        if response.status != 200:
+          logger.error(f"Guild info response: {response.status}")
+          return None
+
+        try:
+          json_data = await response.json(content_type="text/html")
+        except Exception:
+          logger.error(traceback.format_exc())
+          return None
+
+    data = []
+    for guild_data in json_data["data"]:
+      data.append(tuple(guild_data))
+    return data
   except InvalidURL:
     return None

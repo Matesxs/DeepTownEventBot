@@ -459,6 +459,7 @@ class DTDataManager(Base_Cog):
           if datetime.datetime.utcnow() - last_sleep >= datetime.timedelta(seconds=20):
             try:
               await inter.edit_original_response(f"```\nFile {file_idx + 1}/{len(csv_files)}\nData row {row_idx + 1}/{dataframe.shape[0]}\n```")
+              logger.info(f"File {file_idx + 1}/{len(csv_files)} Data row {row_idx + 1}/{dataframe.shape[0]}")
             except:
               pass
             last_sleep = datetime.datetime.utcnow()
@@ -505,6 +506,7 @@ class DTDataManager(Base_Cog):
 
     logger.info("Guild data pull starting")
     guild_ids = await dt_helpers.get_ids_of_all_guilds(self.bot)
+    await asyncio.sleep(0.1)
 
     if guild_ids is not None or not guild_ids:
       pulled_data = 0
@@ -529,7 +531,7 @@ class DTDataManager(Base_Cog):
 
         data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
 
-        await asyncio.sleep(2)
+        await asyncio.sleep(1)
         if data is None:
           not_updated.append(guild_id)
           continue
@@ -561,7 +563,7 @@ class DTDataManager(Base_Cog):
 
           data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
 
-          await asyncio.sleep(2)
+          await asyncio.sleep(1)
           if data is None:
             continue
 

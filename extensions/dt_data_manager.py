@@ -354,20 +354,8 @@ class DTDataManager(Base_Cog):
   @cooldowns.long_cooldown
   @commands.max_concurrency(1, commands.BucketType.default)
   @commands.is_owner()
-  async def load_data(self, inter: disnake.MessageCommandInteraction,
-                      guild_identifier: Optional[str] = commands.Param(default=None, description=Strings.dt_guild_identifier_param_description, autocomp=dt_identifier_autocomplete.autocomplete_identifier_guild)):
+  async def load_data(self, inter: disnake.MessageCommandInteraction):
     await inter.response.defer(with_message=True, ephemeral=True)
-
-    guild_id_ext = None
-    if guild_identifier is not None:
-      if guild_identifier.isnumeric():
-        guild_id_ext = int(guild_identifier)
-      else:
-        specifier = dt_identifier_autocomplete.identifier_to_specifier(guild_identifier)
-        if specifier is None:
-          return await message_utils.generate_error_message(inter, Strings.dt_invalid_identifier)
-
-        guild_id_ext = specifier[1]
 
     attachments = inter.target.attachments
     if not attachments:
@@ -389,7 +377,7 @@ class DTDataManager(Base_Cog):
       for row_idx, (_, row) in enumerate(dataframe.iterrows()):
         try:
           user_id = int(row["user_id"])
-          guild_id = int(row["guild_id"]) if guild_id_ext is None else guild_id_ext
+          guild_id = int(row["guild_id"])
           ammount = int(row["amount"])
 
           if "week" in row.keys() and "year" in row.keys():

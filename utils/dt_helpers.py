@@ -81,7 +81,7 @@ async def get_dt_guild_data(bot: BaseAutoshardedBot, guild_id:int) -> Optional[D
       logger.error(traceback.format_exc())
       return None
 
-  await asyncio.sleep(0.05)
+  await asyncio.sleep(0.1)
 
   async with bot.http_session.get(f"http://dtat.hampl.space/data/guild/id/{guild_id}/data") as response:
     if response.status != 200:

@@ -13,7 +13,7 @@ from features.base_cog import Base_Cog
 from utils import dt_helpers, message_utils, string_manipulation, dt_identifier_autocomplete
 from utils.logger import setup_custom_logger
 from config import cooldowns, Strings, config
-from database import event_participation_repo, tracking_settings_repo, dt_guild_repo, dt_guild_member_repo, guilds_repo, dt_items_repo
+from database import event_participation_repo, tracking_settings_repo, dt_guild_repo, dt_guild_member_repo, guilds_repo, dt_items_repo, dt_blacklist_repo
 from features.views.paginator import EmbedView
 
 logger = setup_custom_logger(__name__)
@@ -524,6 +524,9 @@ class DTDataManager(Base_Cog):
           logger.info("Data pull interrupted")
           break
 
+        if dt_blacklist_repo.is_on_blacklist(dt_blacklist_repo.BlacklistType.GUILD, guild_id):
+          continue
+
         data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
 
         await asyncio.sleep(2)
@@ -552,6 +555,9 @@ class DTDataManager(Base_Cog):
           if self.skip_periodic_data_update or self.data_loading:
             logger.info("Data pull interrupted")
             break
+
+          if dt_blacklist_repo.is_on_blacklist(dt_blacklist_repo.BlacklistType.GUILD, guild_id):
+            continue
 
           data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
 

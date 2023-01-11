@@ -518,6 +518,7 @@ class DTDataManager(Base_Cog):
           continue
 
         event_participation_repo.generate_or_update_event_participations(data)
+        await asyncio.sleep(0.1)
         pulled_data += 1
 
       number_of_not_updated_guilds = len(not_updated)
@@ -550,6 +551,7 @@ class DTDataManager(Base_Cog):
 
           not_updated.remove(guild_id)
           event_participation_repo.generate_or_update_event_participations(data)
+          await asyncio.sleep(0.1)
           pulled_data += 1
 
       logger.info(f"Pulled data of {pulled_data} guilds\nGuilds {not_updated} not updated")

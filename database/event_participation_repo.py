@@ -227,22 +227,34 @@ def generate_or_update_event_participations(guild_data: dt_helpers.DTGuildData) 
   return participations
 
 
-def dump_guild_event_participation_data(guild_id: Optional[int] = None) -> List[Tuple[int, int, int, str, int, str, int]]:
-  filters = [EventParticipation.dt_guild_id == guild_id] if guild_id is not None else []
-  data = session.query(
-    EventSpecification.event_year,
-    EventSpecification.event_week,
-    EventParticipation.dt_guild_id,
-    dt_guild_repo.DTGuild.name,
-    EventParticipation.dt_user_id,
-    dt_user_repo.DTUser.username,
-    EventParticipation.amount
-  )\
-    .select_from(EventSpecification)\
-    .join(EventParticipation)\
-    .join(dt_user_repo.DTUser)\
-    .join(dt_guild_repo.DTGuild)\
-    .filter(*filters).all()
+def dump_guild_event_participation_data(guild_id: Optional[int] = None):
+  if guild_id is not None:
+    data = session.query(
+      EventSpecification.event_year,
+      EventSpecification.event_week,
+      EventParticipation.dt_user_id,
+      dt_user_repo.DTUser.username,
+      EventParticipation.amount
+    )\
+      .select_from(EventSpecification)\
+      .join(EventParticipation)\
+      .join(dt_user_repo.DTUser)\
+      .filter(EventParticipation.dt_guild_id == guild_id).all()
+  else:
+    data = session.query(
+      EventSpecification.event_year,
+      EventSpecification.event_week,
+      EventParticipation.dt_guild_id,
+      dt_guild_repo.DTGuild.name,
+      EventParticipation.dt_user_id,
+      dt_user_repo.DTUser.username,
+      EventParticipation.amount
+    ) \
+      .select_from(EventSpecification) \
+      .join(EventParticipation) \
+      .join(dt_user_repo.DTUser) \
+      .join(dt_guild_repo.DTGuild) \
+      .all()
   return data
 
 

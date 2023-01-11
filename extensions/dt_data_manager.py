@@ -54,13 +54,17 @@ class DTDataManager(Base_Cog):
                          identifier: str=commands.Param(description=Strings.dt_guild_identifier_param_description, autocomp=dt_identifier_autocomplete.autocomplete_identifier_guild)):
     await inter.response.defer(with_message=True, ephemeral=True)
 
-    specifier = dt_identifier_autocomplete.identifier_to_specifier(identifier)
-    if specifier is None:
-      return await message_utils.generate_error_message(inter, Strings.dt_invalid_identifier)
+    if identifier.isnumeric():
+      guild_id = int(identifier)
+    else:
+      specifier = dt_identifier_autocomplete.identifier_to_specifier(identifier)
+      if specifier is None:
+        return await message_utils.generate_error_message(inter, Strings.dt_invalid_identifier)
+      guild_id = specifier[1]
 
-    data = await dt_helpers.get_dt_guild_data(self.bot, specifier[1])
+    data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
     if data is None:
-      return await message_utils.generate_error_message(inter, Strings.data_manager_update_guild_get_failed(identifier=specifier[1]))
+      return await message_utils.generate_error_message(inter, Strings.data_manager_update_guild_get_failed(identifier=guild_id))
 
     event_participation_repo.generate_or_update_event_participations(data)
 
@@ -156,6 +160,7 @@ class DTDataManager(Base_Cog):
                                           identifier: Optional[str]=commands.Param(default=None, description=Strings.dt_guild_identifier_param_description, autocomp=dt_identifier_autocomplete.autocomplete_identifier_guild)):
     await inter.response.defer(with_message=True, ephemeral=True)
 
+    specifier = None
     if identifier is not None:
       specifier = dt_identifier_autocomplete.identifier_to_specifier(identifier)
       if specifier is None:
@@ -171,13 +176,13 @@ class DTDataManager(Base_Cog):
       if not dump_data:
         return await message_utils.generate_error_message(inter, Strings.data_manager_dump_guild_participation_data_no_data_no_guild_id)
 
-    dataframe = pd.DataFrame(dump_data, columns=["year", "week", "guild_id", "guild_name", "user_id", "username", "amount"], index=None)
+    dataframe = pd.DataFrame(dump_data, columns=["year", "week", "guild_id", "guild_name", "user_id", "username", "amount"] if identifier is None else ["year", "week", "user_id", "username", "amount"], index=None)
 
     data = io.BytesIO()
     dataframe.to_csv(data, sep=";", index=False)
 
     data.seek(0)
-    discord_file = disnake.File(data, filename="guild_dump.csv")
+    discord_file = disnake.File(data, filename="participations_dump_all.csv" if specifier is None else f"participations_guild_{specifier[1]}_dump.csv")
 
     await message_utils.generate_success_message(inter, Strings.data_manager_dump_guild_participation_data_success)
     await inter.send(file=discord_file)
@@ -382,8 +387,20 @@ class DTDataManager(Base_Cog):
   @cooldowns.long_cooldown
   @commands.max_concurrency(1, commands.BucketType.default)
   @commands.is_owner()
-  async def load_data(self, inter: disnake.MessageCommandInteraction):
+  async def load_data(self, inter: disnake.MessageCommandInteraction,
+                      guild_identifier: Optional[str] = commands.Param(default=None, description=Strings.dt_guild_identifier_param_description, autocomp=dt_identifier_autocomplete.autocomplete_identifier_guild)):
     await inter.response.defer(with_message=True, ephemeral=True)
+
+    guild_id_ext = None
+    if guild_identifier is not None:
+      if guild_identifier.isnumeric():
+        guild_id_ext = int(guild_identifier)
+      else:
+        specifier = dt_identifier_autocomplete.identifier_to_specifier(guild_identifier)
+        if specifier is None:
+          return await message_utils.generate_error_message(inter, Strings.dt_invalid_identifier)
+
+        guild_id_ext = specifier[1]
 
     attachments = inter.target.attachments
     if not attachments:
@@ -405,10 +422,27 @@ class DTDataManager(Base_Cog):
       for row_idx, (_, row) in enumerate(dataframe.iterrows()):
         try:
           user_id = int(row["user_id"])
-          guild_id = int(row["guild_id"])
+          guild_id = int(row["guild_id"]) if guild_id_ext is None else guild_id_ext
           ammount = int(row["amount"])
-          week = int(row["week"])
-          year = int(row["year"])
+
+          if "week" in row.keys() and "year" in row.keys():
+            week = int(row["week"])
+            year = int(row["year"])
+          elif "date" in row.keys():
+            try:
+              date = datetime.datetime.fromisoformat(row["date"])
+              year, week = dt_helpers.get_event_index(date)
+            except:
+              continue
+          elif "timestamp" in row.keys():
+            try:
+              date = datetime.datetime.fromtimestamp(row["timestamp"])
+              year, week = dt_helpers.get_event_index(date)
+            except:
+              continue
+          else:
+            logger.warning("Invalid event identifier")
+            break
 
           member = dt_guild_member_repo.create_dummy_dt_guild_member(user_id, guild_id)
           if member is None:

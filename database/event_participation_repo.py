@@ -94,7 +94,7 @@ def get_event_participants_data(guild_id: Optional[int] = None, year: Optional[i
       output_data.append((user_id, username, guild_id, guild_name, total, ignore_zero_average if ignore_zero_participation_average else average, ignore_zero_median if ignore_zero_participation_median else median))
 
     return output_data
-  return data[0], data[1], data[2], data[3], data[4], data[5], data[6] if data[6] is not None else 0
+  return [(d[0], d[1], d[2], d[3], d[4], d[5], d[6] if d[6] is not None else 0) for d in data]
 
 def get_event_participation_stats(guild_id: Optional[int]=None, user_id: Optional[int]=None, year: Optional[int]=None, ignore_zero_participation_median: bool=False, ignore_zero_participation_average: bool=False) -> Tuple[int, float, float]:
   """
@@ -184,7 +184,7 @@ def get_guild_event_participations_data(guild_id: int, year: Optional[int] = Non
       output_data.append((year, week, total, ignore_zero_average if ignore_zero_participation_average else average, ignore_zero_median if ignore_zero_participation_median else median))
 
     return output_data
-  return data[0], data[1], data[2], data[3], data[4] if data[4] is not None else 0
+  return [(d[0], d[1], d[2], d[3], d[4] if d[4] is not None else 0) for d in data]
 
 def get_and_update_event_participation(user_id: int, guild_id: int, event_year: int, event_week: int, participation_amount: int) -> Optional[EventParticipation]:
   item = session.query(EventParticipation).filter(EventSpecification.event_year == event_year, EventSpecification.event_week == event_week, EventParticipation.dt_user_id == user_id, EventParticipation.dt_guild_id == guild_id).join(EventSpecification).one_or_none()

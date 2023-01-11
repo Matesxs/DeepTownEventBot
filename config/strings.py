@@ -3,6 +3,9 @@
 from features.callable_string import Formatable
 
 class Strings(metaclass=Formatable):
+  # Global
+  discord_text_channel_param_description = "Guild text channel"
+
   # Help
   help_description = "Show all message commands and help for them"
   help_name_param_description = "Specify name of command or name of extension as parameter to search help only for thing you want"
@@ -143,7 +146,6 @@ class Strings(metaclass=Formatable):
   event_report_announcer_add_or_modify_tracker_description = "Add guild for tracking or modify existing announcement channel"
   event_report_announcer_add_or_modify_tracker_tracker_limit_reached = "Tracker limit ({limit} per guild) reached"
   event_report_announcer_add_or_modify_tracker_success_with_channel = "Set tracking for guild `{guild}` and announcement to channel `{channel}`"
-  event_report_announcer_add_or_modify_tracker_announce_channel_param_description = "Channel for announcing results at the end of event"
 
   event_report_announcer_remove_tracker_description = "Remove event tracker and its announcement settings"
   event_report_announcer_remove_tracker_success = "Removed tracking for guild `{guild}`"
@@ -206,3 +208,25 @@ class Strings(metaclass=Formatable):
   blacklist_report_success = "Report submited"
   blacklist_report_user_cheater_user_not_found = "User not found in database"
   blacklist_report_guild_cheater_guild_not_found = "Guild not found in database"
+
+  # Questions and answers
+  questions_and_answers_repond_format = "Maybe this is what you are looking for\n```\n{result}\n```"
+
+  questions_and_answers_add_description = "Add new question and answer"
+  questions_and_answers_add_added = "New Q&A datapoint created"
+  questions_and_answers_add_failed = "Failed to create new Q&A datapoint, maybe it already exists"
+
+  questions_and_answers_remove_description = "Remove question and answer from database"
+  questions_and_answers_remove_question_id_param_description = "Question and Answer ID"
+  questions_and_answers_remove_removed = "Question removed from database"
+
+  questions_and_answers_list_description = "List all questions and answers"
+  questions_and_answers_list_no_results = "No questions and answers available"
+
+  questions_and_answers_whitelist_add_description = "Add guild channel to whitelist for automatic help"
+  questions_and_answers_whitelist_add_success = "Channel `{channel}` added to whitelist for automatic help"
+  questions_and_answers_whitelist_add_failed = "Channel `{channel}` is already on whitelist"
+
+  questions_and_answers_whitelist_remove_description = "Remove guild channel from whitelist for automatic help"
+  questions_and_answers_whitelist_remove_success = "Channel `{channel}` removed from whitelist for automatic help"
+  questions_and_answers_whitelist_remove_failed = "Channel `{channel}` is not on whitelist"

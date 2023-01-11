@@ -9,14 +9,14 @@ from database.dt_guild_repo import get_dt_guild
 def get_tracking_settings(guild_id: int, dt_guild_id: int) -> Optional[TrackingSettings]:
   return session.query(TrackingSettings).filter(TrackingSettings.guild_id == str(guild_id), TrackingSettings.dt_guild_id == dt_guild_id).one_or_none()
 
-def get_or_create_tracking_settings(guild: disnake.Guild, guild_id: int, announce_channel_id:Optional[int]=None) -> Optional[TrackingSettings]:
-  item = get_tracking_settings(guild.id, guild_id)
+def get_or_create_tracking_settings(guild: disnake.Guild, dt_guild_id: int, announce_channel_id:Optional[int]=None) -> Optional[TrackingSettings]:
+  item = get_tracking_settings(guild.id, dt_guild_id)
   if item is None:
     get_or_create_guild_if_not_exist(guild)
-    if get_dt_guild(guild_id) is None:
+    if get_dt_guild(dt_guild_id) is None:
       return None
 
-    item = TrackingSettings(guild_id=str(guild.id), dt_guild_id=guild_id, announce_channel_id=str(announce_channel_id) if announce_channel_id is not None else None)
+    item = TrackingSettings(guild_id=str(guild.id), dt_guild_id=dt_guild_id, announce_channel_id=str(announce_channel_id) if announce_channel_id is not None else None)
     session.add(item)
   else:
     item.announce_channel_id=str(announce_channel_id) if announce_channel_id is not None else None

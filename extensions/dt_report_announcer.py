@@ -34,7 +34,7 @@ class DTEventReportAnnouncer(Base_Cog):
   @cooldowns.default_cooldown
   async def add_or_modify_tracker(self, inter: disnake.CommandInteraction,
                                   identifier: str=commands.Param(description=Strings.dt_guild_identifier_param_description, autocomp=dt_identifier_autocomplete.autocomplete_identifier_guild),
-                                  announce_channel: disnake.TextChannel=commands.Param(description=Strings.event_report_announcer_add_or_modify_tracker_announce_channel_param_description)):
+                                  announce_channel: disnake.TextChannel=commands.Param(description=Strings.discord_text_channel_param_description)):
     await inter.response.defer(with_message=True, ephemeral=True)
 
     specifier = dt_identifier_autocomplete.identifier_to_specifier(identifier)

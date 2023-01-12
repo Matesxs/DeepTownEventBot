@@ -1,6 +1,6 @@
 import disnake
 
-def is_administrator(ctx):
+def is_discord_guild_owner(ctx):
   if ctx.bot.owner_id is not None and ctx.bot.owner_id == ctx.author.id:
     return True
 

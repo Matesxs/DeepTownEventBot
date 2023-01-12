@@ -124,24 +124,3 @@ async def get_ids_of_all_guilds() -> Optional[List[int]]:
   for guild_data in json_data["data"]:
     ids.append(guild_data[0])
   return ids
-
-async def get_guild_info(guild_name: Optional[str]=None) -> Optional[List[Tuple[int, str, int]]]:
-  try:
-    async with ClientSession(timeout=ClientTimeout(total=30)) as session:
-      async with session.get("http://dtat.hampl.space/data/guild/name" + ("" if guild_name is None else f"/{guild_name.replace(' ', '_')}")) as response:
-        if response.status != 200:
-          logger.error(f"Guild info response: {response.status}")
-          return None
-
-        try:
-          json_data = await response.json(content_type="text/html")
-        except Exception:
-          logger.error(traceback.format_exc())
-          return None
-
-    data = []
-    for guild_data in json_data["data"]:
-      data.append(tuple(guild_data))
-    return data
-  except InvalidURL:
-    return None

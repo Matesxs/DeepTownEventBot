@@ -25,7 +25,7 @@ class DTEventReportAnnouncer(Base_Cog):
       self.result_announce_task.cancel()
 
   @commands.slash_command()
-  @commands.check(permission_helper.is_administrator)
+  @commands.check(permission_helper.is_discord_guild_owner)
   @commands.guild_only()
   async def announcer(self, inter: disnake.CommandInteraction):
     pass
@@ -112,7 +112,7 @@ class DTEventReportAnnouncer(Base_Cog):
 
     if guild_ids is not None:
       for guild_id in guild_ids:
-        data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
+        data = await dt_helpers.get_dt_guild_data(guild_id)
 
         await asyncio.sleep(1)
         if data is None: continue

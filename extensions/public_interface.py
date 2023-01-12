@@ -1,5 +1,4 @@
 import asyncio
-import statistics
 import disnake
 from disnake.ext import commands
 import datetime
@@ -149,7 +148,7 @@ class PublicInterface(Base_Cog):
 
     guild_profile_lists = []
 
-    guild_data = await dt_helpers.get_dt_guild_data(self.bot, guild.id)
+    guild_data = await dt_helpers.get_dt_guild_data(guild.id)
     if guild_data is not None:
       event_participation_repo.generate_or_update_event_participations(guild_data)
       guild = dt_guild_repo.get_dt_guild(guild.id)
@@ -354,7 +353,7 @@ class PublicInterface(Base_Cog):
 
     user_profile_lists = []
 
-    guild_data = (await dt_helpers.get_dt_guild_data(self.bot, user.active_member.guild.id)) if user.active_member else None
+    guild_data = (await dt_helpers.get_dt_guild_data(user.active_member.guild.id)) if user.active_member else None
     if guild_data is not None:
       event_participation_repo.generate_or_update_event_participations(guild_data)
       user = dt_user_repo.get_dt_user(user.id)

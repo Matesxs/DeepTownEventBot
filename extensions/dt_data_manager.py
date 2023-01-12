@@ -62,7 +62,7 @@ class DTDataManager(Base_Cog):
         return await message_utils.generate_error_message(inter, Strings.dt_invalid_identifier)
       guild_id = specifier[1]
 
-    data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
+    data = await dt_helpers.get_dt_guild_data(guild_id)
     if data is None:
       return await message_utils.generate_error_message(inter, Strings.data_manager_update_guild_get_failed(identifier=guild_id))
 
@@ -81,7 +81,7 @@ class DTDataManager(Base_Cog):
 
       await message_utils.generate_success_message(inter, Strings.data_manager_update_all_guilds_success_with_periodic_update)
     else:
-      guild_ids = await dt_helpers.get_ids_of_all_guilds(self.bot)
+      guild_ids = await dt_helpers.get_ids_of_all_guilds()
 
       last_update = datetime.datetime.utcnow()
 
@@ -89,7 +89,7 @@ class DTDataManager(Base_Cog):
         pulled_data = 0
 
         for idx, guild_id in enumerate(guild_ids):
-          data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
+          data = await dt_helpers.get_dt_guild_data(guild_id)
           if datetime.datetime.utcnow() - last_update > datetime.timedelta(seconds=10):
             await inter.edit_original_response(f"```\nGuild {idx+1}/{len(guild_ids)}\n```")
             last_update = datetime.datetime.utcnow()
@@ -123,7 +123,7 @@ class DTDataManager(Base_Cog):
       last_update = datetime.datetime.utcnow()
 
       for idx, guild_id in enumerate(guild_ids):
-        data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
+        data = await dt_helpers.get_dt_guild_data(guild_id)
         if datetime.datetime.utcnow() - last_update > datetime.timedelta(seconds=10):
           await inter.edit_original_response(f"```\nGuild {idx + 1}/{len(guild_ids)}\n```")
           last_update = datetime.datetime.utcnow()
@@ -468,7 +468,7 @@ class DTDataManager(Base_Cog):
   @tasks.loop(hours=config.data_manager.cleanup_rate_days * 24)
   async def cleanup_task(self):
     logger.info("Starting cleanup")
-    all_guild_ids = await dt_helpers.get_ids_of_all_guilds(self.bot)
+    all_guild_ids = await dt_helpers.get_ids_of_all_guilds()
     if all_guild_ids is None:
       logger.error("Failed to get all ids of guilds")
     else:
@@ -486,7 +486,7 @@ class DTDataManager(Base_Cog):
       return
 
     logger.info("Guild data pull starting")
-    guild_ids = await dt_helpers.get_ids_of_all_guilds(self.bot)
+    guild_ids = await dt_helpers.get_ids_of_all_guilds()
     await asyncio.sleep(0.1)
 
     if guild_ids is not None or not guild_ids:
@@ -510,7 +510,7 @@ class DTDataManager(Base_Cog):
         if dt_blacklist_repo.is_on_blacklist(dt_blacklist_repo.BlacklistType.GUILD, guild_id):
           continue
 
-        data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
+        data = await dt_helpers.get_dt_guild_data(guild_id)
 
         await asyncio.sleep(2)
         if data is None:
@@ -543,7 +543,7 @@ class DTDataManager(Base_Cog):
           if dt_blacklist_repo.is_on_blacklist(dt_blacklist_repo.BlacklistType.GUILD, guild_id):
             continue
 
-          data = await dt_helpers.get_dt_guild_data(self.bot, guild_id)
+          data = await dt_helpers.get_dt_guild_data(guild_id)
 
           await asyncio.sleep(2)
           if data is None:

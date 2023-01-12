@@ -8,13 +8,10 @@ class DTUser(database.base):
   __tablename__ = "dt_users"
 
   id = Column(BigIntegerType, primary_key=True)
-  username = Column(String, index=True)
-  level = Column(Integer)
-  depth = Column(Integer)
+  username = Column(String, index=True, default="*Unknown*")
+  level = Column(Integer, default=-1)
+  depth = Column(Integer, default=-1)
   last_online = Column(DateTime, nullable=True)
-
-  donated = Column(BigIntegerType, default=0)
-  received = Column(BigIntegerType, default=0)
 
   mines = Column(Integer, default=0)
   chem_mines = Column(Integer, default=0)
@@ -37,8 +34,6 @@ class DTUser(database.base):
       level=data.level,
       depth=data.depth,
       last_online=data.last_online,
-      donated=data.donated,
-      received=data.received,
       mines=data.mines,
       chem_mines=data.chem_mines,
       oil_mines=data.oil_mines,
@@ -53,11 +48,6 @@ class DTUser(database.base):
     self.level = data.level
     self.depth = data.depth
     self.last_online = data.last_online
-
-    if data.donated != -1:
-      self.donated = data.donated
-    if data.received != -1:
-      self.received = data.received
 
     self.mines = data.mines
     self.chem_mines = data.chem_mines

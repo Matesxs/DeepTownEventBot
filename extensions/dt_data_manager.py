@@ -49,7 +49,7 @@ class DTDataManager(Base_Cog):
     pass
 
   @data_manager.sub_command(description=Strings.data_manager_update_guild_description)
-  @cooldowns.long_cooldown
+  @cooldowns.huge_cooldown
   @commands.is_owner()
   async def update_guild(self, inter: disnake.CommandInteraction,
                          identifier: str=commands.Param(description=Strings.dt_guild_identifier_param_description, autocomp=dt_identifier_autocomplete.autocomplete_identifier_guild)):
@@ -72,7 +72,7 @@ class DTDataManager(Base_Cog):
     await message_utils.generate_success_message(inter, Strings.data_manager_update_guild_success(guild=data.name))
 
   @data_manager.sub_command(description=Strings.data_manager_update_all_guilds_description)
-  @cooldowns.long_cooldown
+  @cooldowns.huge_cooldown
   @commands.is_owner()
   async def update_all_guilds(self, inter: disnake.CommandInteraction):
     await inter.response.defer(with_message=True, ephemeral=True)
@@ -111,7 +111,7 @@ class DTDataManager(Base_Cog):
       await message_utils.generate_error_message(inter, Strings.data_manager_update_all_guilds_failed_without_periodic_update)
 
   @data_manager.sub_command(description=Strings.data_manager_update_tracked_guilds_description)
-  @cooldowns.long_cooldown
+  @cooldowns.huge_cooldown
   @commands.is_owner()
   async def update_tracked_guilds(self, inter: disnake.CommandInteraction):
     await inter.response.defer(with_message=True, ephemeral=True)

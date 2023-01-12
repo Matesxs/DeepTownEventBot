@@ -19,8 +19,6 @@ class DTUserData:
   last_online: Optional[datetime.datetime]
 
   last_event_contribution: int
-  received: int
-  donated: int
 
   mines: int=0
   chem_mines: int=0
@@ -32,15 +30,15 @@ class DTUserData:
   green_houses: int=0
 
   @classmethod
-  def from_api_data(cls, guild_data: dict, donations: tuple):
+  def from_api_data(cls, guild_data: dict):
     return cls(
       guild_data[1] if guild_data[1] is not None else "*Unknown*", guild_data[0], guild_data[3], guild_data[4], datetime.datetime.strptime(guild_data[2], '%a, %d %b %Y %H:%M:%S GMT'),
-      guild_data[-1], donations[1], donations[0],
+      guild_data[-1],
       guild_data[5], guild_data[6], guild_data[7], guild_data[8], guild_data[9], guild_data[10], guild_data[11], guild_data[12]
     )
 
   def __repr__(self):
-    return f"<{self.name}({self.id}),{self.level},{self.depth},'{self.last_online if self.last_online is not None else '*Never*'}', {self.donated}, {self.received},{self.last_event_contribution}, ({self.mines},{self.chem_mines},{self.oil_mines},{self.crafters},{self.smelters},{self.jewel_stations},{self.chem_stations},{self.green_houses})>"
+    return f"<{self.name}({self.id}),{self.level},{self.depth},'{self.last_online if self.last_online is not None else '*Never*'}',{self.last_event_contribution}, ({self.mines},{self.chem_mines},{self.oil_mines},{self.crafters},{self.smelters},{self.jewel_stations},{self.chem_stations},{self.green_houses})>"
 
 @dataclasses.dataclass
 class DTGuildData:
@@ -68,20 +66,11 @@ def get_event_index(date:datetime.datetime):
 
   return event_year, week_number
 
-async def get_dt_guild_data(guild_id:int, update_donate_data: bool=False) -> Optional[DTGuildData]:
+async def get_dt_guild_data(guild_id:int, update: bool=False) -> Optional[DTGuildData]:
   async with ClientSession(timeout=ClientTimeout(total=60)) as session:
-    donations_data = None
-    if update_donate_data:
+    if update:
       async with session.get(f"http://dtat.hampl.space/data/donations/current/guild/id/{guild_id}") as response:
         if response.status != 200:
-          logger.error(f"Guild donations response: {response.status}")
-          return None
-
-        try:
-          donations_data = await response.json(content_type="text/html")
-          donations_data = {d[0]: (d[1], d[2]) for d in donations_data["data"]}
-        except Exception:
-          logger.error(traceback.format_exc())
           return None
 
     await asyncio.sleep(0.1)
@@ -102,8 +91,7 @@ async def get_dt_guild_data(guild_id:int, update_donate_data: bool=False) -> Opt
 
   players = []
   for player_data in guild_data_json["players"]["data"]:
-    player_donations = donations_data[player_data[1]] if donations_data is not None and player_data[1] in donations_data.keys() else (-1, -1)
-    players.append(DTUserData.from_api_data(player_data, player_donations))
+    players.append(DTUserData.from_api_data(player_data))
 
   return DTGuildData(guild_data_json["name"] if guild_data_json["name"] is not None else "*Unknown*", guild_data_json["id"], guild_data_json["level"], players)
 

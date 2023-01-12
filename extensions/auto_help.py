@@ -1,3 +1,4 @@
+import asyncio
 import disnake
 from disnake.ext import commands
 from Levenshtein import ratio
@@ -15,7 +16,7 @@ logger = setup_custom_logger(__name__)
 
 def getApproximateAnswer(q):
   max_score = 0
-  answer_id = -1
+  answer_id = None
   ref_question = None
 
   questions = questions_and_answers_repo.all_questions_iterator()
@@ -29,9 +30,9 @@ def getApproximateAnswer(q):
       answer_id = ans_id
       ref_question = question
 
-  if (max_score * 100) > config.questions_and_answers.score_limit:
+  if answer_id is not None and (max_score * 100) > config.questions_and_answers.score_limit:
     return ref_question, questions_and_answers_repo.get_answer_by_id(answer_id), max_score
-  return None, None, None
+  return None
 
 class AutoHelp(Base_Cog):
   def __init__(self, bot):
@@ -45,12 +46,18 @@ class AutoHelp(Base_Cog):
     if not "?" in message.content: return
     if not questions_and_answers_repo.is_on_whitelist(message.guild.id, message.channel.id): return
 
-    ref_question, answer, score = getApproximateAnswer(message.content)
-    if answer is None: return
+    answer_object = getApproximateAnswer(message.content)
+    if answer_object is None: return
+
+    ref_question, answer, score = answer_object
 
     # logger.info(f"Found answer for users question: `{message.content}`\nReference question: `{ref_question}`\nAnswer: `{answer}` with score `{score}`")
 
-    await message.reply(Strings.questions_and_answers_repond_format(result=string_manipulation.truncate_string(answer, 3800)))
+    final_reply_string_lines = str(Strings.questions_and_answers_repond_format(question=ref_question, answer=answer)).split("\n")
+    while final_reply_string_lines:
+      reply_string, final_reply_string_lines = string_manipulation.add_string_until_length(final_reply_string_lines, 1900, "\n")
+      await message.reply(reply_string)
+      await asyncio.sleep(0.01)
 
   @commands.slash_command(name="question_and_answer")
   async def question_and_answer(self, inter: disnake.CommandInteraction):

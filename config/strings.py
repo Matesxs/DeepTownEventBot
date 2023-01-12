@@ -214,7 +214,7 @@ class Strings(metaclass=Formatable):
   questions_and_answers_id_param_description = "Question and Answer ID"
   questions_and_answers_not_found = "Question and answer not in database"
 
-  questions_and_answers_repond_format = "Maybe this is what you are looking for\n```\n{result}\n```"
+  questions_and_answers_repond_format = "Maybe this is what you are looking for\n**Question:** {question}\n**Answer:** {answer}"
 
   questions_and_answers_add_description = "Add new question and answer"
   questions_and_answers_add_added = "New Q&A datapoint created"

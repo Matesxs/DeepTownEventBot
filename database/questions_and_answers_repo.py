@@ -27,6 +27,9 @@ def remove_from_whitelist(guild_id: int, channel_id: int) -> bool:
   result = session.query(QuestionAndAnswerWhitelist).filter(QuestionAndAnswerWhitelist.guild_id == str(guild_id), QuestionAndAnswerWhitelist.channel_id == str(channel_id)).delete()
   return result > 0
 
+def get_question_and_answer(qa_id: int) -> Optional[QuestionAndAnswer]:
+  return session.query(QuestionAndAnswer).filter(QuestionAndAnswer.id == qa_id).one_or_none()
+
 def find_question(question: str) -> Optional[QuestionAndAnswer]:
   return session.query(QuestionAndAnswer).filter(QuestionAndAnswer.question == question).one_or_none()
 
@@ -60,5 +63,6 @@ def get_all_ids() -> List[int]:
   return [d[0] for d in data]
 
 def remove_question(id: int):
-  session.query(QuestionAndAnswer).filter(QuestionAndAnswer.id == id).delete()
+  result = session.query(QuestionAndAnswer).filter(QuestionAndAnswer.id == id).delete()
   session.commit()
+  return result > 0

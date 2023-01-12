@@ -211,14 +211,18 @@ class Strings(metaclass=Formatable):
   blacklist_report_guild_cheater_guild_not_found = "Guild not found in database"
 
   # Questions and answers
+  questions_and_answers_id_param_description = "Question and Answer ID"
+  questions_and_answers_not_found = "Question and answer not in database"
+
   questions_and_answers_repond_format = "Maybe this is what you are looking for\n```\n{result}\n```"
 
   questions_and_answers_add_description = "Add new question and answer"
   questions_and_answers_add_added = "New Q&A datapoint created"
   questions_and_answers_add_failed = "Failed to create new Q&A datapoint, maybe it already exists"
 
+  questions_and_answers_modify_description = "Modify existing question and answer"
+
   questions_and_answers_remove_description = "Remove question and answer from database"
-  questions_and_answers_remove_question_id_param_description = "Question and Answer ID"
   questions_and_answers_remove_removed = "Question removed from database"
 
   questions_and_answers_list_description = "List all questions and answers"

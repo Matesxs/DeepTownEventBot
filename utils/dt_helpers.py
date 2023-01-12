@@ -1,10 +1,9 @@
 import asyncio
 import datetime
 import dataclasses
-from typing import List, Optional, Tuple
+from typing import List, Optional
 import traceback
 from aiohttp import ClientSession, ClientTimeout
-from aiohttp.client_exceptions import InvalidURL
 
 from config import config
 from utils.logger import setup_custom_logger
@@ -69,25 +68,26 @@ def get_event_index(date:datetime.datetime):
 
   return event_year, week_number
 
-async def get_dt_guild_data(guild_id:int) -> Optional[DTGuildData]:
+async def get_dt_guild_data(guild_id:int, update_donate_data: bool=False) -> Optional[DTGuildData]:
   async with ClientSession(timeout=ClientTimeout(total=60)) as session:
-    async with session.get(f"http://dtat.hampl.space/data/donations/current/guild/id/{guild_id}") as response:
-      if response.status != 200:
-        logger.error(f"Guild donations response: {response.status}")
-        return None
+    donations_data = None
+    if update_donate_data:
+      async with session.get(f"http://dtat.hampl.space/data/donations/current/guild/id/{guild_id}") as response:
+        if response.status != 200:
+          logger.error(f"Guild donations response: {response.status}")
+          return None
 
-      try:
-        donations_data = await response.json(content_type="text/html")
-        donations_data = {d[0]: (d[1], d[2]) for d in donations_data["data"]}
-      except Exception:
-        logger.error(traceback.format_exc())
-        return None
+        try:
+          donations_data = await response.json(content_type="text/html")
+          donations_data = {d[0]: (d[1], d[2]) for d in donations_data["data"]}
+        except Exception:
+          logger.error(traceback.format_exc())
+          return None
 
     await asyncio.sleep(0.1)
 
     async with session.get(f"http://dtat.hampl.space/data/guild/id/{guild_id}/data") as response:
       if response.status != 200:
-        logger.error(f"Guild data response: {response.status}")
         return None
 
       try:
@@ -102,7 +102,7 @@ async def get_dt_guild_data(guild_id:int) -> Optional[DTGuildData]:
 
   players = []
   for player_data in guild_data_json["players"]["data"]:
-    player_donations = donations_data[player_data[1]] if player_data[1] in donations_data.keys() else (-1, -1)
+    player_donations = donations_data[player_data[1]] if donations_data is not None and player_data[1] in donations_data.keys() else (-1, -1)
     players.append(DTUserData.from_api_data(player_data, player_donations))
 
   return DTGuildData(guild_data_json["name"] if guild_data_json["name"] is not None else "*Unknown*", guild_data_json["id"], guild_data_json["level"], players)
@@ -111,7 +111,6 @@ async def get_ids_of_all_guilds() -> Optional[List[int]]:
   async with ClientSession(timeout=ClientTimeout(total=30)) as session:
     async with session.get("http://dtat.hampl.space/data/guild/name") as response:
       if response.status != 200:
-        logger.error(f"Guild ids response: {response.status}")
         return None
 
       try:

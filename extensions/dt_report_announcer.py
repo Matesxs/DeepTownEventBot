@@ -112,7 +112,7 @@ class DTEventReportAnnouncer(Base_Cog):
 
     if guild_ids is not None:
       for guild_id in guild_ids:
-        data = await dt_helpers.get_dt_guild_data(guild_id)
+        data = await dt_helpers.get_dt_guild_data(guild_id, True)
 
         await asyncio.sleep(1)
         if data is None: continue

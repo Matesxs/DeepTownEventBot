@@ -63,7 +63,7 @@ class DTDataManager(Base_Cog):
         return await message_utils.generate_error_message(inter, Strings.dt_invalid_identifier)
       guild_id = specifier[1]
 
-    data = await dt_helpers.get_dt_guild_data(guild_id)
+    data = await dt_helpers.get_dt_guild_data(guild_id, True)
     if data is None:
       return await message_utils.generate_error_message(inter, Strings.data_manager_update_guild_get_failed(identifier=guild_id))
 
@@ -124,7 +124,7 @@ class DTDataManager(Base_Cog):
       last_update = datetime.datetime.utcnow()
 
       for idx, guild_id in enumerate(guild_ids):
-        data = await dt_helpers.get_dt_guild_data(guild_id)
+        data = await dt_helpers.get_dt_guild_data(guild_id, True)
         if datetime.datetime.utcnow() - last_update > datetime.timedelta(seconds=10):
           await inter.edit_original_response(f"```\nGuild {idx + 1}/{len(guild_ids)}\n```")
           last_update = datetime.datetime.utcnow()

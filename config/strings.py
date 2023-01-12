@@ -122,6 +122,7 @@ class Strings(metaclass=Formatable):
   data_manager_remove_dt_item_components_failed = "Target item `{target_item}` have no components"
 
   data_manager_set_event_items_description = "Set Deep Town items in event"
+  data_manager_set_event_items_current_level_param_description = "Current level of event"
   data_manager_set_event_items_item_name_param_description = "Event Deep Town Item {number}"
   data_manager_set_event_items_item_amount_param_description = "Base amount for item {number}"
   data_manager_set_event_items_item_not_in_database = "Item `{item}` not found in database"

@@ -32,7 +32,7 @@ data_pull_rate_hours = 6
 pull_data_startup_delay_seconds = 60
 
 [event_tracker]
-tracker_limit_per_guild = 10
+tracker_limit_per_guild = 5
 
 announce_day_index = 0 # 0 - monday, 6 - sunday
 announce_time_hours = 8

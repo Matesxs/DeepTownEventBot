@@ -78,7 +78,7 @@ def set_event_item(event_year: int, event_week: int, item_name: str, base_amount
   if item is None:
     item = EventItem(event_id=event_specification.event_id, item_name=item_name)
     session.add(item)
-  item.base_amount = base_amount if base_amount is not None else 0
+  item.base_amount = base_amount
 
   if commit:
     session.commit()

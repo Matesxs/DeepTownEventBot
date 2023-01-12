@@ -8,6 +8,7 @@ import io
 import traceback
 from table2ascii import table2ascii
 from table2ascii.alignment import Alignment
+import math
 
 from features.base_cog import Base_Cog
 from utils import dt_helpers, message_utils, string_manipulation, dt_identifier_autocomplete
@@ -276,7 +277,8 @@ class DTDataManager(Base_Cog):
                             base_amount1: Optional[int]=commands.Param(default=None, min_value=0, description=Strings.data_manager_set_event_items_item_amount_param_description(number=1)),
                             base_amount2: Optional[int]=commands.Param(default=None, min_value=0, description=Strings.data_manager_set_event_items_item_amount_param_description(number=2)),
                             base_amount3: Optional[int]=commands.Param(default=None, min_value=0, description=Strings.data_manager_set_event_items_item_amount_param_description(number=3)),
-                            base_amount4: Optional[int]=commands.Param(default=None, min_value=0, description=Strings.data_manager_set_event_items_item_amount_param_description(number=4))):
+                            base_amount4: Optional[int]=commands.Param(default=None, min_value=0, description=Strings.data_manager_set_event_items_item_amount_param_description(number=4)),
+                            current_level: int=commands.Param(default=0, min_value=0, description=Strings.data_manager_set_event_items_current_level_param_description)):
     await inter.response.defer(with_message=True, ephemeral=True)
 
     if event_year is None or event_week is None:
@@ -301,10 +303,10 @@ class DTDataManager(Base_Cog):
     dt_items_repo.remove_event_participation_items(event_year, event_week)
     await asyncio.sleep(0.01)
 
-    dt_items_repo.set_event_item(event_year, event_week, item1, base_amount1, commit=False)
-    dt_items_repo.set_event_item(event_year, event_week, item2, base_amount2, commit=False)
-    dt_items_repo.set_event_item(event_year, event_week, item3, base_amount3, commit=False)
-    dt_items_repo.set_event_item(event_year, event_week, item4, base_amount4, commit=False)
+    dt_items_repo.set_event_item(event_year, event_week, item1, base_amount1 if current_level == 0 else math.ceil(base_amount1 / (0.9202166811 * math.exp((current_level + 1) / 8))), commit=False)
+    dt_items_repo.set_event_item(event_year, event_week, item2, base_amount2 if current_level == 0 else math.ceil(base_amount2 / (0.9202166811 * math.exp((current_level + 1) / 8))), commit=False)
+    dt_items_repo.set_event_item(event_year, event_week, item3, base_amount3 if current_level == 0 else math.ceil(base_amount3 / (0.9202166811 * math.exp((current_level + 1) / 8))), commit=False)
+    dt_items_repo.set_event_item(event_year, event_week, item4, base_amount4 if current_level == 0 else math.ceil(base_amount4 / (0.9202166811 * math.exp((current_level + 1) / 8))), commit=False)
     dt_items_repo.session.commit()
 
     await message_utils.generate_success_message(inter, Strings.data_manager_set_event_items_success(event_year=event_year,

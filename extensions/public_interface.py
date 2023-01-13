@@ -160,6 +160,7 @@ class PublicInterface(Base_Cog):
     guild_front_page.add_field(name="ID", value=str(guild.id))
     guild_front_page.add_field(name="Level", value=str(guild.level))
     guild_front_page.add_field(name="Members", value=str(len(guild.active_members)))
+    guild_front_page.add_field(name="Active", value=str(guild.is_active))
     guild_front_page.add_field(name="Position", value=str(dt_guild_repo.get_guild_level_leaderboard(guild.id)[0][0]))
     guild_profile_lists.append(guild_front_page)
 

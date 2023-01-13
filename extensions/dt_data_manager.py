@@ -44,6 +44,9 @@ class DTDataManager(Base_Cog):
     if self.data_update_task.is_running():
       self.data_update_task.cancel()
 
+    if self.inactive_guild_data_update_task.is_running():
+      self.inactive_guild_data_update_task.cancel()
+
   @commands.slash_command()
   async def data_manager(self, inter: disnake.CommandInteraction):
     pass
@@ -484,7 +487,30 @@ class DTDataManager(Base_Cog):
       logger.info(f"Remove {removed_guilds} deleted guilds from database")
     logger.info("Cleanup finished")
 
-  @tasks.loop(hours=config.data_manager.data_pull_rate_hours)
+  @tasks.loop(hours=config.data_manager.inactive_guild_data_pull_rate_hours)
+  async def inactive_guild_data_update_task(self):
+    inactive_guild_ids = dt_guild_repo.get_inactive_guild_ids()
+
+    logger.info("Inactive Guild data pull starting")
+
+    if inactive_guild_ids:
+      pulled_data = 0
+
+      for idx, guild_id in enumerate(inactive_guild_ids):
+        data = await dt_helpers.get_dt_guild_data(guild_id)
+
+        await asyncio.sleep(5)
+        if data is None:
+          continue
+
+        event_participation_repo.generate_or_update_event_participations(data)
+        await asyncio.sleep(0.1)
+        pulled_data += 1
+
+      logger.info(f"Pulled data of {pulled_data} inactive guilds")
+    logger.info("Inactive Guild data pull finished")
+
+  @tasks.loop(hours=max(config.data_manager.data_pull_rate_hours, 1))
   async def data_update_task(self):
     self.skip_periodic_data_update = False
     await asyncio.sleep(config.data_manager.pull_data_startup_delay_seconds)
@@ -497,7 +523,7 @@ class DTDataManager(Base_Cog):
     guild_ids = await dt_helpers.get_ids_of_all_guilds()
     await asyncio.sleep(0.1)
 
-    if guild_ids is not None or not guild_ids:
+    if guild_ids is not None and guild_ids:
       pulled_data = 0
       not_updated = []
 
@@ -515,7 +541,7 @@ class DTDataManager(Base_Cog):
           logger.info("Data pull interrupted")
           break
 
-        if dt_blacklist_repo.is_on_blacklist(dt_blacklist_repo.BlacklistType.GUILD, guild_id):
+        if dt_blacklist_repo.is_on_blacklist(dt_blacklist_repo.BlacklistType.GUILD, guild_id) or not dt_guild_repo.is_guild_active(guild_id):
           continue
 
         data = await dt_helpers.get_dt_guild_data(guild_id)
@@ -548,7 +574,7 @@ class DTDataManager(Base_Cog):
             logger.info("Data pull interrupted")
             break
 
-          if dt_blacklist_repo.is_on_blacklist(dt_blacklist_repo.BlacklistType.GUILD, guild_id):
+          if dt_blacklist_repo.is_on_blacklist(dt_blacklist_repo.BlacklistType.GUILD, guild_id) or not dt_guild_repo.is_guild_active(guild_id):
             continue
 
           data = await dt_helpers.get_dt_guild_data(guild_id)
@@ -568,6 +594,9 @@ class DTDataManager(Base_Cog):
 
     await asyncio.sleep(30)
     await self.bot.change_presence(activity=disnake.Game(name=config.base.status_message), status=disnake.Status.online)
+
+    if not self.inactive_guild_data_update_task.is_running() and config.data_manager.inactive_guild_data_pull_rate_hours > 0:
+      self.inactive_guild_data_update_task.start()
 
   @commands.Cog.listener()
   async def on_guild_joined(self, guild: disnake.Guild):

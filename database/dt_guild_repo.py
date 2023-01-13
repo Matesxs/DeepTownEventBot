@@ -3,8 +3,9 @@ from sqlalchemy import or_
 
 from database import session
 from database.tables.dt_guild import DTGuild
-from database import dt_blacklist_repo
+from database import dt_blacklist_repo, event_participation_guild_repo
 from utils.dt_helpers import DTGuildData
+from config import config
 
 def get_dt_guild(guild_id:int) -> Optional[DTGuild]:
   return session.query(DTGuild).filter(DTGuild.id == guild_id).one_or_none()
@@ -42,11 +43,14 @@ def get_and_update_dt_guild(guild_data: DTGuildData) -> Optional[DTGuild]:
     if dt_blacklist_repo.is_on_blacklist(dt_blacklist_repo.BlacklistType.GUILD, guild_data.id):
       return None
 
-    item = DTGuild(id=guild_data.id, name=guild_data.name, level=guild_data.level)
+    item = DTGuild(id=guild_data.id)
     session.add(item)
   else:
-    item.name = guild_data.name
-    item.level = guild_data.level
+    item.is_active = event_participation_guild_repo.get_guild_activity(item.id, config.data_manager.guild_activity_check_events, config.data_manager.guild_activity_check_participation_threshold)
+
+  item.name = guild_data.name
+  item.level = guild_data.level
+
   session.commit()
   return item
 
@@ -59,6 +63,16 @@ def remove_deleted_guilds(guild_id_list: List[int]) -> int:
   deleted_guilds = session.query(DTGuild).filter(DTGuild.id.not_in(guild_id_list)).delete()
   session.commit()
   return deleted_guilds
+
+def is_guild_active(guild_id: int) -> bool:
+  guild = get_dt_guild(guild_id)
+  if guild is None: return True
+  if guild.is_active: return True
+  return False
+
+def get_inactive_guild_ids() -> List[int]:
+  data = session.query(DTGuild.id).filter(DTGuild.is_active == False).all()
+  return [d[0] for d in data]
 
 def get_guild_level_leaderboard(guild_id: Optional[int]=None) -> List[Tuple[int, int, str, int]]:
   """

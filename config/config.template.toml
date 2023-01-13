@@ -31,6 +31,10 @@ periodically_pull_data = true
 data_pull_rate_hours = 6
 pull_data_startup_delay_seconds = 60
 
+inactive_guild_data_pull_rate_hours = 168 # Disable by setting it to value 0 or less
+guild_activity_check_events = 5
+guild_activity_check_participation_threshold = 0.0
+
 [event_tracker]
 tracker_limit_per_guild = 5
 

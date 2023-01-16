@@ -13,7 +13,6 @@ from utils.logger import setup_custom_logger
 from config import cooldowns, Strings
 from utils import dt_helpers, dt_report_generators, message_utils, string_manipulation, dt_identifier_autocomplete
 from features.views.paginator import EmbedView
-from features.views.paginator2d import EmbedView2D
 from database import event_participation_repo, dt_user_repo, dt_guild_repo, dt_guild_member_repo
 from features.views.data_selector import DataSelector
 
@@ -26,75 +25,6 @@ class PublicInterface(Base_Cog):
   @commands.slash_command(name="guild")
   async def guild_commands(self, inter: disnake.CommandInteraction):
     pass
-
-  @guild_commands.sub_command(name="members", description=Strings.public_interface_guild_members_description)
-  @cooldowns.default_cooldown
-  async def guild_members(self, inter: disnake.CommandInteraction,
-                          identifier: str = commands.Param(description=Strings.dt_guild_identifier_param_description, autocomp=dt_identifier_autocomplete.autocomplete_identifier_guild)):
-    await inter.response.defer(with_message=True)
-
-    specifier = dt_identifier_autocomplete.identifier_to_specifier(identifier)
-    if specifier is None:
-      return await message_utils.generate_error_message(inter, Strings.dt_invalid_identifier)
-
-    guild = dt_guild_repo.get_dt_guild(specifier[1])
-
-    if not guild:
-      return await message_utils.generate_error_message(inter, Strings.dt_guild_not_found(identifier=identifier))
-
-    current_time = datetime.datetime.utcnow()
-    current_year, _ = dt_helpers.get_event_index(current_time)
-
-    users_embeds = []
-    for member in guild.active_members:
-      member_pages = []
-
-      # Front page
-      member_front_page = disnake.Embed(title=f"{string_manipulation.truncate_string(member.user.username, 20)}", color=disnake.Color.dark_blue())
-      message_utils.add_author_footer(member_front_page, inter.author)
-      member_front_page.add_field(name="ID", value=str(member.dt_user_id))
-      member_front_page.add_field(name="Level", value=str(member.user.level))
-      member_front_page.add_field(name="Depth", value=str(member.user.depth))
-      member_front_page.add_field(name="Online", value=humanize.naturaltime(current_time - member.user.last_online) if member.user.last_online is not None else "Never")
-      member_front_page.add_field(name="Current guild", value=f"{member.guild.name}({member.guild.level})", inline=False)
-      member_pages.append(member_front_page)
-
-      # Buildings page
-      user_buildings_page = disnake.Embed(title=f"{string_manipulation.truncate_string(member.user.username, 20)} buildings", color=disnake.Color.dark_blue())
-      message_utils.add_author_footer(user_buildings_page, inter.author)
-      user_buildings_page.add_field(name="Mines", value=str(member.user.mines))
-      user_buildings_page.add_field(name="Chemical mines", value=str(member.user.chem_mines))
-      user_buildings_page.add_field(name="Oil mines", value=str(member.user.oil_mines))
-      user_buildings_page.add_field(name="Crafters", value=str(member.user.crafters))
-      user_buildings_page.add_field(name="Smelters", value=str(member.user.smelters))
-      user_buildings_page.add_field(name="Jewel stations", value=str(member.user.jewel_stations))
-      user_buildings_page.add_field(name="Chemical stations", value=str(member.user.chem_stations))
-      user_buildings_page.add_field(name="Green houses", value=str(member.user.green_houses))
-      member_pages.append(user_buildings_page)
-
-      # Event participation stats
-      all_time_total, all_time_average, all_time_median = event_participation_repo.get_event_participation_stats(user_id=member.dt_user_id, ignore_zero_participation_median=True)
-      all_time_total_last_year, all_time_average_last_year, all_time_median_last_year = event_participation_repo.get_event_participation_stats(user_id=member.dt_user_id, year=current_year, ignore_zero_participation_median=True)
-
-      member_participation_stats_page = disnake.Embed(title=f"{string_manipulation.truncate_string(member.user.username, 20)} event participations stats", color=disnake.Color.dark_blue())
-      member_participation_stats_page.add_field(name="Total event participation", value=string_manipulation.format_number(all_time_total, 4), inline=False)
-      member_participation_stats_page.add_field(name="Average donate", value=string_manipulation.format_number(all_time_average, 4), inline=False)
-      member_participation_stats_page.add_field(name="Median donate", value=string_manipulation.format_number(all_time_median, 4), inline=False)
-      member_participation_stats_page.add_field(name="Total event participation last year", value=string_manipulation.format_number(all_time_total_last_year, 4), inline=False)
-      member_participation_stats_page.add_field(name="Average donate last year", value=string_manipulation.format_number(all_time_average_last_year, 4), inline=False)
-      member_participation_stats_page.add_field(name="Median donate last year", value=string_manipulation.format_number(all_time_median_last_year, 4), inline=False)
-      member_pages.append(member_participation_stats_page)
-
-      # Event participations
-      participation_pages_data = dt_report_generators.generate_participations_page_strings(event_participation_repo.get_event_participations(user_id=member.dt_user_id))
-      for participation_page_data in participation_pages_data:
-        participation_page = disnake.Embed(title=f"{string_manipulation.truncate_string(member.user.username, 20)} event participations", description=f"```\n{participation_page_data}\n```", color=disnake.Color.dark_blue())
-        message_utils.add_author_footer(participation_page, inter.author)
-        member_pages.append(participation_page)
-      users_embeds.append(member_pages)
-
-    embed_view = EmbedView2D(inter.author, users_embeds, invert_list_dir=True)
-    await embed_view.run(inter)
 
   @guild_commands.sub_command(name="report", description=Strings.public_interface_guild_report_description)
   @cooldowns.default_cooldown

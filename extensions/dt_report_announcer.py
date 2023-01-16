@@ -131,8 +131,8 @@ class DTEventReportAnnouncer(Base_Cog):
         tracking_settings_repo.session.delete(tracker)
         continue
 
-      participations = event_participation_repo.get_event_participations(guild_id=int(tracker.guild_id), year=year, week=week, order_by=[event_participation_repo.EventParticipation.amount.desc()])
-      if not participations: return
+      participations = event_participation_repo.get_event_participations(guild_id=int(tracker.dt_guild_id), year=year, week=week, order_by=[event_participation_repo.EventParticipation.amount.desc()])
+      if not participations: continue
 
       await dt_report_generators.send_text_guild_event_participation_report(announce_channel, tracker.dt_guild, participations, colm_padding=0)
       await asyncio.sleep(0.25)

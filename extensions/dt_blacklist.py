@@ -47,7 +47,6 @@ class DTBlacklist(Base_Cog):
     return True
 
   @blacklist_commands.sub_command(name="add", description=Strings.blacklist_add_description)
-  @cooldowns.default_cooldown
   @commands.is_owner()
   async def blacklist_add(self, inter: disnake.CommandInteraction,
                           identifier: str=commands.Param(description=Strings.blacklist_identifier_param_description, autocomp=dt_identifier_autocomplete.autocomplete_identifier_guild_and_user)):
@@ -68,7 +67,6 @@ class DTBlacklist(Base_Cog):
     await self.add_to_blacklist(inter, block_type, entity_id)
 
   @commands.message_command(name="Add to Blacklist")
-  @cooldowns.short_cooldown
   @commands.is_owner()
   async def msg_com_add_to_blacklist(self, inter: disnake.MessageCommandInteraction):
     target_message = inter.target
@@ -102,7 +100,6 @@ class DTBlacklist(Base_Cog):
     return await message_utils.generate_error_message(inter, Strings.blacklist_msg_com_add_invalid_target)
 
   @blacklist_commands.sub_command(name="remove", description=Strings.blacklist_remove_description)
-  @cooldowns.default_cooldown
   @commands.is_owner()
   async def blacklist_remove(self, inter: disnake.CommandInteraction,
                           type: dt_blacklist_repo.BlacklistType = commands.Param(description=Strings.blacklist_type_param_description),

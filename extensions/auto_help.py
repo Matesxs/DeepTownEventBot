@@ -3,9 +3,9 @@ import disnake
 from disnake.ext import commands
 from Levenshtein import ratio
 
-from utils import message_utils, string_manipulation, permission_helper
+from utils import message_utils, string_manipulation
 from database import questions_and_answers_repo
-from config import config, cooldowns
+from config import config, cooldowns, permisions
 from utils.logger import setup_custom_logger
 from features.base_cog import Base_Cog
 from features.modals.question_and_answer import CreateQuestionAndAnswer
@@ -117,7 +117,7 @@ class AutoHelp(Base_Cog):
 
   @question_and_answer.sub_command_group(name="whitelist")
   @commands.guild_only()
-  @commands.check(permission_helper.is_discord_guild_owner)
+  @permisions.guild_owner()
   @cooldowns.default_cooldown
   async def question_and_answer_whitelist(self, inter: disnake.CommandInteraction):
     pass

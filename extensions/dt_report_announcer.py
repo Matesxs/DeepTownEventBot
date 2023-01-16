@@ -7,9 +7,9 @@ import humanize
 
 from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
-from utils import dt_helpers, dt_report_generators, message_utils, permission_helper, dt_identifier_autocomplete
+from utils import dt_helpers, dt_report_generators, message_utils, dt_identifier_autocomplete
 from database import event_participation_repo, tracking_settings_repo
-from config import Strings, cooldowns, config
+from config import Strings, cooldowns, config, permisions
 from features.views.paginator import EmbedView
 
 logger = setup_custom_logger(__name__)
@@ -25,7 +25,7 @@ class DTEventReportAnnouncer(Base_Cog):
       self.result_announce_task.cancel()
 
   @commands.slash_command()
-  @commands.check(permission_helper.is_discord_guild_owner)
+  @permisions.guild_owner()
   @commands.guild_only()
   async def announcer(self, inter: disnake.CommandInteraction):
     pass

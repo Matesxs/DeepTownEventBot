@@ -30,7 +30,7 @@ class DTEventReportAnnouncer(Base_Cog):
   async def announcer(self, inter: disnake.CommandInteraction):
     pass
 
-  @announcer.sub_command(name="add_or_modify", description=Strings.event_report_announcer_add_or_modify_tracker_description)
+  @announcer.sub_command(name="modify", description=Strings.event_report_announcer_add_or_modify_tracker_description)
   @cooldowns.default_cooldown
   async def add_or_modify_tracker(self, inter: disnake.CommandInteraction,
                                   identifier: str=commands.Param(description=Strings.dt_guild_identifier_param_description, autocomp=dt_identifier_autocomplete.autocomplete_identifier_guild),

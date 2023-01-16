@@ -28,13 +28,27 @@ class BetterMessageLinks(Base_Cog):
       original_message = await object_getters.get_or_fetch_message(self.bot, original_message_channel, int(match[2]))
       if original_message is None: continue
 
-      attachments = original_message.attachments
-      attachment_files = [await a.to_file() for a in attachments]
+      attachments = [a for a in original_message.attachments if a.size <= 8_000_000]
+      image_attachment = None
+      other_files = []
+      for attachment in attachments:
+        if attachment.content_type is not None:
+          if attachment.content_type.startswith("image") and image_attachment is None: # First image is set as image of embed, rest will be sent as files
+            image_attachment = attachment
+          else:
+            other_files.append(await attachment.to_file())
+        else:
+          other_files.append(await attachment.to_file())
 
       embed = disnake.Embed(description=f"{string_manipulation.truncate_string(original_message.content, 3500) if original_message.content else '*No content*'}\n\n**Source**\n[Jump to message]({original_message.jump_url}) in {original_message.channel.mention}", color=disnake.Color.dark_grey())
       embed.set_author(name=f"{original_message.author.display_name} said:", icon_url=original_message.author.display_avatar.url)
+      if image_attachment is not None:
+        embed.set_image(url=image_attachment.url)
       embed.timestamp = original_message.created_at
-      await message.reply(embed=embed, files=attachment_files)
+
+      await message.reply(embed=embed)
+      if other_files:
+        await message.reply(files=other_files) # To separate files under the first better repost message
 
 def setup(bot):
   bot.add_cog(BetterMessageLinks(bot))

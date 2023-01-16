@@ -98,7 +98,7 @@ class DTDataManager(Base_Cog):
             await inter.edit_original_response(f"```\nGuild {idx+1}/{len(guild_ids)}\n```")
             last_update = datetime.datetime.utcnow()
 
-          await asyncio.sleep(0.5)
+          await asyncio.sleep(1)
           if data is None: continue
 
           event_participation_repo.generate_or_update_event_participations(data)
@@ -420,7 +420,7 @@ class DTDataManager(Base_Cog):
             member.guild.name = row["guild_name"]
 
           event_participation_repo.get_and_update_event_participation(user_id, guild_id, year, week, ammount)
-          await asyncio.sleep(0.01)
+          await asyncio.sleep(0.02)
 
           if datetime.datetime.utcnow() - last_sleep >= datetime.timedelta(seconds=20):
             try:
@@ -504,7 +504,7 @@ class DTDataManager(Base_Cog):
           continue
 
         event_participation_repo.generate_or_update_event_participations(data)
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(0.2)
         pulled_data += 1
 
       logger.info(f"Pulled data of {pulled_data} inactive guilds")

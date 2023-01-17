@@ -233,3 +233,13 @@ class Strings(metaclass=Formatable):
   questions_and_answers_whitelist_remove_description = "Remove guild channel from whitelist for automatic help"
   questions_and_answers_whitelist_remove_success = "Channel `{channel}` removed from whitelist for automatic help"
   questions_and_answers_whitelist_remove_failed = "Channel `{channel}` is not on whitelist"
+
+  # Settings
+  settings_admin_role_set_description = "Set discord guild admin role"
+  settings_admin_role_set_admin_role_param_description = "Admin role to set"
+  settings_admin_role_set_success = "Admin role {admin_role} set"
+  settings_admin_role_set_failed = "Invalid admin role set"
+
+  settings_admin_role_remove_description = "Remove discord guild admin role"
+  settings_admin_role_remove_success = "Removed admin role"
+  settings_admin_role_remove_failed = "Admin role is not set for this guild"

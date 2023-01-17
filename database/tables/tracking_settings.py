@@ -15,7 +15,7 @@ class TrackingSettings(database.base):
 
   announce_channel_id = Column(String, nullable=True)
 
-  guild = relationship("Guild", uselist=False, back_populates="tracking_settings")
+  guild = relationship("DiscordGuild", uselist=False, back_populates="tracking_settings")
   dt_guild = relationship("DTGuild", uselist=False)
 
   async def get_announce_channel(self, bot: BaseAutoshardedBot) -> Optional[Union[disnake.TextChannel, disnake.Thread, disnake.VoiceChannel, disnake.PartialMessageable]]:

@@ -12,7 +12,7 @@ def add_to_whitelist(guild: disnake.Guild, channel_id: int) -> bool:
   if is_on_whitelist(guild.id, channel_id):
     return False
 
-  guilds_repo.get_or_create_guild_if_not_exist(guild)
+  guilds_repo.get_or_create_discord_guild(guild)
 
   item = QuestionAndAnswerWhitelist(guild_id=str(guild.id), channel_id=str(channel_id))
   session.add(item)

@@ -600,11 +600,11 @@ class DTDataManager(Base_Cog):
 
   @commands.Cog.listener()
   async def on_guild_joined(self, guild: disnake.Guild):
-    guilds_repo.get_or_create_guild_if_not_exist(guild)
+    guilds_repo.get_or_create_discord_guild(guild)
 
   @commands.Cog.listener()
   async def on_guild_remove(self, guild: disnake.Guild):
-    guilds_repo.remove_guild(guild.id)
+    guilds_repo.remove_discord_guild(guild.id)
 
 def setup(bot):
   bot.add_cog(DTDataManager(bot))

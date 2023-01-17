@@ -6,10 +6,12 @@ from sqlalchemy.orm import relationship
 from database import database
 from features.base_bot import BaseAutoshardedBot
 
-class Guild(database.base):
+class DiscordGuild(database.base):
   __tablename__ = "guilds"
 
   id = Column(String, primary_key=True)
+
+  admin_role_id = Column(String, nullable=True)
 
   tracking_settings = relationship("TrackingSettings", uselist=True, back_populates="guild")
 

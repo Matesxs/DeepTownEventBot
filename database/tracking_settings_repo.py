@@ -3,7 +3,7 @@ from typing import Optional, List
 
 from database import session
 from database.tables.tracking_settings import TrackingSettings
-from database.guilds_repo import get_or_create_guild_if_not_exist
+from database.guilds_repo import get_or_create_discord_guild
 from database.dt_guild_repo import get_dt_guild
 
 def get_tracking_settings(guild_id: int, dt_guild_id: int) -> Optional[TrackingSettings]:
@@ -12,7 +12,7 @@ def get_tracking_settings(guild_id: int, dt_guild_id: int) -> Optional[TrackingS
 def get_or_create_tracking_settings(guild: disnake.Guild, dt_guild_id: int, announce_channel_id:Optional[int]=None) -> Optional[TrackingSettings]:
   item = get_tracking_settings(guild.id, dt_guild_id)
   if item is None:
-    get_or_create_guild_if_not_exist(guild)
+    get_or_create_discord_guild(guild)
     if get_dt_guild(dt_guild_id) is None:
       return None
 

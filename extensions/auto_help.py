@@ -5,7 +5,7 @@ from Levenshtein import ratio
 
 from utils import message_utils, string_manipulation
 from database import questions_and_answers_repo
-from config import config, cooldowns, permisions
+from config import config, cooldowns, permissions
 from utils.logger import setup_custom_logger
 from features.base_cog import Base_Cog
 from features.modals.question_and_answer import CreateQuestionAndAnswer

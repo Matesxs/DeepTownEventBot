@@ -117,9 +117,9 @@ def parse_slash_commands(slash_commands: Set[commands.InvokableSlashCommand]):
               group.append((f"/{slash_command.name} {sc_option.name} {scg_option.name} {value_options_to_string(scg_option.options)}", scg_option.description))
         elif sc_option.type == disnake.OptionType.sub_command:
           group.append((f"/{slash_command.name} {sc_option.name} {value_options_to_string(sc_option.options)}", sc_option.description))
-      command_groups.append(group)
+      command_groups.append((slash_command.name, group))
 
-  return [free_commands, *command_groups]
+  return [(None, free_commands), *command_groups]
 
 class Help(Base_Cog):
   def __init__(self, bot):
@@ -164,8 +164,13 @@ class Help(Base_Cog):
 
     pages = []
 
-    for command_group in command_groups:
-      embed = disnake.Embed(title="Slash command list", color=disnake.Color.green())
+    for group_name, command_group in command_groups:
+      if group_name is None:
+        title = "Slash command list"
+      else:
+        title = f"{group_name} slash command list"
+
+      embed = disnake.Embed(title=title, color=disnake.Color.green())
       message_utils.add_author_footer(embed, inter.author)
 
       while command_group:
@@ -176,7 +181,7 @@ class Help(Base_Cog):
 
         if embed_len + added_length > 2000:
           pages.append(embed)
-          embed = disnake.Embed(title="Slash command list", colour=disnake.Color.green())
+          embed = disnake.Embed(title=title, colour=disnake.Color.green())
           message_utils.add_author_footer(embed, inter.author)
 
         embed.add_field(name=signature, value=description, inline=False)

@@ -3,7 +3,7 @@ from sqlalchemy import Column, ForeignKey, String, Float, Integer, Enum
 from sqlalchemy.orm import relationship
 import math
 
-from database import database, BigIntegerType
+import database
 
 class DTItemComponentMapping(database.base):
   __tablename__ = "dt_item_component_mapping"
@@ -91,7 +91,7 @@ class DTItem(database.base):
 class EventItem(database.base):
   __tablename__ = "event_items"
 
-  event_id = Column(BigIntegerType, ForeignKey("event_specifications.event_id", ondelete="CASCADE"), primary_key=True)
+  event_id = Column(database.BigIntegerType, ForeignKey("event_specifications.event_id", ondelete="CASCADE"), primary_key=True)
   item_name = Column(String, ForeignKey("dt_items.name", ondelete="CASCADE"), primary_key=True)
   base_amount = Column(Integer)
 

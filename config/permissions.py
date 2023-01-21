@@ -24,7 +24,7 @@ def guild_administrator():
     if ctx.author.id == ctx.guild.owner_id:
       return True
 
-    guild_admin_role_id = get_or_create_discord_guild(ctx.guild).admin_role_id
+    guild_admin_role_id = (await get_or_create_discord_guild(ctx.guild)).admin_role_id
     if guild_admin_role_id is None:
       return False
 

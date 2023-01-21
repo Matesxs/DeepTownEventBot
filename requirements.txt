@@ -2,9 +2,10 @@ disnake~=2.7.0
 toml~=0.10.2
 coloredlogs~=15.0.1
 psycopg2~=2.9.3
-SQLAlchemy==1.4.46
+asyncpg~=0.27.0
+sqlalchemy[asyncio]~=1.4.46
 aiohttp~=3.8.1
 humanize~=4.4.0
-pandas~=1.5.2
+pandas==1.5.3
 table2ascii==1.1.0
 python-Levenshtein~=0.20.9

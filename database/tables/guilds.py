@@ -3,7 +3,7 @@ from typing import Optional
 from sqlalchemy import Column, String
 from sqlalchemy.orm import relationship
 
-from database import database
+import database
 from features.base_bot import BaseAutoshardedBot
 
 class DiscordGuild(database.base):

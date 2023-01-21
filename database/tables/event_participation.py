@@ -2,7 +2,7 @@ import datetime
 from sqlalchemy import Column, ForeignKey, Integer, DateTime, UniqueConstraint
 from sqlalchemy.orm import relationship
 
-from database import database, BigIntegerType
+import database
 from utils.dt_helpers import DTUserData
 
 class EventSpecification(database.base):
@@ -10,7 +10,7 @@ class EventSpecification(database.base):
 
   __table_args__ = (UniqueConstraint('event_year', 'event_week'),)
 
-  event_id = Column(BigIntegerType, primary_key=True, autoincrement=True)
+  event_id = Column(database.BigIntegerType, primary_key=True, autoincrement=True)
 
   event_year = Column(Integer, index=True, nullable=False)
   event_week = Column(Integer, index=True, nullable=False)
@@ -21,16 +21,16 @@ class EventSpecification(database.base):
 class EventParticipation(database.base):
   __tablename__ = "event_participations"
 
-  event_id = Column(BigIntegerType, ForeignKey("event_specifications.event_id", ondelete="CASCADE"), primary_key=True)
-  dt_guild_id = Column(BigIntegerType, ForeignKey("dt_guilds.id", ondelete="CASCADE"), primary_key=True)
-  dt_user_id = Column(BigIntegerType, ForeignKey("dt_users.id", ondelete="CASCADE"), primary_key=True)
+  event_id = Column(database.BigIntegerType, ForeignKey("event_specifications.event_id", ondelete="CASCADE"), primary_key=True)
+  dt_guild_id = Column(database.BigIntegerType, ForeignKey("dt_guilds.id", ondelete="CASCADE"), primary_key=True)
+  dt_user_id = Column(database.BigIntegerType, ForeignKey("dt_users.id", ondelete="CASCADE"), primary_key=True)
   updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow, index=True)
 
   event_specification = relationship("EventSpecification", uselist=False, back_populates="event_participations")
   dt_user = relationship("DTUser", uselist=False, back_populates="event_participations")
   dt_guild = relationship("DTGuild", uselist=False, back_populates="event_participations")
 
-  amount = Column(BigIntegerType, default=0, index=True)
+  amount = Column(database.BigIntegerType, default=0, index=True)
 
   def to_DTUserData(self) -> DTUserData:
     return DTUserData(self.dt_user.username,

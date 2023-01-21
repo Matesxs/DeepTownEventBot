@@ -1,55 +1,49 @@
 from typing import Optional, List
-from sqlalchemy import or_
+from sqlalchemy import or_, select, delete
 
-from database import session
+from database import run_commit, run_query, session
 from database.tables.dt_user import DTUser
 from utils.dt_helpers import DTUserData
 from database import dt_blacklist_repo
+async def get_dt_user(user_id: int) -> Optional[DTUser]:
+  result = await run_query(select(DTUser).filter(DTUser.id == user_id))
+  return result.scalar_one_or_none()
 
-def get_dt_user(user_id: int) -> Optional[DTUser]:
-  return session.query(DTUser).filter(DTUser.id == user_id).one_or_none()
-
-def get_all_users(search: Optional[str]=None, limit: int=25) -> List[DTUser]:
+async def get_all_users(search: Optional[str]=None, limit: int=25) -> List[DTUser]:
   if search is not None:
     if search.isnumeric():
-      return session.query(DTUser).filter(or_(DTUser.username.ilike(f"%{search}%"), DTUser.id == int(search))).order_by(DTUser.username).limit(limit).all()
+      result = await run_query(select(DTUser).filter(or_(DTUser.username.ilike(f"%{search}%"), DTUser.id == int(search))).order_by(DTUser.username).limit(limit))
     else:
-      return session.query(DTUser).filter(DTUser.username.ilike(f"%{search}%")).order_by(DTUser.username).limit(limit).all()
-  return session.query(DTUser).order_by(DTUser.username).limit(limit).all()
+      result = await run_query(select(DTUser).filter(DTUser.username.ilike(f"%{search}%")).order_by(DTUser.username).limit(limit))
+  else:
+    result = await run_query(select(DTUser).order_by(DTUser.username).limit(limit))
+  return result.scalars().all()
 
-def get_users_by_identifier(identifier: str) -> List[DTUser]:
-  if identifier.isnumeric():
-    result = get_dt_user(int(identifier))
-    if result is not None:
-      return [result]
-
-  return session.query(DTUser).filter(DTUser.username.ilike(identifier)).all()
-
-def create_dummy_dt_user(id: int) -> Optional[DTUser]:
-  item = get_dt_user(id)
+async def create_dummy_dt_user(id: int) -> Optional[DTUser]:
+  item = await get_dt_user(id)
   if item is None:
-    if dt_blacklist_repo.is_on_blacklist(dt_blacklist_repo.BlacklistType.USER, id):
+    if await dt_blacklist_repo.is_on_blacklist(dt_blacklist_repo.BlacklistType.USER, id):
       return None
 
     item = DTUser(id=id, username="Unknown", level=-1, depth=-1)
     session.add(item)
-    session.commit()
+    await run_commit()
   return item
 
-def remove_user(id: int) -> bool:
-  result = session.query(DTUser).filter(DTUser.id == id).delete()
-  session.commit()
-  return result > 0
+async def remove_user(id: int) -> bool:
+  result = await run_query(delete(DTUser).filter(DTUser.id == id), commit=True)
+  return result.rowcount > 0
 
-def get_and_update_dt_user(user_data: DTUserData) -> Optional[DTUser]:
-  item = get_dt_user(user_data.id)
+async def get_and_update_dt_user(user_data: DTUserData) -> Optional[DTUser]:
+  item = await get_dt_user(user_data.id)
   if item is None:
-    if dt_blacklist_repo.is_on_blacklist(dt_blacklist_repo.BlacklistType.USER, user_data.id):
+    if await dt_blacklist_repo.is_on_blacklist(dt_blacklist_repo.BlacklistType.USER, user_data.id):
       return None
 
     item = DTUser.from_DTUserData(user_data)
     session.add(item)
   else:
     item.update(user_data)
-  session.commit()
+
+  await run_commit()
   return item

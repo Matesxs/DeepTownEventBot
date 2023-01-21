@@ -4,7 +4,9 @@ import datetime
 import disnake
 from disnake.ext import commands
 import traceback
+import sqlalchemy.exc
 
+from database import session
 from utils import message_utils, command_utils, string_manipulation
 from utils.logger import setup_custom_logger
 from features.base_cog import Base_Cog
@@ -26,7 +28,15 @@ class Errors(Base_Cog):
     await self.command_error_handling(inter, error)
 
   async def command_error_handling(self, ctx, error):
-    if isinstance(error, disnake.Forbidden):
+    if isinstance(error, disnake.errors.DiscordServerError):
+      pass
+    elif isinstance(error, sqlalchemy.exc.InternalError) or isinstance(error, sqlalchemy.exc.IntegrityError):
+      logger.warning(f"Database rollback")
+      output = "".join(traceback.format_exception(type(error), error, error.__traceback__))
+      logger.error(output)
+
+      session.rollback()
+    elif isinstance(error, disnake.Forbidden):
       await message_utils.generate_error_message(ctx, Strings.error_forbiden)
     elif isinstance(error, disnake.HTTPException) and error.code == 50007:
       await message_utils.generate_error_message(ctx, Strings.error_blocked_dms)

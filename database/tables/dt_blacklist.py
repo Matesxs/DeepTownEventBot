@@ -1,7 +1,7 @@
 import enum
 from sqlalchemy import Column, Enum, Integer, String
 
-from database import database
+import database
 
 class BlacklistType(enum.Enum):
   USER = 1

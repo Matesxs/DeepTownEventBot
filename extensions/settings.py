@@ -28,9 +28,9 @@ class Settings(Base_Cog):
     await inter.response.defer(with_message=True, ephemeral=True)
 
     if admin_role is not None and hasattr(admin_role, "id"):
-      guild = guilds_repo.get_or_create_discord_guild(inter.guild)
+      guild = await guilds_repo.get_or_create_discord_guild(inter.guild)
       guild.admin_role_id = str(admin_role.id)
-      guilds_repo.session.commit()
+      await guilds_repo.run_commit()
 
       return await message_utils.generate_success_message(inter, Strings.settings_admin_role_set_success(admin_role=admin_role.mention))
     await message_utils.generate_error_message(inter, Strings.settings_admin_role_set_failed)
@@ -39,10 +39,10 @@ class Settings(Base_Cog):
   async def admin_role_remove(self, inter: disnake.CommandInteraction):
     await inter.response.defer(with_message=True, ephemeral=True)
 
-    guild = guilds_repo.get_or_create_discord_guild(inter.guild)
+    guild = await guilds_repo.get_or_create_discord_guild(inter.guild)
     if guild.admin_role_id is not None:
       guild.admin_role_id = None
-      guilds_repo.session.commit()
+      await guilds_repo.run_commit()
 
       return await message_utils.generate_success_message(inter, Strings.settings_admin_role_remove_success)
     await message_utils.generate_error_message(inter, Strings.settings_admin_role_remove_failed)

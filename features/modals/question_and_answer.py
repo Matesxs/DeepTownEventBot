@@ -14,6 +14,6 @@ class CreateQuestionAndAnswer(disnake.ui.Modal):
     super(CreateQuestionAndAnswer, self).__init__(title="Create Question and Answer", custom_id="q_and_a_create", timeout=600, components=components)
 
   async def callback(self, interaction: disnake.ModalInteraction) -> None:
-    if questions_and_answers_repo.create_question_and_answer(interaction.text_values["q_and_a:question"], interaction.text_values["q_and_a:answer"]) is None:
+    if (await questions_and_answers_repo.create_question_and_answer(interaction.text_values["q_and_a:question"], interaction.text_values["q_and_a:answer"])) is None:
       return await message_utils.generate_error_message(interaction, Strings.questions_and_answers_add_failed)
     await message_utils.generate_success_message(interaction, Strings.questions_and_answers_add_added)

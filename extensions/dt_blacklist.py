@@ -20,28 +20,28 @@ class DTBlacklist(Base_Cog):
 
   @staticmethod
   async def add_to_blacklist(inter, block_type: dt_blacklist_repo.BlacklistType, entity_id: int) -> bool:
-    if dt_blacklist_repo.is_on_blacklist(block_type, entity_id):
+    if await dt_blacklist_repo.is_on_blacklist(block_type, entity_id):
       await message_utils.generate_error_message(inter, Strings.blacklist_add_already_on_blacklist)
       return False
 
     if block_type == dt_blacklist_repo.BlacklistType.USER:
-      subject = dt_user_repo.get_dt_user(entity_id)
+      subject = await dt_user_repo.get_dt_user(entity_id)
       subject_name = subject.username if subject is not None else None
     else:
-      subject = dt_guild_repo.get_dt_guild(entity_id)
+      subject = await dt_guild_repo.get_dt_guild(entity_id)
       subject_name = subject.name if subject is not None else None
 
     if subject is None:
       await message_utils.generate_error_message(inter, Strings.blacklist_add_subject_not_found)
       return False
 
-    dt_blacklist_repo.create_blacklist_item(block_type, entity_id, subject_name)
+    await dt_blacklist_repo.create_blacklist_item(block_type, entity_id, subject_name)
     await asyncio.sleep(0.1)
 
     if block_type == dt_blacklist_repo.BlacklistType.USER:
-      dt_user_repo.remove_user(entity_id)
+      await dt_user_repo.remove_user(entity_id)
     elif block_type == dt_blacklist_repo.BlacklistType.GUILD:
-      dt_guild_repo.remove_guild(entity_id)
+      await dt_guild_repo.remove_guild(entity_id)
 
     await message_utils.generate_success_message(inter, Strings.blacklist_add_success(subject_name=subject_name, type=block_type))
     return True
@@ -107,7 +107,7 @@ class DTBlacklist(Base_Cog):
     await inter.response.defer(with_message=True, ephemeral=True)
     type = dt_blacklist_repo.BlacklistType(type)
 
-    if dt_blacklist_repo.remove_blacklist_item(type, identifier):
+    if await dt_blacklist_repo.remove_blacklist_item(type, identifier):
       await message_utils.generate_success_message(inter, Strings.blacklist_remove_success(identifier=identifier, type=type))
     else:
       await message_utils.generate_error_message(inter, Strings.blacklist_remove_failed(identifier=identifier, type=type))
@@ -121,7 +121,7 @@ class DTBlacklist(Base_Cog):
     if type is not None:
       type = dt_blacklist_repo.BlacklistType(type)
 
-    blacklist_items = dt_blacklist_repo.get_blacklist_items(type)
+    blacklist_items = await dt_blacklist_repo.get_blacklist_items(type)
 
     blacklist_data = [(bitem.identifier, bitem.bl_type, string_manipulation.truncate_string(bitem.additional_data, 20)) for bitem in blacklist_items]
     blacklist_table_lines = table2ascii(["Identifier", "Type", "Specific Data"], blacklist_data, alignments=[Alignment.LEFT, Alignment.LEFT, Alignment.LEFT]).split("\n")
@@ -154,7 +154,7 @@ class DTBlacklist(Base_Cog):
     report_type, entity_id = specifier
 
     if report_type == "USER":
-      user = dt_user_repo.get_dt_user(entity_id)
+      user = await dt_user_repo.get_dt_user(entity_id)
       if user is None:
         return await message_utils.generate_error_message(inter, Strings.blacklist_report_user_cheater_user_not_found)
 
@@ -164,7 +164,7 @@ class DTBlacklist(Base_Cog):
       embed.add_field(name="ID", value=str(user.id))
       embed.add_field(name="Guild", value=f"{user.active_member.guild.name}" if user.active_member is not None else "None")
     elif report_type == "GUILD":
-      guild = dt_guild_repo.get_dt_guild(entity_id)
+      guild = await dt_guild_repo.get_dt_guild(entity_id)
       if guild is None:
         return await message_utils.generate_error_message(inter, Strings.blacklist_report_guild_cheater_guild_not_found)
 

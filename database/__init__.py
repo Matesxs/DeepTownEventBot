@@ -1,4 +1,7 @@
-from sqlalchemy import create_engine, BigInteger
+import asyncio
+from typing import Any, Union
+from sqlalchemy import BigInteger, create_engine
+from sqlalchemy.engine import Result, CursorResult
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects import postgresql, sqlite
@@ -11,29 +14,39 @@ from utils.logger import setup_custom_logger
 
 logger = setup_custom_logger(__name__)
 
-class Database:
-  def __init__(self):
-    if config.base.database_connect_string is None or config.base.database_connect_string == "":
-      logger.error("Database connect string is empty!")
-      exit(-1)
-
-    try:
-      self.base = declarative_base()
-      self.db = create_engine(config.base.database_connect_string)
-
-    except Exception:
-      logger.error(f"Failed to create database connection\n{traceback.format_exc()}")
-      exit(-1)
-
-    logger.info("Database opened")
-
-database:Database = Database()
+if config.base.database_connect_string is None or config.base.database_connect_string == "":
+  logger.error("Database connect string is empty!")
+  exit(-1)
 
 try:
-  session:Session = sessionmaker(database.db)()
+  base = declarative_base()
+  engine = create_engine(config.base.database_connect_string)
+
+except Exception:
+  logger.error(f"Failed to create database connection\n{traceback.format_exc()}")
+  exit(-1)
+
+logger.info("Database opened")
+
+try:
+  session:Session = sessionmaker(engine, expire_on_commit=False)()
 except Exception:
   logger.error(f"Failed to create database session\n{traceback.format_exc()}")
   exit(-1)
+
+session_lock = asyncio.Lock()
+async def run_query(statement: Any, commit: bool=False) -> Union[Result, CursorResult]:
+  await session_lock.acquire()
+  result = await asyncio.to_thread(session.execute, statement)
+  if commit:
+    await asyncio.to_thread(session.commit)
+  session_lock.release()
+  return result
+
+async def run_commit():
+  await session_lock.acquire()
+  await asyncio.to_thread(session.commit)
+  session_lock.release()
 
 BigIntegerType = BigInteger()
 BigIntegerType = BigIntegerType.with_variant(postgresql.BIGINT(), 'postgresql')
@@ -47,7 +60,7 @@ def load_sub_modules(module):
 def init_tables():
   load_sub_modules("database.tables")
 
-  database.base.metadata.create_all(database.db)
+  base.metadata.create_all(engine)
   session.commit()
 
   logger.info("Initializating all loaded tables")

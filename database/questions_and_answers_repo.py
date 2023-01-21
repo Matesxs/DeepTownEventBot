@@ -1,68 +1,68 @@
-import math
-from typing import List, Tuple, Optional, Iterator
+from typing import List, Tuple, Optional, AsyncIterator
 import disnake
+from sqlalchemy import select, delete
 
-from database import session, guilds_repo
+from database import run_query, run_commit, session, guilds_repo
 from database.tables.questions_and_answers import QuestionAndAnswer, QuestionAndAnswerWhitelist
 
-def is_on_whitelist(guild_id: int, channel_id: int) -> bool:
-  return session.query(QuestionAndAnswerWhitelist.channel_id).filter(QuestionAndAnswerWhitelist.guild_id == str(guild_id), QuestionAndAnswerWhitelist.channel_id == str(channel_id)).one_or_none() is not None
+async def is_on_whitelist(guild_id: int, channel_id: int) -> bool:
+  result = await run_query(select(QuestionAndAnswerWhitelist.channel_id).filter(QuestionAndAnswerWhitelist.guild_id == str(guild_id), QuestionAndAnswerWhitelist.channel_id == str(channel_id)))
+  return result.scalar_one_or_none() is not None
 
-def add_to_whitelist(guild: disnake.Guild, channel_id: int) -> bool:
-  if is_on_whitelist(guild.id, channel_id):
+async def add_to_whitelist(guild: disnake.Guild, channel_id: int) -> bool:
+  if await is_on_whitelist(guild.id, channel_id):
     return False
 
-  guilds_repo.get_or_create_discord_guild(guild)
+  await guilds_repo.get_or_create_discord_guild(guild)
 
   item = QuestionAndAnswerWhitelist(guild_id=str(guild.id), channel_id=str(channel_id))
   session.add(item)
-  session.commit()
+
+  await run_commit()
   return True
 
-def get_guild_whitelisted_channel_ids(guild_id: int) -> List[int]:
-  data = session.query(QuestionAndAnswerWhitelist.channel_id).filter(QuestionAndAnswerWhitelist.guild_id == str(guild_id)).all()
-  return [int(d[0]) for d in data]
+async def remove_from_whitelist(guild_id: int, channel_id: int) -> bool:
+  result = await run_query(delete(QuestionAndAnswerWhitelist).filter(QuestionAndAnswerWhitelist.guild_id == str(guild_id), QuestionAndAnswerWhitelist.channel_id == str(channel_id)))
+  await run_commit()
+  return result.rowcount > 0
 
-def remove_from_whitelist(guild_id: int, channel_id: int) -> bool:
-  result = session.query(QuestionAndAnswerWhitelist).filter(QuestionAndAnswerWhitelist.guild_id == str(guild_id), QuestionAndAnswerWhitelist.channel_id == str(channel_id)).delete()
-  return result > 0
+async def get_question_and_answer(qa_id: int) -> Optional[QuestionAndAnswer]:
+  result = await run_query(select(QuestionAndAnswer).filter(QuestionAndAnswer.id == qa_id))
+  return result.scalar_one_or_none()
 
-def get_question_and_answer(qa_id: int) -> Optional[QuestionAndAnswer]:
-  return session.query(QuestionAndAnswer).filter(QuestionAndAnswer.id == qa_id).one_or_none()
+async def find_question(question: str) -> Optional[QuestionAndAnswer]:
+  result = await run_query(select(QuestionAndAnswer).filter(QuestionAndAnswer.question == question))
+  return result.scalar_one_or_none()
 
-def find_question(question: str) -> Optional[QuestionAndAnswer]:
-  return session.query(QuestionAndAnswer).filter(QuestionAndAnswer.question == question).one_or_none()
-
-def create_question_and_answer(question: str, answer: str) -> Optional[QuestionAndAnswer]:
-  if find_question(question) is not None:
+async def create_question_and_answer(question: str, answer: str) -> Optional[QuestionAndAnswer]:
+  if (await find_question(question)) is not None:
     return None
 
   item = QuestionAndAnswer(question=question, answer=answer)
   session.add(item)
-  session.commit()
+
+  await run_commit()
   return item
 
-def all_questions_iterator() -> Iterator[Tuple[int, str]]:
-  number_of_questions = session.query(QuestionAndAnswer.id).count()
-  number_of_batches = math.ceil(number_of_questions / 10)
+async def all_questions_iterator() -> AsyncIterator[Tuple[int, str]]:
+  result = await run_query(select(QuestionAndAnswer.id, QuestionAndAnswer.question).execution_options(yield_per=10))
+  for partition in result.partitions():
+    for row in partition:
+      yield row[0], row[1]
 
-  for batch_index in range(number_of_batches):
-    data = session.query(QuestionAndAnswer.id, QuestionAndAnswer.question).offset(batch_index * 10).limit(10)
-    for d in data:
-      yield d[0], d[1]
+async def get_answer_by_id(ans_id: int) -> Optional[str]:
+  result = await run_query(select(QuestionAndAnswer.answer).filter(QuestionAndAnswer.id == ans_id))
+  return result.scalar_one_or_none()
 
-def get_answer_by_id(ans_id: int) -> Optional[str]:
-  data = session.query(QuestionAndAnswer.answer).filter(QuestionAndAnswer.id == ans_id).one_or_none()
-  return str(data[0]) if data is not None else None
+async def get_all() -> List[QuestionAndAnswer]:
+  result = await run_query(select(QuestionAndAnswer))
+  return result.scalars().all()
 
-def get_all() -> List[QuestionAndAnswer]:
-  return session.query(QuestionAndAnswer).all()
+async def get_all_ids() -> List[int]:
+  result = await run_query(select(QuestionAndAnswer.id))
+  return result.scalars().all()
 
-def get_all_ids() -> List[int]:
-  data = session.query(QuestionAndAnswer.id).all()
-  return [d[0] for d in data]
-
-def remove_question(id: int):
-  result = session.query(QuestionAndAnswer).filter(QuestionAndAnswer.id == id).delete()
-  session.commit()
-  return result > 0
+async def remove_question(id: int) -> bool:
+  result = await run_query(delete(QuestionAndAnswer).filter(QuestionAndAnswer.id == id))
+  await run_commit()
+  return result.rowcount > 0

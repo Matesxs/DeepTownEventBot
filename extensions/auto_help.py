@@ -43,6 +43,7 @@ class AutoHelp(Base_Cog):
     if message.guild is None: return
     if message.author.bot or message.author.system: return
     if message.content == "" or message.content.startswith(config.base.command_prefix): return
+    if not message.channel.permissions_for(message.guild.me).send_messages: return
     if not "?" in message.content: return
     if not (await questions_and_answers_repo.is_on_whitelist(message.guild.id, message.channel.id)): return
 

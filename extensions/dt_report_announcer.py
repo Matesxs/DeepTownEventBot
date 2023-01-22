@@ -41,19 +41,19 @@ class DTEventReportAnnouncer(Base_Cog):
     if specifier is None:
       return await message_utils.generate_error_message(inter, Strings.dt_invalid_identifier)
 
-    existing_tracker = tracking_settings_repo.get_tracking_settings(inter.guild.id, specifier[1])
+    existing_tracker = await tracking_settings_repo.get_tracking_settings(inter.guild.id, specifier[1])
     if not existing_tracker:
       if self.bot.owner is None or inter.author.id != self.bot.owner.id:
-        all_trackers = tracking_settings_repo.get_all_guild_trackers(inter.guild.id)
+        all_trackers = await tracking_settings_repo.get_all_guild_trackers(inter.guild.id)
         if len(all_trackers) >= config.event_tracker.tracker_limit_per_guild:
           return await message_utils.generate_error_message(inter, Strings.event_report_announcer_add_or_modify_tracker_tracker_limit_reached(limit=config.event_report_announcer.tracker_limit_per_guild))
 
-      existing_tracker = tracking_settings_repo.get_or_create_tracking_settings(inter.guild, specifier[1], announce_channel.id)
+      existing_tracker = await tracking_settings_repo.get_or_create_tracking_settings(inter.guild, specifier[1], announce_channel.id)
       if existing_tracker is None:
         return await message_utils.generate_error_message(inter, Strings.dt_guild_not_found(identifier=identifier))
     else:
       existing_tracker.announce_channel_id = str(announce_channel.id)
-      tracking_settings_repo.session.commit()
+      await tracking_settings_repo.run_commit()
 
     await message_utils.generate_success_message(inter, Strings.event_report_announcer_add_or_modify_tracker_success_with_channel(guild=existing_tracker.dt_guild.name, channel=announce_channel.name))
 
@@ -65,13 +65,13 @@ class DTEventReportAnnouncer(Base_Cog):
     if specifier is None:
       return await message_utils.generate_error_message(inter, Strings.dt_invalid_identifier)
 
-    settings = tracking_settings_repo.get_tracking_settings(inter.guild.id, specifier[1])
+    settings = await tracking_settings_repo.get_tracking_settings(inter.guild.id, specifier[1])
     if settings is None:
       return await message_utils.generate_error_message(inter, Strings.event_report_announcer_remove_tracker_failed(identifier=specifier[1]))
 
     guild_name = settings.dt_guild.name
 
-    if tracking_settings_repo.remove_tracking_settings(inter.guild.id, specifier[1]):
+    if await tracking_settings_repo.remove_tracking_settings(inter.guild.id, specifier[1]):
       await message_utils.generate_success_message(inter, Strings.event_report_announcer_remove_tracker_success(guild=guild_name))
     else:
       await message_utils.generate_error_message(inter, Strings.event_report_announcer_remove_tracker_failed(identifier=specifier[1]))
@@ -79,7 +79,7 @@ class DTEventReportAnnouncer(Base_Cog):
   @announcer.sub_command(name="list", description=Strings.event_report_announcer_list_trackers_description)
   @cooldowns.default_cooldown
   async def list_guild_trackers(self, inter: disnake.CommandInteraction):
-    guild_trackers = tracking_settings_repo.get_all_guild_trackers(inter.guild.id)
+    guild_trackers = await tracking_settings_repo.get_all_guild_trackers(inter.guild.id)
     number_of_trackers = len(guild_trackers)
 
     if number_of_trackers == 0:
@@ -108,7 +108,7 @@ class DTEventReportAnnouncer(Base_Cog):
   async def result_announce_task(self):
     logger.info("Update before announcement starting")
 
-    guild_ids = tracking_settings_repo.get_tracked_guild_ids()
+    guild_ids = await tracking_settings_repo.get_tracked_guild_ids()
 
     if guild_ids is not None:
       for guild_id in guild_ids:
@@ -117,21 +117,22 @@ class DTEventReportAnnouncer(Base_Cog):
         await asyncio.sleep(1)
         if data is None: continue
 
-        event_participation_repo.generate_or_update_event_participations(data)
+        await event_participation_repo.generate_or_update_event_participations(data)
     logger.info("Update before announcement finished")
 
     year, week = dt_helpers.get_event_index(datetime.datetime.utcnow())
 
     logger.info("Starting Announcement")
     trackers = tracking_settings_repo.get_all_trackers()
-    for tracker in trackers:
+    async for tracker in trackers:
       announce_channel = await tracker.get_announce_channel(self.bot)
       if announce_channel is None:
         # Announce channel not found so the tracker is not valid anymore
-        tracking_settings_repo.session.delete(tracker)
+        await asyncio.to_thread(tracking_settings_repo.session.delete, tracker)
+        await tracking_settings_repo.run_commit()
         continue
 
-      participations = event_participation_repo.get_event_participations(guild_id=int(tracker.dt_guild_id), year=year, week=week, order_by=[event_participation_repo.EventParticipation.amount.desc()])
+      participations = await event_participation_repo.get_event_participations(guild_id=int(tracker.dt_guild_id), year=year, week=week, order_by=[event_participation_repo.EventParticipation.amount.desc()])
       if not participations: continue
 
       await dt_report_generators.send_text_guild_event_participation_report(announce_channel, tracker.dt_guild, participations, colm_padding=0)

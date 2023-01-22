@@ -14,24 +14,24 @@ from config.strings import Strings
 
 logger = setup_custom_logger(__name__)
 
-def getApproximateAnswer(q):
+async def getApproximateAnswer(q):
   max_score = 0
   answer_id = None
   ref_question = None
 
-  questions = questions_and_answers_repo.all_questions_iterator()
+  all_questions = questions_and_answers_repo.all_questions_iterator()
 
-  for ans_id, question in questions:
+  async for ans_id, question in all_questions:
     score = ratio(question, q)
     if score >= 0.9:
-      return question, questions_and_answers_repo.get_answer_by_id(ans_id), score
+      return question, await questions_and_answers_repo.get_answer_by_id(ans_id), score
     elif score > max_score:
       max_score = score
       answer_id = ans_id
       ref_question = question
 
   if answer_id is not None and (max_score * 100) > config.questions_and_answers.score_limit:
-    return ref_question, questions_and_answers_repo.get_answer_by_id(answer_id), max_score
+    return ref_question, await questions_and_answers_repo.get_answer_by_id(answer_id), max_score
   return None
 
 class AutoHelp(Base_Cog):
@@ -44,9 +44,9 @@ class AutoHelp(Base_Cog):
     if message.author.bot or message.author.system: return
     if message.content == "" or message.content.startswith(config.base.command_prefix): return
     if not "?" in message.content: return
-    if not questions_and_answers_repo.is_on_whitelist(message.guild.id, message.channel.id): return
+    if not (await questions_and_answers_repo.is_on_whitelist(message.guild.id, message.channel.id)): return
 
-    answer_object = getApproximateAnswer(message.content)
+    answer_object = await getApproximateAnswer(message.content)
     if answer_object is None: return
 
     ref_question, answer, score = answer_object
@@ -72,7 +72,7 @@ class AutoHelp(Base_Cog):
   @commands.is_owner()
   async def modify_question_and_answer(self, inter: disnake.CommandInteraction,
                                        question_id: int=commands.Param(description=Strings.questions_and_answers_id_param_description)):
-    question_and_answer = questions_and_answers_repo.get_question_and_answer(question_id)
+    question_and_answer = await questions_and_answers_repo.get_question_and_answer(question_id)
     if question_and_answer is None:
       return await message_utils.generate_error_message(inter, Strings.questions_and_answers_not_found)
     await inter.response.send_modal(modal=CreateQuestionAndAnswer(question_and_answer.question, question_and_answer.answer))
@@ -82,14 +82,14 @@ class AutoHelp(Base_Cog):
   async def remove_question_and_answer(self, inter: disnake.CommandInteraction,
                                        question_id: int=commands.Param(description=Strings.questions_and_answers_id_param_description)):
     await inter.response.defer(with_message=True, ephemeral=True)
-    if questions_and_answers_repo.remove_question(question_id):
+    if await questions_and_answers_repo.remove_question(question_id):
       await message_utils.generate_success_message(inter, Strings.questions_and_answers_remove_removed)
     else:
       await message_utils.generate_error_message(inter, Strings.questions_and_answers_not_found)
 
   @remove_question_and_answer.autocomplete("question_id")
   async def remove_question_and_answer_question_id_autocomplete(self, _, string: str):
-    question_ids = questions_and_answers_repo.get_all_ids()
+    question_ids = await questions_and_answers_repo.get_all_ids()
     if string is None or not string:
       return question_ids[:25]
     return [id_ for id_ in question_ids if string.lower() in str(id_)][:25]
@@ -98,7 +98,7 @@ class AutoHelp(Base_Cog):
   @cooldowns.default_cooldown
   async def question_and_answer_list(self, inter: disnake.CommandInteraction):
     await inter.response.defer(with_message=True)
-    question_objects = questions_and_answers_repo.get_all()
+    question_objects = await questions_and_answers_repo.get_all()
 
     question_answer_pairs = [f"**ID:** {question_object.id}\n**Question:** {question_object.question}\n**Answer:** {question_object.answer}\n" for question_object in question_objects]
 
@@ -127,7 +127,7 @@ class AutoHelp(Base_Cog):
                           channel: disnake.TextChannel=commands.Param(description=Strings.discord_text_channel_param_description)):
     await inter.response.defer(with_message=True, ephemeral=True)
 
-    if questions_and_answers_repo.add_to_whitelist(inter.guild, channel.id):
+    if await questions_and_answers_repo.add_to_whitelist(inter.guild, channel.id):
       return await message_utils.generate_success_message(inter, Strings.questions_and_answers_whitelist_add_success(channel=channel.name))
     await message_utils.generate_error_message(inter, Strings.questions_and_answers_whitelist_add_failed(channel=channel.name))
 
@@ -136,7 +136,7 @@ class AutoHelp(Base_Cog):
                              channel: disnake.TextChannel=commands.Param(description=Strings.discord_text_channel_param_description)):
     await inter.response.defer(with_message=True, ephemeral=True)
 
-    if questions_and_answers_repo.remove_from_whitelist(inter.guild_id, channel.id):
+    if await questions_and_answers_repo.remove_from_whitelist(inter.guild_id, channel.id):
       return await message_utils.generate_success_message(inter, Strings.questions_and_answers_whitelist_remove_success(channel=channel.name))
     await message_utils.generate_error_message(inter, Strings.questions_and_answers_whitelist_remove_failed(channel=channel.name))
 

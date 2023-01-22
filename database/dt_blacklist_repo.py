@@ -1,39 +1,37 @@
-from typing import Optional, List, Union
+from typing import Optional, List
 
-from database import session
+from sqlalchemy import select, delete
+
+from database import run_query, run_commit, session
 from database.tables.dt_blacklist import BlacklistType, DTBlacklistItem
 
-def get_blacklist_item(bl_type: BlacklistType, identifier: int) -> Optional[DTBlacklistItem]:
-  return session.query(DTBlacklistItem).filter(DTBlacklistItem.bl_type == BlacklistType(bl_type), DTBlacklistItem.identifier == identifier).one_or_none()
+async def get_blacklist_item(bl_type: BlacklistType, identifier: int) -> Optional[DTBlacklistItem]:
+  statement = select(DTBlacklistItem).filter(DTBlacklistItem.bl_type == BlacklistType(bl_type), DTBlacklistItem.identifier == identifier)
+  result = await run_query(statement)
+  return result.scalar_one_or_none()
 
-def is_on_blacklist(bl_type: BlacklistType, identifier: int) -> bool:
-  return session.query(DTBlacklistItem.identifier).filter(DTBlacklistItem.bl_type == BlacklistType(bl_type), DTBlacklistItem.identifier == identifier).one_or_none() is not None
+async def is_on_blacklist(bl_type: BlacklistType, identifier: int) -> bool:
+  result = await run_query(select(DTBlacklistItem.identifier).filter(DTBlacklistItem.bl_type == BlacklistType(bl_type), DTBlacklistItem.identifier == identifier))
+  return result.scalar_one_or_none() is not None
 
-def get_blacklist_items(bl_type: Optional[BlacklistType]=None) -> List[DTBlacklistItem]:
+async def get_blacklist_items(bl_type: Optional[BlacklistType]=None) -> List[DTBlacklistItem]:
   if bl_type is not None:
-    return session.query(DTBlacklistItem).filter(DTBlacklistItem.bl_type == BlacklistType(bl_type)).all()
-  return session.query(DTBlacklistItem).all()
+    result = await run_query(select(DTBlacklistItem).filter(DTBlacklistItem.bl_type == BlacklistType(bl_type)))
+    return result.scalars().all()
 
-def search_blacklist_item(bl_type: BlacklistType, search_term: Union[str, int]) -> List[DTBlacklistItem]:
-  if isinstance(search_term, int) or search_term.isnumeric():
-    search_term = int(search_term)
+  result = await run_query(select(DTBlacklistItem))
+  return result.scalars().all()
 
-    item = get_blacklist_item(bl_type, search_term)
-    if item is not None:
-      return [item]
-
-  return session.query(DTBlacklistItem).filter(DTBlacklistItem.bl_type == BlacklistType(bl_type), DTBlacklistItem.additional_data.ilike(str(search_term))).all()
-
-def create_blacklist_item(bl_type: BlacklistType, identifier: int, additional_data: Optional[str]=None) -> Optional[DTBlacklistItem]:
-  item = get_blacklist_item(bl_type, identifier)
+async def create_blacklist_item(bl_type: BlacklistType, identifier: int, additional_data: Optional[str]=None) -> Optional[DTBlacklistItem]:
+  item = await get_blacklist_item(bl_type, identifier)
   if item is not None: return None
 
   item = DTBlacklistItem(bl_type=BlacklistType(bl_type), identifier=identifier, additional_data=additional_data)
   session.add(item)
-  session.commit()
+  await run_commit()
   return item
 
-def remove_blacklist_item(bl_type: BlacklistType, identifier: int) -> bool:
-  result = session.query(DTBlacklistItem).filter(DTBlacklistItem.bl_type == BlacklistType(bl_type), DTBlacklistItem.identifier == identifier).delete()
-  session.commit()
-  return result > 0
+async def remove_blacklist_item(bl_type: BlacklistType, identifier: int) -> bool:
+  result = await run_query(delete(DTBlacklistItem).filter(DTBlacklistItem.bl_type == BlacklistType(bl_type), DTBlacklistItem.identifier == identifier))
+  await run_commit()
+  return result.rowcount > 0

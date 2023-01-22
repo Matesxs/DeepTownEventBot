@@ -1,12 +1,12 @@
 from sqlalchemy import Column, String, Integer, Boolean
 from sqlalchemy.orm import relationship
 
-from database import database, BigIntegerType
+import database
 
 class DTGuild(database.base):
   __tablename__ = "dt_guilds"
 
-  id = Column(BigIntegerType, primary_key=True)
+  id = Column(database.BigIntegerType, primary_key=True)
   name = Column(String, index=True)
   level = Column(Integer)
 

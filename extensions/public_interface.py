@@ -46,7 +46,7 @@ class PublicInterface(Base_Cog):
     if specifier is None:
       return await message_utils.generate_error_message(inter, Strings.dt_invalid_identifier)
 
-    guild_data = event_participation_repo.get_event_participations(guild_id=specifier[1], year=year, week=week, order_by=[event_participation_repo.EventParticipation.amount.desc()])
+    guild_data = await event_participation_repo.get_event_participations(guild_id=specifier[1], year=year, week=week, order_by=[event_participation_repo.EventParticipation.amount.desc()])
 
     if not guild_data:
       return await message_utils.generate_error_message(inter, Strings.dt_event_data_not_found(year=year, week=week))
@@ -70,16 +70,11 @@ class PublicInterface(Base_Cog):
     if specifier is None:
       return await message_utils.generate_error_message(inter, Strings.dt_invalid_identifier)
 
-    guild = dt_guild_repo.get_dt_guild(specifier[1])
+    guild = await dt_guild_repo.get_dt_guild(specifier[1])
     if not guild:
       return await message_utils.generate_error_message(inter, Strings.dt_guild_not_found(identifier=identifier))
 
     guild_profile_lists = []
-
-    guild_data = await dt_helpers.get_dt_guild_data(guild.id)
-    if guild_data is not None:
-      event_participation_repo.generate_or_update_event_participations(guild_data)
-      guild = dt_guild_repo.get_dt_guild(guild.id)
 
     current_time = datetime.datetime.utcnow()
     current_year, _ = dt_helpers.get_event_index(current_time)
@@ -91,7 +86,7 @@ class PublicInterface(Base_Cog):
     guild_front_page.add_field(name="Level", value=str(guild.level))
     guild_front_page.add_field(name="Members", value=str(len(guild.active_members)))
     guild_front_page.add_field(name="Active", value=str(guild.is_active))
-    guild_front_page.add_field(name="Position", value=str(dt_guild_repo.get_guild_level_leaderboard(guild.id)[0][0]))
+    guild_front_page.add_field(name="Position", value=str(await dt_guild_repo.get_guild_position(guild.id)))
     guild_profile_lists.append(guild_front_page)
 
     # Members list
@@ -113,23 +108,23 @@ class PublicInterface(Base_Cog):
       guild_profile_lists.append(member_page)
 
     # Event participation stats
-    all_time_total, all_time_average, all_time_median = event_participation_repo.get_event_participation_stats(guild_id=guild.id, ignore_zero_participation_median=True)
-    all_time_total_last_year, all_time_average_last_year, all_time_median_last_year = event_participation_repo.get_event_participation_stats(guild_id=guild.id, year=current_year, ignore_zero_participation_median=True)
+    all_time_total, all_time_average, all_time_median = await event_participation_repo.get_event_participation_stats(guild_id=guild.id, ignore_zero_participation_median=True)
+    all_time_total_last_year, all_time_average_last_year, all_time_median_last_year = await event_participation_repo.get_event_participation_stats(guild_id=guild.id, year=current_year, ignore_zero_participation_median=True)
 
     guild_event_participations_stats_page = disnake.Embed(title=f"{string_manipulation.truncate_string(guild.name, 20)} event participations stats", color=disnake.Color.dark_blue())
     message_utils.add_author_footer(guild_event_participations_stats_page, inter.author)
     guild_event_participations_stats_page.add_field(name="Total event participation", value=string_manipulation.format_number(all_time_total, 4), inline=False)
     guild_event_participations_stats_page.add_field(name="Average donate per event", value=string_manipulation.format_number(all_time_average, 4), inline=False)
     guild_event_participations_stats_page.add_field(name="Median donate per event", value=string_manipulation.format_number(all_time_median, 4), inline=False)
-    guild_event_participations_stats_page.add_field(name="Total event participation last year", value=string_manipulation.format_number(all_time_total_last_year, 4), inline=False)
-    guild_event_participations_stats_page.add_field(name="Average donate per event last year", value=string_manipulation.format_number(all_time_average_last_year, 4), inline=False)
-    guild_event_participations_stats_page.add_field(name="Median donate per event last year", value=string_manipulation.format_number(all_time_median_last_year, 4), inline=False)
+    guild_event_participations_stats_page.add_field(name="Total event participation current year", value=string_manipulation.format_number(all_time_total_last_year, 4), inline=False)
+    guild_event_participations_stats_page.add_field(name="Average donate per event current year", value=string_manipulation.format_number(all_time_average_last_year, 4), inline=False)
+    guild_event_participations_stats_page.add_field(name="Median donate per event current year", value=string_manipulation.format_number(all_time_median_last_year, 4), inline=False)
     guild_profile_lists.append(guild_event_participations_stats_page)
 
     await asyncio.sleep(0.1)
 
     # Event best contributors
-    top_event_contributors = event_participation_repo.get_event_participants_data(guild.id, limit=10, ignore_zero_participation_median=True, only_current_members=True, order_by=[sqlalchemy.func.avg(event_participation_repo.EventParticipation.amount).desc()])
+    top_event_contributors = await event_participation_repo.get_event_participants_data(guild.id, limit=10, ignore_zero_participation_median=True, only_current_members=True, order_by=[sqlalchemy.func.avg(event_participation_repo.EventParticipation.amount).desc()])
     top_event_contributors_data = [(idx + 1, string_manipulation.truncate_string(contributor[1], 14), string_manipulation.format_number(contributor[4]), string_manipulation.format_number(contributor[5]), string_manipulation.format_number(contributor[6])) for idx, contributor in enumerate(top_event_contributors)]
     event_best_contributors_table_strings = table2ascii(body=top_event_contributors_data, header=["No°", "Name", "Total", "Average", "Median"], alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.RIGHT, Alignment.RIGHT, Alignment.RIGHT], first_col_heading=True).split("\n")
 
@@ -142,7 +137,7 @@ class PublicInterface(Base_Cog):
     await asyncio.sleep(0.1)
 
     # Worst event contributors
-    worst_event_contributors = event_participation_repo.get_event_participants_data(guild.id, limit=10, ignore_zero_participation_median=True, only_current_members=True, order_by=[sqlalchemy.func.avg(event_participation_repo.EventParticipation.amount)])
+    worst_event_contributors = await event_participation_repo.get_event_participants_data(guild.id, limit=10, ignore_zero_participation_median=True, only_current_members=True, order_by=[sqlalchemy.func.avg(event_participation_repo.EventParticipation.amount)])
     worst_event_contributors_data = [(idx + 1, string_manipulation.truncate_string(contributor[1], 14), string_manipulation.format_number(contributor[4]), string_manipulation.format_number(contributor[5]), string_manipulation.format_number(contributor[6])) for idx, contributor in enumerate(worst_event_contributors)]
     event_worst_contributors_table_strings = table2ascii(body=worst_event_contributors_data, header=["No°", "Name", "Total", "Average", "Median"], alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.RIGHT, Alignment.RIGHT, Alignment.RIGHT], first_col_heading=True).split("\n")
 
@@ -156,8 +151,8 @@ class PublicInterface(Base_Cog):
 
     # Event participations
     event_participations_data = []
-    for year, week, total, average, median in event_participation_repo.get_guild_event_participations_data(guild.id, ignore_zero_participation_median=True):
-      best_participants = event_participation_repo.get_event_participants_data(guild.id, year, week, limit=1) if total != 0 else None
+    for year, week, total, average, median in (await event_participation_repo.get_guild_event_participations_data(guild.id, ignore_zero_participation_median=True)):
+      best_participants = await event_participation_repo.get_event_participants_data(guild.id, year, week, limit=1) if total != 0 else None
       event_participations_data.append((year, week, (string_manipulation.truncate_string(best_participants[0][1], 10) if best_participants is not None else "*Unknown*"), string_manipulation.format_number(best_participants[0][4]) if best_participants else "0", string_manipulation.format_number(average), string_manipulation.format_number(median)))
 
     event_participations_strings = table2ascii(body=event_participations_data, header=["Year", "Week", "Top Member", "Top Donate", "Average", "Median"], alignments=[Alignment.RIGHT, Alignment.RIGHT, Alignment.LEFT, Alignment.RIGHT, Alignment.RIGHT, Alignment.RIGHT]).split("\n")
@@ -180,15 +175,15 @@ class PublicInterface(Base_Cog):
     if specifier is None:
       return await message_utils.generate_error_message(inter, Strings.dt_invalid_identifier)
 
-    guild = dt_guild_repo.get_dt_guild(specifier[1])
+    guild = await dt_guild_repo.get_dt_guild(specifier[1])
     if not guild:
       return await message_utils.generate_error_message(inter, Strings.dt_guild_not_found(identifier=identifier))
 
-    all_guild_participations = event_participation_repo.get_guild_event_participations_data(guild.id, ignore_zero_participation_median=True)
+    all_guild_participations = await event_participation_repo.get_guild_event_participations_data(guild.id, ignore_zero_participation_median=True)
 
     event_participations_data = []
     for year, week, total, average, median in all_guild_participations:
-      best_participants = event_participation_repo.get_event_participants_data(guild.id, year, week, limit=1) if total != 0 else None
+      best_participants = await event_participation_repo.get_event_participants_data(guild.id, year, week, limit=1) if total != 0 else None
       event_participations_data.append((year, week, (string_manipulation.truncate_string(best_participants[0][1], 10) if best_participants is not None else "*Unknown*"), string_manipulation.format_number(best_participants[0][4]) if best_participants else "0", string_manipulation.format_number(average), string_manipulation.format_number(median)))
 
     event_participations_strings = table2ascii(body=event_participations_data, header=["Year", "Week", "Top Member", "Top Donate", "Average", "Median"], alignments=[Alignment.RIGHT, Alignment.RIGHT, Alignment.LEFT, Alignment.RIGHT, Alignment.RIGHT, Alignment.RIGHT]).split("\n")
@@ -211,13 +206,13 @@ class PublicInterface(Base_Cog):
   async def guild_leaderboard(self, inter: disnake.CommandInteraction):
     await inter.response.defer(with_message=True)
 
-    guild_leaderboard_data = dt_guild_repo.get_guild_level_leaderboard()
+    guild_leaderboard_data = await dt_guild_repo.get_guild_level_leaderboard()
     if not guild_leaderboard_data:
       return await message_utils.generate_error_message(inter, Strings.public_interface_guild_leaderboard_no_guilds)
 
     standing_table_data = []
     for standing, guild_id, guild_name, level in guild_leaderboard_data:
-      member_number = dt_guild_member_repo.get_number_of_members(guild_id)
+      member_number = await dt_guild_member_repo.get_number_of_members(guild_id)
       standing_table_data.append((standing, string_manipulation.truncate_string(guild_name, 20), level, member_number))
 
     standing_table_strings = table2ascii(["No°", "Name", "Level", "Members"], standing_table_data, alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.RIGHT, Alignment.RIGHT], first_col_heading=True).split("\n")
@@ -247,11 +242,11 @@ class PublicInterface(Base_Cog):
     if specifier is None:
       return await message_utils.generate_error_message(inter, Strings.dt_invalid_identifier)
 
-    user = dt_user_repo.get_dt_user(specifier[1])
+    user = await dt_user_repo.get_dt_user(specifier[1])
     if not user:
       return await message_utils.generate_error_message(inter, Strings.dt_user_not_found(identifier=identifier))
 
-    all_participations = event_participation_repo.get_event_participations(user_id=user.id)
+    all_participations = await event_participation_repo.get_event_participations(user_id=user.id)
 
     user_participations = []
     participation_pages_data = dt_report_generators.generate_participations_page_strings(all_participations)
@@ -273,7 +268,7 @@ class PublicInterface(Base_Cog):
     if specifier is None:
       return await message_utils.generate_error_message(inter, Strings.dt_invalid_identifier)
 
-    user = dt_user_repo.get_dt_user(specifier[1])
+    user = await dt_user_repo.get_dt_user(specifier[1])
     if not user:
       return await message_utils.generate_error_message(inter, Strings.dt_user_not_found(identifier=identifier))
 
@@ -281,11 +276,6 @@ class PublicInterface(Base_Cog):
     current_year, _ = dt_helpers.get_event_index(current_time)
 
     user_profile_lists = []
-
-    guild_data = (await dt_helpers.get_dt_guild_data(user.active_member.guild.id)) if user.active_member else None
-    if guild_data is not None:
-      event_participation_repo.generate_or_update_event_participations(guild_data)
-      user = dt_user_repo.get_dt_user(user.id)
 
     # Front page
     user_front_page = disnake.Embed(title=f"{string_manipulation.truncate_string(user.username, 20)}", color=disnake.Color.dark_blue())
@@ -311,21 +301,21 @@ class PublicInterface(Base_Cog):
     user_profile_lists.append(user_buildings_page)
 
     # Event participation stats
-    all_time_total, all_time_average, all_time_median = event_participation_repo.get_event_participation_stats(user_id=user.id, ignore_zero_participation_median=True)
-    all_time_total_last_year, all_time_average_last_year, all_time_median_last_year = event_participation_repo.get_event_participation_stats(user_id=user.id, year=current_year, ignore_zero_participation_median=True)
+    all_time_total, all_time_average, all_time_median = await event_participation_repo.get_event_participation_stats(user_id=user.id, ignore_zero_participation_median=True)
+    all_time_total_last_year, all_time_average_last_year, all_time_median_last_year = await event_participation_repo.get_event_participation_stats(user_id=user.id, year=current_year, ignore_zero_participation_median=True)
 
     user_event_participations_stats_page = disnake.Embed(title=f"{string_manipulation.truncate_string(user.username, 20)} event participations stats", color=disnake.Color.dark_blue())
     message_utils.add_author_footer(user_event_participations_stats_page, inter.author)
     user_event_participations_stats_page.add_field(name="Total event participation", value=string_manipulation.format_number(all_time_total, 4), inline=False)
     user_event_participations_stats_page.add_field(name="Average donate", value=string_manipulation.format_number(all_time_average, 4), inline=False)
     user_event_participations_stats_page.add_field(name="Median donate", value=string_manipulation.format_number(all_time_median, 4), inline=False)
-    user_event_participations_stats_page.add_field(name="Total event participation last year", value=string_manipulation.format_number(all_time_total_last_year, 4), inline=False)
-    user_event_participations_stats_page.add_field(name="Average donate last year", value=string_manipulation.format_number(all_time_average_last_year, 4), inline=False)
-    user_event_participations_stats_page.add_field(name="Median donate last year", value=string_manipulation.format_number(all_time_median_last_year, 4), inline=False)
+    user_event_participations_stats_page.add_field(name="Total event participation current year", value=string_manipulation.format_number(all_time_total_last_year, 4), inline=False)
+    user_event_participations_stats_page.add_field(name="Average donate current year", value=string_manipulation.format_number(all_time_average_last_year, 4), inline=False)
+    user_event_participations_stats_page.add_field(name="Median donate current year", value=string_manipulation.format_number(all_time_median_last_year, 4), inline=False)
     user_profile_lists.append(user_event_participations_stats_page)
 
     # Event participations
-    participation_pages_data = dt_report_generators.generate_participations_page_strings(event_participation_repo.get_event_participations(user_id=user.id))
+    participation_pages_data = dt_report_generators.generate_participations_page_strings(await event_participation_repo.get_event_participations(user_id=user.id))
     for participation_page_data in participation_pages_data:
       participation_page = disnake.Embed(title=f"{string_manipulation.truncate_string(user.username, 20)} event participations", description=f"```\n{participation_page_data}\n```", color=disnake.Color.dark_blue())
       message_utils.add_author_footer(participation_page, inter.author)
@@ -352,7 +342,7 @@ class PublicInterface(Base_Cog):
       if week is None:
         week = c_week
 
-    event_specification = event_participation_repo.get_event_specification(year, week)
+    event_specification = await event_participation_repo.get_event_specification(year, week)
     if event_specification is None:
       return await message_utils.generate_error_message(inter, Strings.public_interface_event_help_no_items)
 
@@ -383,7 +373,7 @@ class PublicInterface(Base_Cog):
       if week is None:
         week = c_week
 
-    global_best_participants = event_participation_repo.get_event_participants_data(year=year, week=week, limit=user_count)
+    global_best_participants = await event_participation_repo.get_event_participants_data(year=year, week=week, limit=user_count)
     if not global_best_participants:
       return await message_utils.generate_error_message(inter, Strings.dt_event_data_not_found(year=year, week=week))
 

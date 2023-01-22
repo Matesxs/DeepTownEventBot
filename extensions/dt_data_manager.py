@@ -9,6 +9,7 @@ import traceback
 from table2ascii import table2ascii
 from table2ascii.alignment import Alignment
 import math
+import re
 
 from features.base_cog import Base_Cog
 from utils import dt_helpers, message_utils, string_manipulation, dt_identifier_autocomplete
@@ -18,6 +19,8 @@ from database import event_participation_repo, tracking_settings_repo, dt_guild_
 from features.views.paginator import EmbedView
 
 logger = setup_custom_logger(__name__)
+
+guild_id_regex = re.compile(r".*_guild_id_(\d+)_.*")
 
 class DTDataManager(Base_Cog):
   def __init__(self, bot):
@@ -34,8 +37,8 @@ class DTDataManager(Base_Cog):
       if not self.data_update_task.is_running():
         self.data_update_task.start()
 
-    self.all_item_names = dt_items_repo.get_all_dt_item_names()
-    self.all_craftable_item_names = dt_items_repo.get_all_craftable_dt_item_names()
+    self.all_item_names = None
+    self.all_craftable_item_names = None
 
   def cog_unload(self):
     if self.cleanup_task.is_running():
@@ -70,7 +73,7 @@ class DTDataManager(Base_Cog):
     if data is None:
       return await message_utils.generate_error_message(inter, Strings.data_manager_update_guild_get_failed(identifier=guild_id))
 
-    event_participation_repo.generate_or_update_event_participations(data)
+    await event_participation_repo.generate_or_update_event_participations(data)
 
     await message_utils.generate_success_message(inter, Strings.data_manager_update_guild_success(guild=data.name))
 
@@ -101,7 +104,7 @@ class DTDataManager(Base_Cog):
           await asyncio.sleep(1)
           if data is None: continue
 
-          event_participation_repo.generate_or_update_event_participations(data)
+          await event_participation_repo.generate_or_update_event_participations(data)
           pulled_data += 1
 
         if not inter.is_expired():
@@ -119,7 +122,7 @@ class DTDataManager(Base_Cog):
   async def update_tracked_guilds(self, inter: disnake.CommandInteraction):
     await inter.response.defer(with_message=True, ephemeral=True)
 
-    guild_ids = tracking_settings_repo.get_tracked_guild_ids()
+    guild_ids = await tracking_settings_repo.get_tracked_guild_ids()
 
     if guild_ids is not None or not guild_ids:
       pulled_data = 0
@@ -135,7 +138,7 @@ class DTDataManager(Base_Cog):
         await asyncio.sleep(0.5)
         if data is None: continue
 
-        event_participation_repo.generate_or_update_event_participations(data)
+        await event_participation_repo.generate_or_update_event_participations(data)
         pulled_data += 1
 
       if not inter.is_expired():
@@ -176,10 +179,10 @@ class DTDataManager(Base_Cog):
     item_type = dt_items_repo.ItemType(item_type)
     item_source = dt_items_repo.ItemSource(item_source)
 
-    dt_items_repo.set_dt_item(name, item_type, item_source, value, crafting_time)
+    await dt_items_repo.set_dt_item(name, item_type, item_source, value, crafting_time)
 
-    self.all_item_names = dt_items_repo.get_all_dt_item_names()
-    self.all_craftable_item_names = dt_items_repo.get_all_craftable_dt_item_names()
+    self.all_item_names = await dt_items_repo.get_all_dt_item_names()
+    self.all_craftable_item_names = await dt_items_repo.get_all_craftable_dt_item_names()
 
     if item_type == dt_items_repo.ItemType.CRAFTABLE:
       await message_utils.generate_success_message(inter, Strings.data_manager_add_dt_item_success_craftable(name=name, item_type=item_type, value=value, crafting_time=crafting_time))
@@ -192,10 +195,10 @@ class DTDataManager(Base_Cog):
   async def remove_dt_item(self, inter: disnake.CommandInteraction,
                            name: str=commands.Param(description=Strings.data_manager_add_remove_dt_item_name_param_description)):
     await inter.response.defer(with_message=True, ephemeral=True)
-    if dt_items_repo.remove_dt_item(name):
+    if await dt_items_repo.remove_dt_item(name):
 
-      self.all_item_names = dt_items_repo.get_all_dt_item_names()
-      self.all_craftable_item_names = dt_items_repo.get_all_craftable_dt_item_names()
+      self.all_item_names = await dt_items_repo.get_all_dt_item_names()
+      self.all_craftable_item_names = await dt_items_repo.get_all_craftable_dt_item_names()
 
       await message_utils.generate_success_message(inter, Strings.data_manager_remove_dt_item_success(name=name))
     else:
@@ -206,7 +209,7 @@ class DTDataManager(Base_Cog):
   async def list_dt_items(self, inter: disnake.CommandInteraction):
     await inter.response.defer(with_message=True)
 
-    items = dt_items_repo.get_all_dt_items()
+    items = await dt_items_repo.get_all_dt_items()
     if not items:
       return await message_utils.generate_error_message(inter, Strings.data_manager_list_dt_items_no_items)
 
@@ -232,23 +235,23 @@ class DTDataManager(Base_Cog):
                                   amount: float=commands.Param(default=1.0, min_value=0.0, description=Strings.data_manager_modify_dt_item_component_amount_param_description)):
     await inter.response.defer(with_message=True, ephemeral=True)
 
-    target_item_ = dt_items_repo.get_dt_item(target_item)
+    target_item_ = await dt_items_repo.get_dt_item(target_item)
     if target_item_ is None:
       return await message_utils.generate_error_message(inter, Strings.data_manager_target_item_not_found)
 
     if target_item_.item_type != dt_items_repo.ItemType.CRAFTABLE:
       return await message_utils.generate_error_message(inter, Strings.data_manager_modify_dt_item_component_target_not_craftable)
 
-    if dt_items_repo.get_dt_item(component_item) is None:
+    if (await dt_items_repo.get_dt_item(component_item)) is None:
       return await message_utils.generate_error_message(inter, Strings.data_manager_modify_dt_item_component_component_not_found)
 
     if amount == 0:
-      if dt_items_repo.remove_component_mapping(target_item, component_item):
+      if await dt_items_repo.remove_component_mapping(target_item, component_item):
         await message_utils.generate_success_message(inter, Strings.data_manager_modify_dt_item_component_removed(component_item=component_item, target_item=target_item))
       else:
         await message_utils.generate_error_message(inter, Strings.data_manager_modify_dt_item_component_remove_failed(component_item=component_item, target_item=target_item))
     else:
-      dt_items_repo.set_component_mapping(target_item, component_item, amount)
+      await dt_items_repo.set_component_mapping(target_item, component_item, amount)
       await message_utils.generate_success_message(inter, Strings.data_manager_modify_dt_item_component_added(target_item=target_item, component_item=component_item, amount=amount))
 
   @item_commands.sub_command(name="remove_components", description=Strings.data_manager_remove_dt_item_components_description)
@@ -258,11 +261,11 @@ class DTDataManager(Base_Cog):
                                       target_item: str=commands.Param(description=Strings.data_manager_remove_dt_item_components_target_item_param_description)):
     await inter.response.defer(with_message=True, ephemeral=True)
 
-    target_item_ = dt_items_repo.get_dt_item(target_item)
+    target_item_ = await dt_items_repo.get_dt_item(target_item)
     if target_item_ is None:
       return await message_utils.generate_error_message(inter, Strings.data_manager_target_item_not_found)
 
-    if dt_items_repo.remove_all_component_mappings(target_item):
+    if await dt_items_repo.remove_all_component_mappings(target_item):
       await message_utils.generate_success_message(inter, Strings.data_manager_remove_dt_item_components_removed(target_item=target_item))
     else:
       await message_utils.generate_error_message(inter, Strings.data_manager_remove_dt_item_components_failed(target_item=target_item))
@@ -287,23 +290,23 @@ class DTDataManager(Base_Cog):
     if event_year is None or event_week is None:
       event_year, event_week = dt_helpers.get_event_index(datetime.datetime.utcnow())
 
-    if dt_items_repo.get_dt_item(item1) is None:
+    if (await dt_items_repo.get_dt_item(item1)) is None:
       return await message_utils.generate_error_message(inter, Strings.data_manager_set_event_items_item_not_in_database(item=item1))
 
-    if dt_items_repo.get_dt_item(item2) is None:
+    if (await dt_items_repo.get_dt_item(item2)) is None:
       return await message_utils.generate_error_message(inter, Strings.data_manager_set_event_items_item_not_in_database(item=item2))
 
-    if dt_items_repo.get_dt_item(item3) is None:
+    if (await dt_items_repo.get_dt_item(item3)) is None:
       return await message_utils.generate_error_message(inter, Strings.data_manager_set_event_items_item_not_in_database(item=item3))
 
-    if dt_items_repo.get_dt_item(item4) is None:
+    if (await dt_items_repo.get_dt_item(item4)) is None:
       return await message_utils.generate_error_message(inter, Strings.data_manager_set_event_items_item_not_in_database(item=item4))
 
     unique_item_names = list(set(list([item1, item2, item3, item4])))
     if len(unique_item_names) != 4:
       return await message_utils.generate_error_message(inter, Strings.data_manager_set_event_items_repeated_items)
 
-    dt_items_repo.remove_event_participation_items(event_year, event_week)
+    await dt_items_repo.remove_event_participation_items(event_year, event_week)
     await asyncio.sleep(0.01)
 
     if current_level != 0:
@@ -312,11 +315,12 @@ class DTDataManager(Base_Cog):
       base_amount3 = math.ceil(base_amount3 / (0.9202166811 * math.exp((current_level + 1) / 8)))
       base_amount4 = math.ceil(base_amount4 / (0.9202166811 * math.exp((current_level + 1) / 8)))
 
-    dt_items_repo.set_event_item(event_year, event_week, item1, base_amount1, commit=False)
-    dt_items_repo.set_event_item(event_year, event_week, item2, base_amount2, commit=False)
-    dt_items_repo.set_event_item(event_year, event_week, item3, base_amount3, commit=False)
-    dt_items_repo.set_event_item(event_year, event_week, item4, base_amount4, commit=False)
-    dt_items_repo.session.commit()
+    futures = [dt_items_repo.set_event_item(event_year, event_week, item1, base_amount1, commit=False),
+               dt_items_repo.set_event_item(event_year, event_week, item2, base_amount2, commit=False),
+               dt_items_repo.set_event_item(event_year, event_week, item3, base_amount3, commit=False),
+               dt_items_repo.set_event_item(event_year, event_week, item4, base_amount4, commit=False)]
+    await asyncio.gather(*futures)
+    await dt_items_repo.run_commit()
 
     await message_utils.generate_success_message(inter, Strings.data_manager_set_event_items_success(event_year=event_year,
                                                                                                      event_week=event_week,
@@ -340,7 +344,7 @@ class DTDataManager(Base_Cog):
     if event_year is None or event_week is None:
       event_year, event_week = dt_helpers.get_event_index(datetime.datetime.utcnow())
 
-    if dt_items_repo.remove_event_participation_items(event_year, event_week):
+    if await dt_items_repo.remove_event_participation_items(event_year, event_week):
       await message_utils.generate_success_message(inter, Strings.data_manager_remove_event_items_success(event_year=event_year, event_week=event_week))
     else:
       await message_utils.generate_error_message(inter, Strings.data_manager_remove_event_items_failed(event_year=event_year, event_week=event_week))
@@ -352,12 +356,16 @@ class DTDataManager(Base_Cog):
   @remove_dt_item.autocomplete("name")
   @modify_dt_item_component.autocomplete("component_item")
   async def autocomplete_item(self, _, string: str):
+    if self.all_item_names is None:
+      self.all_item_names = await dt_items_repo.get_all_dt_item_names()
     if string is None or not string: return self.all_item_names[:20]
     return [item for item in self.all_item_names if string.lower() in item.lower()][:20]
 
   @modify_dt_item_component.autocomplete("target_item")
   @remove_dt_item_components.autocomplete("target_item")
   async def autocomplete_craftable_item(self, _, string: str):
+    if self.all_craftable_item_names is None:
+      self.all_craftable_item_names = await dt_items_repo.get_all_craftable_dt_item_names()
     if string is None or not string: return self.all_craftable_item_names[:20]
     return [item for item in self.all_craftable_item_names if string.lower() in item.lower()][:20]
 
@@ -382,13 +390,22 @@ class DTDataManager(Base_Cog):
 
     updated_rows = 0
     for file_idx, file in enumerate(csv_files):
-      data = io.BytesIO(await file.read())
-      dataframe = pd.read_csv(data, sep=";")
+      try:
+        data = io.BytesIO(await file.read())
+        dataframe = pd.read_csv(data, sep=";")
+      except:
+        continue
+
+      guild_id_results = guild_id_regex.findall(file.filename.lower())
+      if len(guild_id_results) != 1 or not str(guild_id_results[0]).isnumeric():
+        logger.warning(f"Failed to get guild id from file `{file.filename}`")
+        continue
+
+      guild_id = int(guild_id_results[0])
 
       for row_idx, (_, row) in enumerate(dataframe.iterrows()):
         try:
           user_id = int(row["user_id"])
-          guild_id = int(row["guild_id"])
           ammount = int(row["amount"])
 
           if "week" in row.keys() and "year" in row.keys():
@@ -410,16 +427,14 @@ class DTDataManager(Base_Cog):
             logger.warning("Invalid event identifier")
             break
 
-          member = dt_guild_member_repo.create_dummy_dt_guild_member(user_id, guild_id)
+          member = await dt_guild_member_repo.create_dummy_dt_guild_member(user_id, guild_id)
           if member is None:
             continue
 
           if "username" in row.keys():
             member.user.username = row["username"]
-          if "guild_name" in row.keys():
-            member.guild.name = row["guild_name"]
 
-          event_participation_repo.get_and_update_event_participation(user_id, guild_id, year, week, ammount)
+          await event_participation_repo.get_and_update_event_participation(user_id, guild_id, year, week, ammount)
           await asyncio.sleep(0.02)
 
           if datetime.datetime.utcnow() - last_sleep >= datetime.timedelta(seconds=20):
@@ -434,7 +449,7 @@ class DTDataManager(Base_Cog):
         except Exception:
           logger.warning(traceback.format_exc())
 
-    event_participation_repo.session.commit()
+    await event_participation_repo.run_commit()
 
     logger.info(f"Loaded {updated_rows} data rows")
     self.data_loading = False
@@ -460,7 +475,7 @@ class DTDataManager(Base_Cog):
     if specifier is None:
       return await message_utils.generate_error_message(inter, Strings.dt_invalid_identifier)
 
-    dump_data = event_participation_repo.dump_guild_event_participation_data(specifier[1])
+    dump_data = await event_participation_repo.dump_guild_event_participation_data(specifier[1])
 
     if not dump_data:
       return await message_utils.generate_error_message(inter, Strings.data_manager_dump_guild_participation_data_no_data(identifier=specifier[1]))
@@ -471,7 +486,7 @@ class DTDataManager(Base_Cog):
     dataframe.to_csv(data, sep=";", index=False)
 
     data.seek(0)
-    discord_file = disnake.File(data, filename=f"participations_guild_{specifier[1]}_dump.csv")
+    discord_file = disnake.File(data, filename=f"participations_guild_id_{specifier[1]}_dump.csv")
 
     await message_utils.generate_success_message(inter, Strings.data_manager_dump_guild_participation_data_success)
     await inter.send(file=discord_file)
@@ -483,13 +498,13 @@ class DTDataManager(Base_Cog):
     if all_guild_ids is None:
       logger.error("Failed to get all ids of guilds")
     else:
-      removed_guilds = dt_guild_repo.remove_deleted_guilds(all_guild_ids)
+      removed_guilds = await dt_guild_repo.remove_deleted_guilds(all_guild_ids)
       logger.info(f"Remove {removed_guilds} deleted guilds from database")
     logger.info("Cleanup finished")
 
   @tasks.loop(hours=config.data_manager.inactive_guild_data_pull_rate_hours)
   async def inactive_guild_data_update_task(self):
-    inactive_guild_ids = dt_guild_repo.get_inactive_guild_ids()
+    inactive_guild_ids = await dt_guild_repo.get_inactive_guild_ids()
 
     logger.info("Inactive Guild data pull starting")
 
@@ -503,7 +518,7 @@ class DTDataManager(Base_Cog):
         if data is None:
           continue
 
-        event_participation_repo.generate_or_update_event_participations(data)
+        await event_participation_repo.generate_or_update_event_participations(data)
         await asyncio.sleep(0.2)
         pulled_data += 1
 
@@ -541,7 +556,7 @@ class DTDataManager(Base_Cog):
           logger.info("Data pull interrupted")
           break
 
-        if dt_blacklist_repo.is_on_blacklist(dt_blacklist_repo.BlacklistType.GUILD, guild_id) or not dt_guild_repo.is_guild_active(guild_id):
+        if (await dt_blacklist_repo.is_on_blacklist(dt_blacklist_repo.BlacklistType.GUILD, guild_id)) or not (await dt_guild_repo.is_guild_active(guild_id)):
           continue
 
         data = await dt_helpers.get_dt_guild_data(guild_id)
@@ -551,7 +566,7 @@ class DTDataManager(Base_Cog):
           not_updated.append(guild_id)
           continue
 
-        event_participation_repo.generate_or_update_event_participations(data)
+        await event_participation_repo.generate_or_update_event_participations(data)
         await asyncio.sleep(0.1)
         pulled_data += 1
 
@@ -574,7 +589,7 @@ class DTDataManager(Base_Cog):
             logger.info("Data pull interrupted")
             break
 
-          if dt_blacklist_repo.is_on_blacklist(dt_blacklist_repo.BlacklistType.GUILD, guild_id) or not dt_guild_repo.is_guild_active(guild_id):
+          if (await dt_blacklist_repo.is_on_blacklist(dt_blacklist_repo.BlacklistType.GUILD, guild_id)) or not (await dt_guild_repo.is_guild_active(guild_id)):
             continue
 
           data = await dt_helpers.get_dt_guild_data(guild_id)
@@ -584,7 +599,7 @@ class DTDataManager(Base_Cog):
             continue
 
           not_updated.remove(guild_id)
-          event_participation_repo.generate_or_update_event_participations(data)
+          await event_participation_repo.generate_or_update_event_participations(data)
           await asyncio.sleep(0.1)
           pulled_data += 1
 
@@ -600,11 +615,11 @@ class DTDataManager(Base_Cog):
 
   @commands.Cog.listener()
   async def on_guild_joined(self, guild: disnake.Guild):
-    guilds_repo.get_or_create_discord_guild(guild)
+    await guilds_repo.get_or_create_discord_guild(guild)
 
   @commands.Cog.listener()
   async def on_guild_remove(self, guild: disnake.Guild):
-    guilds_repo.remove_discord_guild(guild.id)
+    await guilds_repo.remove_discord_guild(guild.id)
 
 def setup(bot):
   bot.add_cog(DTDataManager(bot))

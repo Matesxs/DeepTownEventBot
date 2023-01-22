@@ -1,13 +1,13 @@
 from sqlalchemy import Column, String, Integer, DateTime
 from sqlalchemy.orm import relationship
 
-from database import database, BigIntegerType
+import database
 from utils.dt_helpers import DTUserData
 
 class DTUser(database.base):
   __tablename__ = "dt_users"
 
-  id = Column(BigIntegerType, primary_key=True)
+  id = Column(database.BigIntegerType, primary_key=True)
   username = Column(String, index=True, default="*Unknown*")
   level = Column(Integer, default=-1)
   depth = Column(Integer, default=-1)

@@ -3,7 +3,7 @@ from sqlalchemy import Column, String, ForeignKey
 from sqlalchemy.orm import relationship
 from typing import Optional, Union
 
-from database import database, BigIntegerType
+import database
 from features.base_bot import BaseAutoshardedBot
 from utils import object_getters
 
@@ -11,7 +11,7 @@ class TrackingSettings(database.base):
   __tablename__ = "tracking_settings"
 
   guild_id = Column(String, ForeignKey("guilds.id", ondelete="CASCADE"), primary_key=True)
-  dt_guild_id = Column(BigIntegerType, ForeignKey("dt_guilds.id", ondelete="CASCADE"), primary_key=True)
+  dt_guild_id = Column(database.BigIntegerType, ForeignKey("dt_guilds.id", ondelete="CASCADE"), primary_key=True)
 
   announce_channel_id = Column(String, nullable=True)
 

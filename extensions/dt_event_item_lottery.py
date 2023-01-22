@@ -76,11 +76,54 @@ class DTEventItemLottery(Base_Cog):
                                                                          guessed_3_reward_item, guessed_3_reward_item_amount,
                                                                          guessed_2_reward_item, guessed_2_reward_item_amount,
                                                                          guessed_1_reward_item, guessed_1_reward_item_amount)
+    if lottery is None:
+      return await message_utils.generate_error_message(inter, "You already have lottery created for next event")
 
     buttons = [disnake.ui.Button(emoji="🗑️", custom_id=f"event_item_lottery:remove:{lottery.id}", style=disnake.ButtonStyle.red)]
     if can_show_guesses:
       buttons.append(disnake.ui.Button(emoji="🧾", custom_id=f"event_item_lottery:show:{lottery.id}", style=disnake.ButtonStyle.blurple))
     await message.edit(components=buttons)
+
+  @lottery_command.sub_command(name="guess", description="Make a guess for next event items")
+  @cooldowns.long_cooldown
+  async def lottery_make_guess(self, inter: disnake.CommandInteraction,
+                               guess_item_1: Optional[str] = commands.Param(default=None, description="Item guess 1", autocomplete=dt_autocomplete.autocomplete_item),
+                               guess_item_2: Optional[str] = commands.Param(default=None, description="Item guess 2", autocomplete=dt_autocomplete.autocomplete_item),
+                               guess_item_3: Optional[str] = commands.Param(default=None, description="Item guess 3", autocomplete=dt_autocomplete.autocomplete_item),
+                               guess_item_4: Optional[str] = commands.Param(default=None, description="Item guess 4", autocomplete=dt_autocomplete.autocomplete_item)):
+    await inter.response.defer(with_message=True, ephemeral=True)
+
+    if not (await dt_event_item_lottery_repo.any_lotteries_active_next_event(inter.guild_id)):
+      return await message_utils.generate_error_message(inter, "No active lotteries for next event, try it later")
+
+    items = []
+    if guess_item_1 is not None:
+      guess_item_1_ = await dt_items_repo.get_dt_item(guess_item_1)
+      if guess_item_1_ is None:
+        return await message_utils.generate_error_message(inter, f"`{guess_item_1}` is not valid item")
+      items.append(guess_item_1_)
+    if guess_item_2 is not None:
+      guess_item_2_ = await dt_items_repo.get_dt_item(guess_item_2)
+      if guess_item_2_ is None:
+        return await message_utils.generate_error_message(inter, f"`{guess_item_2}` is not valid item")
+      items.append(guess_item_2_)
+    if guess_item_3 is not None:
+      guess_item_3_ = await dt_items_repo.get_dt_item(guess_item_3)
+      if guess_item_3_ is None:
+        return await message_utils.generate_error_message(inter, f"`{guess_item_3}` is not valid item")
+      items.append(guess_item_3_)
+    if guess_item_4 is not None:
+      guess_item_4_ = await dt_items_repo.get_dt_item(guess_item_4)
+      if guess_item_4_ is None:
+        return await message_utils.generate_error_message(inter, f"`{guess_item_4}` is not valid item")
+      items.append(guess_item_4_)
+
+    guess = await dt_event_item_lottery_repo.make_next_event_guess(inter.guild, inter.author, items)
+    if guess is None:
+      return await message_utils.generate_error_message(inter, "Guess failed, invalid items - duplicates")
+
+    guessed_item_names_string = ", ".join([i.name for i in items])
+    await message_utils.generate_success_message(inter, f"Guess registered for event `{guess.event_specification.event_year} {guess.event_specification.event_week}`\n`{guessed_item_names_string}`")
 
   @commands.Cog.listener()
   async def on_button_click(self, inter: disnake.MessageInteraction):

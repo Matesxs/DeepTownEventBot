@@ -15,15 +15,30 @@ async def get_event_item_lottery(id_: int) -> Optional[DTEventItemLottery]:
   result = await run_query(select(DTEventItemLottery).filter(DTEventItemLottery.id == id_))
   return result.scalar_one_or_none()
 
+async def any_lotteries_active_next_event(guild_id: int) -> bool:
+  year, week = dt_helpers.get_event_index(datetime.datetime.utcnow() + datetime.timedelta(days=7))
+  event_specification = await event_participation_repo.get_event_specification(year, week)
+  if event_specification is None: return False
+
+  result = await run_query(select(DTEventItemLottery.id).filter(DTEventItemLottery.guild_id == str(guild_id), DTEventItemLottery.event_id == event_specification.event_id))
+  return len(result.scalars().all()) > 0
+
+async def event_lotery_exist(guild_id: int, author_id: int, event_id: int) -> bool:
+  result = await run_query(select(DTEventItemLottery.id).filter(DTEventItemLottery.guild_id == str(guild_id), DTEventItemLottery.author_id == str(author_id), DTEventItemLottery.event_id == event_id))
+  return result.scalar_one_or_none() is not None
+
 async def create_event_item_lottery(guild: disnake.Guild, author: disnake.User, message: disnake.Message,
                                     reward_item_g4: Optional[dt_items_repo.DTItem]=None, item_g4_amount: int=0,
                                     reward_item_g3: Optional[dt_items_repo.DTItem]=None, item_g3_amount: int=0,
                                     reward_item_g2: Optional[dt_items_repo.DTItem]=None, item_g2_amount: int=0,
-                                    reward_item_g1: Optional[dt_items_repo.DTItem]=None, item_g1_amount: int=0) -> DTEventItemLottery:
+                                    reward_item_g1: Optional[dt_items_repo.DTItem]=None, item_g1_amount: int=0) -> Optional[DTEventItemLottery]:
   await guilds_repo.get_or_create_discord_guild(guild, True)
 
   year, week = dt_helpers.get_event_index(datetime.datetime.utcnow() + datetime.timedelta(days=7))
   event_specification = await event_participation_repo.get_or_create_event_specification(year, week)
+
+  if await event_lotery_exist(guild.id, author.id, event_specification.event_id):
+    return None
 
   await create_lottery_lock.acquire()
   item = DTEventItemLottery(author_id=str(author.id), guild_id=str(guild.id), lottery_channel_id=str(message.channel.id), lottery_message_id=str(message.id), event_id=event_specification.event_id,
@@ -45,6 +60,12 @@ async def get_guess(guild_id: int, author_id: int, event_id: int) -> Optional[DT
   result = await run_query(select(DTEventItemLotteryGuess).filter(DTEventItemLotteryGuess.guild_id == str(guild_id), DTEventItemLotteryGuess.user_id == str(author_id), DTEventItemLotteryGuess.event_id == event_id))
   return result.scalar_one_or_none()
 
+async def get_next_event_guess(guild_id: int, author_id: int) -> Optional[DTEventItemLotteryGuess]:
+  year, week = dt_helpers.get_event_index(datetime.datetime.utcnow() + datetime.timedelta(days=7))
+  event_specification = await event_participation_repo.get_event_specification(year, week)
+  if event_specification is None: return None
+  return await get_guess(guild_id, author_id, event_specification.event_id)
+
 async def get_guesses(guild_id: int, event_id: int) -> List[DTEventItemLotteryGuess]:
   result = await run_query(select(DTEventItemLotteryGuess).filter(DTEventItemLotteryGuess.event_id == event_id, DTEventItemLotteryGuess.guild_id == str(guild_id)))
   return result.scalars().all()
@@ -54,7 +75,7 @@ async def get_lottery_guesses(lottery_id: int) -> Optional[List[DTEventItemLotte
   if lottery is None: return None
   return await get_guesses(int(lottery.guild_id), lottery.event_id)
 
-async def make_guess(guild: disnake.Guild, author: disnake.User, items: List[dt_items_repo.DTItem]) -> Optional[DTEventItemLotteryGuess]:
+async def make_next_event_guess(guild: disnake.Guild, author: disnake.User, items: List[dt_items_repo.DTItem]) -> Optional[DTEventItemLotteryGuess]:
   unique_item_names = list(dict([item.name for item in items]))
   if len(unique_item_names) != len(items):
     return None

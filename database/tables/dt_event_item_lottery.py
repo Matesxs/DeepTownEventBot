@@ -27,9 +27,11 @@ class DTEventItemLotteryGuess(database.base):
   user_id = Column(String, nullable=False, index=True)
 
   guessed_lotery_items = relationship("DTEventItemLotteryGuessedItem", uselist=True)
+  event_specification = relationship("EventSpecification", uselist=False)
 
 class DTEventItemLottery(database.base):
   __tablename__ = "dt_event_item_lotteries"
+  __table_args__ = (UniqueConstraint('author_id', 'guild_id', "event_id"),)
 
   id = Column(database.BigIntegerType, primary_key=True, unique=True, index=True, autoincrement=True)
 
@@ -57,7 +59,7 @@ class DTEventItemLottery(database.base):
   guessed_1_reward_item = relationship("DTItem", uselist=False, primaryjoin="DTEventItemLottery.guessed_1_reward_item_name==DTItem.name")
 
   guild = relationship("DiscordGuild", uselist=False, back_populates="lotteries")
-  guesses = relationship("DTEventItemLotteryGuess", uselist=True, primaryjoin="and_(DTEventItemLottery.guild_id == DTEventItemLotteryGuess.guild_id, DTEventItemLottery.event_id == DTEventItemLotteryGuess.event_id)")
+  # guesses = relationship("DTEventItemLotteryGuess", uselist=True, primaryjoin="and_(foreign(DTEventItemLottery.guild_id) == DTEventItemLotteryGuess.guild_id, foreign(DTEventItemLottery.event_id) == DTEventItemLotteryGuess.event_id)", viewonly=True)
   event_specification = relationship("EventSpecification", uselist=False)
 
   async def get_lotery_channel(self, bot: BaseAutoshardedBot) -> Optional[Union[disnake.TextChannel, disnake.Thread, disnake.VoiceChannel, disnake.PartialMessageable]]:

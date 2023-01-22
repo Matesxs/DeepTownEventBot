@@ -7,11 +7,7 @@ class Strings(metaclass=Formatable):
   discord_text_channel_param_description = "Guild text channel"
 
   # Help
-  help_description = "Show all message commands and help for them"
-  help_name_param_description = "Specify name of command or name of extension as parameter to search help only for thing you want"
-
-  help_slash_command_list_description = "List all slash commands"
-  help_slash_command_list_no_slash_commands = "No slash commands registered for this bot"
+  help_description = "Show all commands and help for them"
 
   # System
   system_load_description = "Load unloaded extension"

@@ -116,9 +116,9 @@ class PublicInterface(Base_Cog):
     guild_event_participations_stats_page.add_field(name="Total event participation", value=string_manipulation.format_number(all_time_total, 4), inline=False)
     guild_event_participations_stats_page.add_field(name="Average donate per event", value=string_manipulation.format_number(all_time_average, 4), inline=False)
     guild_event_participations_stats_page.add_field(name="Median donate per event", value=string_manipulation.format_number(all_time_median, 4), inline=False)
-    guild_event_participations_stats_page.add_field(name="Total event participation last year", value=string_manipulation.format_number(all_time_total_last_year, 4), inline=False)
-    guild_event_participations_stats_page.add_field(name="Average donate per event last year", value=string_manipulation.format_number(all_time_average_last_year, 4), inline=False)
-    guild_event_participations_stats_page.add_field(name="Median donate per event last year", value=string_manipulation.format_number(all_time_median_last_year, 4), inline=False)
+    guild_event_participations_stats_page.add_field(name="Total event participation current year", value=string_manipulation.format_number(all_time_total_last_year, 4), inline=False)
+    guild_event_participations_stats_page.add_field(name="Average donate per event current year", value=string_manipulation.format_number(all_time_average_last_year, 4), inline=False)
+    guild_event_participations_stats_page.add_field(name="Median donate per event current year", value=string_manipulation.format_number(all_time_median_last_year, 4), inline=False)
     guild_profile_lists.append(guild_event_participations_stats_page)
 
     await asyncio.sleep(0.1)
@@ -309,9 +309,9 @@ class PublicInterface(Base_Cog):
     user_event_participations_stats_page.add_field(name="Total event participation", value=string_manipulation.format_number(all_time_total, 4), inline=False)
     user_event_participations_stats_page.add_field(name="Average donate", value=string_manipulation.format_number(all_time_average, 4), inline=False)
     user_event_participations_stats_page.add_field(name="Median donate", value=string_manipulation.format_number(all_time_median, 4), inline=False)
-    user_event_participations_stats_page.add_field(name="Total event participation last year", value=string_manipulation.format_number(all_time_total_last_year, 4), inline=False)
-    user_event_participations_stats_page.add_field(name="Average donate last year", value=string_manipulation.format_number(all_time_average_last_year, 4), inline=False)
-    user_event_participations_stats_page.add_field(name="Median donate last year", value=string_manipulation.format_number(all_time_median_last_year, 4), inline=False)
+    user_event_participations_stats_page.add_field(name="Total event participation current year", value=string_manipulation.format_number(all_time_total_last_year, 4), inline=False)
+    user_event_participations_stats_page.add_field(name="Average donate current year", value=string_manipulation.format_number(all_time_average_last_year, 4), inline=False)
+    user_event_participations_stats_page.add_field(name="Median donate current year", value=string_manipulation.format_number(all_time_median_last_year, 4), inline=False)
     user_profile_lists.append(user_event_participations_stats_page)
 
     # Event participations

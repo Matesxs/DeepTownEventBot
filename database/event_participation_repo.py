@@ -116,20 +116,23 @@ async def get_event_participation_stats(guild_id: Optional[int]=None, user_id: O
   if year is not None:
     filters.append(EventSpecification.event_year == year)
 
+  distinc_amount_query = select(func.sum(EventParticipation.amount).label("amount"))\
+                         .join(EventSpecification)\
+                         .filter(*filters)\
+                         .group_by(EventSpecification.event_year, EventSpecification.event_week)\
+                         .subquery()
+
   data = (await run_query(select(
-    func.sum(EventParticipation.amount),
-    func.avg(EventParticipation.amount),
-    func.percentile_cont(0.5).within_group(EventParticipation.amount))
-    .join(EventSpecification)
-    .filter(*filters)))\
+    func.sum(distinc_amount_query.c.amount),
+    func.avg(distinc_amount_query.c.amount),
+    func.percentile_cont(0.5).within_group(distinc_amount_query.c.amount))))\
     .one()
 
   if ignore_zero_participation_average or ignore_zero_participation_median:
     additional_data = (await run_query(select(
-      func.avg(EventParticipation.amount),
-      func.percentile_cont(0.5).within_group(EventParticipation.amount))
-      .join(EventSpecification)
-      .filter(*filters, EventParticipation.amount > 0))) \
+      func.avg(distinc_amount_query.c.amount),
+      func.percentile_cont(0.5).within_group(distinc_amount_query.c.amount))
+      .filter(distinc_amount_query.c.amount > 0))) \
       .one()
 
     if not all(additional_data):

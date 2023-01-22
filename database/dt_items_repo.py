@@ -27,12 +27,20 @@ async def remove_dt_item(name: str) -> bool:
   await run_commit()
   return result.rowcount > 0
 
-async def get_all_dt_item_names() -> List[str]:
-  result = await run_query(select(DTItem.name).order_by(DTItem.name))
+async def search_items(search: Optional[str]=None, limit: int=20) -> List[str]:
+  if search is None:
+    query = select(DTItem.name).order_by(DTItem.name)
+  else:
+    query = select(DTItem.name).filter(DTItem.name.ilike(f"%{search}%")).order_by(DTItem.name)
+  result = await run_query(query.limit(limit))
   return result.scalars().all()
 
-async def get_all_craftable_dt_item_names() -> List[DTItem]:
-  result = await run_query(select(DTItem.name).filter(DTItem.item_type == ItemType.CRAFTABLE).order_by(DTItem.name))
+async def search_craftable_items(search: Optional[str]=None, limit: int=20) -> List[DTItem]:
+  if search is None:
+    query = select(DTItem.name).filter(DTItem.item_type == ItemType.CRAFTABLE).order_by(DTItem.name)
+  else:
+    query = select(DTItem.name).filter(DTItem.item_type == ItemType.CRAFTABLE, DTItem.name.ilike(f"%{search}%")).order_by(DTItem.name)
+  result = await run_query(query.limit(limit))
   return result.scalars().all()
 
 async def get_all_dt_items() -> List[DTItem]:

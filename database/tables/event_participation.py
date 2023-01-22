@@ -7,7 +7,6 @@ from utils.dt_helpers import DTUserData
 
 class EventSpecification(database.base):
   __tablename__ = "event_specifications"
-
   __table_args__ = (UniqueConstraint('event_year', 'event_week'),)
 
   event_id = Column(database.BigIntegerType, primary_key=True, autoincrement=True)

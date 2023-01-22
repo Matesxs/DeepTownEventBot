@@ -170,7 +170,9 @@ class Strings(metaclass=Formatable):
   public_interface_user_event_participations_description = "User event participations"
 
   public_interface_event_help_description = "Show items for current item"
+  public_interface_event_help_materials_amounts_param_description = "Show table with materials needed for each level of event if available"
   public_interface_event_help_no_items = "Items not set for this event"
+  public_interface_event_help_no_item_amount_scaling = "Material scaling not available"
 
   public_interface_event_leaderboard_specific_description = "Show leaderboard of participants in specific event"
   public_interface_event_leaderboard_specific_user_count_param_description = "Number of top users to display"

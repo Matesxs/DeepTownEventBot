@@ -61,7 +61,7 @@ class PublicInterface(Base_Cog):
       await send_report_function(reporter_settings.get_results())
 
   @guild_commands.sub_command(name="profile", description=Strings.public_interface_guild_profile_description)
-  @cooldowns.default_cooldown
+  @cooldowns.long_cooldown
   async def guild_profile(self, inter: disnake.CommandInteraction,
                           identifier: str = commands.Param(description=Strings.dt_guild_identifier_param_description, autocomp=dt_autocomplete.autocomplete_identifier_guild)):
     await inter.response.defer(with_message=True)
@@ -166,7 +166,7 @@ class PublicInterface(Base_Cog):
     await embed_view.run(inter)
 
   @guild_commands.sub_command(name="event_participations", description=Strings.public_interface_guild_participations_description)
-  @cooldowns.default_cooldown
+  @cooldowns.long_cooldown
   async def guild_event_participations(self, inter: disnake.CommandInteraction,
                                        identifier: str = commands.Param(description=Strings.dt_guild_identifier_param_description, autocomp=dt_autocomplete.autocomplete_identifier_guild)):
     await inter.response.defer(with_message=True)
@@ -202,7 +202,7 @@ class PublicInterface(Base_Cog):
     await embed_view.run(inter)
 
   @guild_commands.sub_command(name="leaderboard", description=Strings.public_interface_guild_leaderboard_description)
-  @cooldowns.default_cooldown
+  @cooldowns.huge_cooldown
   async def guild_leaderboard(self, inter: disnake.CommandInteraction):
     await inter.response.defer(with_message=True)
 
@@ -233,7 +233,7 @@ class PublicInterface(Base_Cog):
     pass
 
   @user_command.sub_command(name="event_participations", description=Strings.public_interface_user_event_participations_description)
-  @cooldowns.default_cooldown
+  @cooldowns.long_cooldown
   async def user_event_participations(self, inter: disnake.CommandInteraction,
                                       identifier: str=commands.Param(description=Strings.dt_user_identifier_param_description, autocomp=dt_autocomplete.autocomplete_identifier_user)):
     await inter.response.defer(with_message=True)
@@ -259,7 +259,7 @@ class PublicInterface(Base_Cog):
     await embed_view.run(inter)
 
   @user_command.sub_command(name="profile", description=Strings.public_interface_user_profile_description)
-  @cooldowns.default_cooldown
+  @cooldowns.long_cooldown
   async def user_profile(self, inter: disnake.CommandInteraction,
                          identifier:str=commands.Param(description=Strings.dt_user_identifier_param_description, autocomp=dt_autocomplete.autocomplete_identifier_user)):
     await inter.response.defer(with_message=True)
@@ -364,7 +364,7 @@ class PublicInterface(Base_Cog):
         await message_utils.generate_error_message(inter, Strings.public_interface_event_help_no_item_amount_scaling)
 
   @event_commands.sub_command(name="leaderboard", description=Strings.public_interface_event_leaderboard_specific_description)
-  @cooldowns.default_cooldown
+  @cooldowns.huge_cooldown
   async def global_event_leaderboard(self, inter: disnake.CommandInteraction,
                                              year: Optional[int]=commands.Param(default=None, description=Strings.dt_event_year_param_description),
                                              week: Optional[int]=commands.Param(default=None, min_value=1, description=Strings.dt_event_year_param_description),

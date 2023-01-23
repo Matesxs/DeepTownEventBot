@@ -112,7 +112,7 @@ async def create_lottery(inter: Union[disnake.CommandInteraction, disnake.Messag
   lottery_table = table2ascii(["Guessed", "Reward"], table_data, alignments=[Alignment.RIGHT, Alignment.LEFT], first_col_heading=True)
 
   next_year, next_week = dt_helpers.get_event_index(datetime.datetime.utcnow() + datetime.timedelta(days=7))
-  lottery_embed = disnake.Embed(title=f"Items guess lottery for event `{next_year} {next_week}`", description=f"```\n{lottery_table}\n```", color=disnake.Color.blurple())
+  lottery_embed = disnake.Embed(title=f"Items guess lottery for event `{next_year} {next_week}`", description=f"```\n{lottery_table}\n```\nUse `/lottery guess` to participate in lotteries", color=disnake.Color.blurple())
   message_utils.add_author_footer(lottery_embed, inter.author)
 
   if message is None:

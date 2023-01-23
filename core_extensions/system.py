@@ -11,7 +11,7 @@ from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
 from features.views.paginator import EmbedView
 from features.base_bot import BaseAutoshardedBot
-from utils import command_utils, message_utils
+from utils import command_utils, message_utils, string_manipulation
 
 logger = setup_custom_logger(__name__)
 
@@ -230,6 +230,16 @@ class System(Base_Cog):
     await message_utils.delete_message(self.bot, ctx)
     await ctx.send("Cya :wave:")
     await self.bot.close()
+
+  @commands.command(brief=Strings.system_get_guilds)
+  @commands.is_owner()
+  async def get_guilds(self, ctx: commands.Context):
+    await message_utils.delete_message(self.bot, ctx)
+
+    guild_strings = [f"{g.name} ({g.id})" for g in self.bot.guilds]
+    while guild_strings:
+      final_message, guild_strings = string_manipulation.add_string_until_length(guild_strings, 1900, "\n")
+      await ctx.send(f"**Guild List**\n```\n{final_message}\n```")
 
 def setup(bot):
   bot.add_cog(System(bot))

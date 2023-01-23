@@ -14,11 +14,11 @@ logger = setup_custom_logger(__name__)
 
 async def process_loterries(bot: BaseAutoshardedBot):
   async def process_lottery_result(lottery: dt_event_item_lottery_repo.DTEventItemLottery, result: Optional[Dict[int, List[int]]]):
+    guild = await lottery.guild.to_object(bot)
+
     destination = await lottery.get_lotery_message(bot)
     if destination is None:
       destination = await lottery.get_lotery_channel(bot)
-
-    guild = await lottery.guild.to_object(bot)
 
     if destination is None:
       logger.warning(f"Failed to get any destination for guild `{guild.name if guild is not None else lottery.guild_id}` and lottery `{lottery.id}`")

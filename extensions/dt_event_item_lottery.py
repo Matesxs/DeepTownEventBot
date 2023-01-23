@@ -136,14 +136,14 @@ class DTEventItemLottery(Base_Cog):
       return await message_utils.generate_error_message(inter, Strings.lottery_button_listener_invalid_lottery)
 
     if command == "remove":
-      if inter.author.id == int(lottery.author_id) or (await permissions.predicate_is_guild_administrator(inter)):
+      if inter.author.id == int(lottery.author_id) or (int(lottery.author_id) != self.bot.owner_id and (await permissions.predicate_is_guild_administrator(inter))):
         await message_utils.delete_message(self.bot, inter.message)
         await dt_event_item_lottery_repo.remove_lottery(lottery.id)
         await message_utils.generate_success_message(inter, Strings.lottery_button_listener_removed)
       else:
         await message_utils.generate_error_message(inter, Strings.lottery_button_listener_not_author)
     elif command == "show":
-      await message_utils.generate_error_message(inter, "WIP")
+      await message_utils.generate_error_message(inter, "*WIP*")
     elif command == "repeat":
       message = await inter.original_response()
       new_lottery = await lottery.repeat()

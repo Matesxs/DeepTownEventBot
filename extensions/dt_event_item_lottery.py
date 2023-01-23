@@ -145,9 +145,12 @@ class DTEventItemLottery(Base_Cog):
     elif command == "show":
       await message_utils.generate_error_message(inter, "*WIP*")
     elif command == "repeat":
-      message = await inter.original_response()
-      new_lottery = await lottery.repeat()
-      await items_lottery.create_lottery(inter, new_lottery, len(message.components) > 1, message)
+      if inter.author.id == int(lottery.author_id) or (int(lottery.author_id) != self.bot.owner_id and (await permissions.predicate_is_guild_administrator(inter))):
+        message = await inter.original_response()
+        new_lottery = await lottery.repeat()
+        await items_lottery.create_lottery(inter, new_lottery, len(message.components) > 1, message)
+      else:
+        await message_utils.generate_error_message(inter, Strings.lottery_button_listener_not_author)
     else:
       await message_utils.generate_error_message(inter, Strings.lottery_button_listener_invalid_command)
 

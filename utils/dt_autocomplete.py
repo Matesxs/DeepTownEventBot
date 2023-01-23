@@ -1,7 +1,7 @@
 import re
 from typing import Optional, Tuple
 
-from database import dt_user_repo, dt_guild_repo, dt_items_repo
+from database import dt_user_repo, dt_guild_repo, dt_items_repo, event_participation_repo
 from utils import string_manipulation
 
 id_in_identifier_regex = re.compile(r"([A-Z]*) .*\((\d*)\).*")
@@ -41,3 +41,7 @@ def identifier_to_specifier(identifier: str) -> Optional[Tuple[str, int]]:
   if len(specifier) != 1 or len(specifier[0]) != 2 or not str(specifier[0][1]).isnumeric():
     return None
   return str(specifier[0][0]), int(specifier[0][1])
+
+async def autocomplete_event_specifier(_, string: str):
+  results = await event_participation_repo.search_event_specificators(string, limit=20)
+  return [f"{result[0]} {result[1]}" for result in results]

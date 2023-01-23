@@ -80,7 +80,8 @@ async def process_loterries(bot: BaseAutoshardedBot):
         reward = reward_item_amount / len(winner_names)
         table_data.append((position, f"{string_manipulation.format_number(reward)} {reward_item_name}", "\n".join(winner_names)))
 
-      table_lines = [f"Event items lottery result for `{lottery.event_specification.event_year} {lottery.event_specification.event_week}`",
+      author = await lottery.get_author(bot)
+      table_lines = [f"Event items lottery result for `{lottery.event_specification.event_year} {lottery.event_specification.event_week}` by {author.display_name if author is not None else '*Unknown*'}",
                      *table2ascii(["Guessed", "Reward each", "Winners"], table_data, alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.LEFT], first_col_heading=True).split("\n")]
       while table_lines:
         final_string, table_lines = string_manipulation.add_string_until_length(table_lines, 2000, "\n")
@@ -112,7 +113,7 @@ async def create_lottery(inter: Union[disnake.CommandInteraction, disnake.Messag
   lottery_table = table2ascii(["Guessed", "Reward"], table_data, alignments=[Alignment.RIGHT, Alignment.LEFT], first_col_heading=True)
 
   next_year, next_week = dt_helpers.get_event_index(datetime.datetime.utcnow() + datetime.timedelta(days=7))
-  lottery_embed = disnake.Embed(title=f"Items guess lottery for event `{next_year} {next_week}`", description=f"```\n{lottery_table}\n```\nUse `/lottery guess` to participate in lotteries", color=disnake.Color.blurple())
+  lottery_embed = disnake.Embed(title=f"Items guess lottery for event `{next_year} {next_week}` by {inter.author.display_name}", description=f"```\n{lottery_table}\n```\nUse `/lottery guess` to participate in lotteries", color=disnake.Color.blurple())
   message_utils.add_author_footer(lottery_embed, inter.author)
 
   if message is None:

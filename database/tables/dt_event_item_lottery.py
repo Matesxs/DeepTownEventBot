@@ -76,6 +76,12 @@ class DTEventItemLottery(database.base):
     lotery_message = await object_getters.get_or_fetch_message(bot, channel, int(self.lotery_message_id))
     return lotery_message
 
+  async def get_author(self, bot: BaseAutoshardedBot) -> Optional[disnake.Member]:
+    guild = await self.guild.to_object(bot)
+    if guild is None: return None
+
+    return await object_getters.get_or_fetch_member(guild, int(self.author_id))
+
   async def repeat(self):
     next_year, next_week = dt_helpers.get_event_index(datetime.datetime.utcnow() + datetime.timedelta(days=7))
     event_specification = await event_participation_repo.get_or_create_event_specification(next_year, next_week)

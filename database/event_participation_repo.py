@@ -1,7 +1,7 @@
 import datetime
 import statistics
 from typing import Optional, List, Tuple, Any
-from sqlalchemy import func, and_, select
+from sqlalchemy import func, and_, select, or_
 
 from database import run_query, run_commit, session
 from database.tables.event_participation import EventParticipation, EventSpecification
@@ -252,3 +252,27 @@ async def dump_guild_event_participation_data(guild_id: int) -> List[Tuple[int, 
     .join(dt_user_repo.DTUser)
     .filter(EventParticipation.dt_guild_id == guild_id))).all()
   return data
+
+async def search_event_specificators(search: Optional[str]=None, limit: int=25) -> List[Tuple[int, int]]:
+  if search is None:
+    result = await run_query(select(EventSpecification.event_year, EventSpecification.event_week).order_by(EventSpecification.event_year.desc(), EventSpecification.event_week.desc()).limit(limit))
+  else:
+    search_parts = search.split(" ")
+    search_parts = [int(p) for p in search_parts if p.isnumeric()]
+    number_of_parts = len(search_parts)
+
+    if number_of_parts == 0:
+      result = await run_query(select(EventSpecification.event_year, EventSpecification.event_week).order_by(EventSpecification.event_year.desc(), EventSpecification.event_week.desc()).limit(limit))
+    elif number_of_parts == 1:
+      result = await run_query(select(EventSpecification.event_id, EventSpecification.event_year, EventSpecification.event_week)
+                               .filter(or_(EventSpecification.event_year == search_parts[0], EventSpecification.event_week == search_parts[0]))
+                               .order_by(EventSpecification.event_year.desc(), EventSpecification.event_week.desc())
+                               .limit(limit))
+    else:
+      result = await run_query(select(EventSpecification.event_year, EventSpecification.event_week)
+                               .filter(or_(EventSpecification.event_year == search_parts[0], EventSpecification.event_week == search_parts[0],
+                                           EventSpecification.event_year == search_parts[1], EventSpecification.event_week == search_parts[1]))
+                               .order_by(EventSpecification.event_year.desc(), EventSpecification.event_week.desc())
+                               .limit(limit))
+
+  return result.all()

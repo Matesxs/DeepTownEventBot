@@ -28,6 +28,7 @@ class Strings(metaclass=Formatable):
   system_cogs_description = "Show all extensions and their states"
 
   system_logout_brief = "Turn off bot"
+  system_git_pull = "Pull latest version of bot from git repository"
   system_get_guilds = "Get list of guilds that bot is connected to"
 
   # Errors

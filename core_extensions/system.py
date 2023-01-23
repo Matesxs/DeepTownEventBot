@@ -231,6 +231,16 @@ class System(Base_Cog):
     await ctx.send("Cya :wave:")
     await self.bot.close()
 
+  @commands.command(brief=Strings.system_git_pull, aliases=["pull"])
+  @commands.is_owner()
+  async def git_pull(self, ctx: commands.Context):
+    await message_utils.delete_message(self.bot, ctx)
+
+    result_message_lines = str(await self.bot.git.pull()).split("\n")
+    while result_message_lines:
+      result_message, result_message_lines = string_manipulation.add_string_until_length(result_message_lines, 1900, "\n")
+      await ctx.send(f"Git pull result\n```diff\n{result_message}\n```")
+
   @commands.command(brief=Strings.system_get_guilds)
   @commands.is_owner()
   async def get_guilds(self, ctx: commands.Context):

@@ -1,6 +1,5 @@
 # Precursor for bot class
 
-import asyncio
 import datetime
 import disnake
 from disnake.ext import commands
@@ -10,6 +9,7 @@ from utils import message_utils, object_getters, command_utils
 from config import config
 from utils.logger import setup_custom_logger
 from database import init_tables
+from features.git_manipulation import Git
 
 logger = setup_custom_logger(__name__)
 
@@ -34,6 +34,8 @@ class BaseAutoshardedBot(commands.AutoShardedBot):
       intents=intents
     )
     self.initialized = False
+
+    self.git = Git()
 
     self.last_error = None
     self.start_time = datetime.datetime.utcnow()

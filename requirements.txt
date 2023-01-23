@@ -1,5 +1,6 @@
 disnake~=2.7.0
 toml~=0.10.2
+gitpython~=3.1.30
 coloredlogs~=15.0.1
 psycopg2~=2.9.3
 sqlalchemy~=1.4.46

@@ -92,11 +92,11 @@ class PublicInterface(Base_Cog):
     # Members list
     member_data = []
     for member in guild.active_members:
-      member_data.append((member.user.id, string_manipulation.truncate_string(member.user.username, 20), humanize.naturaltime(current_time - member.user.last_online) if member.user.last_online is not None else "Never", member.user.level))
+      member_data.append((member.user.id, string_manipulation.truncate_string(member.user.username, 20), member.user.level, humanize.naturaltime(current_time - member.user.last_online) if member.user.last_online is not None else "Never"))
 
     member_data.sort(key=lambda x: x[0])
 
-    member_table_strings = table2ascii(body=member_data, header=["ID", "Name", "Online", "Level"], alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.LEFT, Alignment.RIGHT]).split("\n")
+    member_table_strings = table2ascii(body=member_data, header=["ID", "Name", "Level", "Online"], alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.RIGHT, Alignment.LEFT]).split("\n")
     member_page_strings = []
     while member_table_strings:
       data_string, member_table_strings = string_manipulation.add_string_until_length(member_table_strings, 3000, "\n")

@@ -79,7 +79,6 @@ class DTEventItemLottery(database.base):
   async def get_author(self, bot: BaseAutoshardedBot) -> Optional[disnake.Member]:
     guild = await self.guild.to_object(bot)
     if guild is None: return None
-
     return await object_getters.get_or_fetch_member(guild, int(self.author_id))
 
   async def repeat(self):

@@ -92,11 +92,11 @@ class PublicInterface(Base_Cog):
     # Members list
     member_data = []
     for member in guild.active_members:
-      member_data.append((member.user.id, string_manipulation.truncate_string(member.user.username, 20), member.user.level, member.user.depth))
+      member_data.append((member.user.id, string_manipulation.truncate_string(member.user.username, 20), humanize.naturaltime(current_time - member.user.last_online) if member.user.last_online is not None else "Never", member.user.level))
 
     member_data.sort(key=lambda x: x[0])
 
-    member_table_strings = table2ascii(body=member_data, header=["ID", "Name", "Level", "Depth"], alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.RIGHT, Alignment.RIGHT]).split("\n")
+    member_table_strings = table2ascii(body=member_data, header=["ID", "Name", "Online", "Level"], alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.LEFT, Alignment.RIGHT]).split("\n")
     member_page_strings = []
     while member_table_strings:
       data_string, member_table_strings = string_manipulation.add_string_until_length(member_table_strings, 3000, "\n")
@@ -153,7 +153,7 @@ class PublicInterface(Base_Cog):
     event_participations_data = []
     for year, week, total, average, median in (await event_participation_repo.get_guild_event_participations_data(guild.id, ignore_zero_participation_median=True)):
       best_participants = await event_participation_repo.get_event_participants_data(guild.id, year, week, limit=1) if total != 0 else None
-      event_participations_data.append((year, week, (string_manipulation.truncate_string(best_participants[0][1], 10) if best_participants is not None else "*Unknown*"), string_manipulation.format_number(best_participants[0][4]) if best_participants else "0", string_manipulation.format_number(average), string_manipulation.format_number(median)))
+      event_participations_data.append((year, week, (string_manipulation.truncate_string(best_participants[0][1], 10) if best_participants is not None else "N/A"), string_manipulation.format_number(best_participants[0][4]) if best_participants else "0", string_manipulation.format_number(average), string_manipulation.format_number(median)))
 
     event_participations_strings = table2ascii(body=event_participations_data, header=["Year", "Week", "Top Member", "Top Donate", "Average", "Median"], alignments=[Alignment.RIGHT, Alignment.RIGHT, Alignment.LEFT, Alignment.RIGHT, Alignment.RIGHT, Alignment.RIGHT]).split("\n")
     while event_participations_strings:
@@ -184,7 +184,7 @@ class PublicInterface(Base_Cog):
     event_participations_data = []
     for year, week, total, average, median in all_guild_participations:
       best_participants = await event_participation_repo.get_event_participants_data(guild.id, year, week, limit=1) if total != 0 else None
-      event_participations_data.append((year, week, (string_manipulation.truncate_string(best_participants[0][1], 10) if best_participants is not None else "*Unknown*"), string_manipulation.format_number(best_participants[0][4]) if best_participants else "0", string_manipulation.format_number(average), string_manipulation.format_number(median)))
+      event_participations_data.append((year, week, (string_manipulation.truncate_string(best_participants[0][1], 10) if best_participants is not None else "N/A"), string_manipulation.format_number(best_participants[0][4]) if best_participants else "0", string_manipulation.format_number(average), string_manipulation.format_number(median)))
 
     event_participations_strings = table2ascii(body=event_participations_data, header=["Year", "Week", "Top Member", "Top Donate", "Average", "Median"], alignments=[Alignment.RIGHT, Alignment.RIGHT, Alignment.LEFT, Alignment.RIGHT, Alignment.RIGHT, Alignment.RIGHT]).split("\n")
     event_participations_page_strings = []

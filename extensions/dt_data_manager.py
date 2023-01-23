@@ -12,7 +12,7 @@ import math
 import re
 
 from features.base_cog import Base_Cog
-from utils import dt_helpers, message_utils, string_manipulation, dt_autocomplete
+from utils import dt_helpers, message_utils, string_manipulation, dt_autocomplete, items_lottery
 from utils.logger import setup_custom_logger
 from config import cooldowns, Strings, config
 from database import event_participation_repo, tracking_settings_repo, dt_guild_repo, dt_guild_member_repo, guilds_repo, dt_items_repo, dt_blacklist_repo
@@ -275,7 +275,8 @@ class DTDataManager(Base_Cog):
                             base_amount2: Optional[int]=commands.Param(default=None, min_value=0, description=Strings.data_manager_set_event_items_item_amount_param_description(number=2)),
                             base_amount3: Optional[int]=commands.Param(default=None, min_value=0, description=Strings.data_manager_set_event_items_item_amount_param_description(number=3)),
                             base_amount4: Optional[int]=commands.Param(default=None, min_value=0, description=Strings.data_manager_set_event_items_item_amount_param_description(number=4)),
-                            current_level: int=commands.Param(default=0, min_value=0, description=Strings.data_manager_set_event_items_current_level_param_description)):
+                            current_level: int=commands.Param(default=0, min_value=0, description=Strings.data_manager_set_event_items_current_level_param_description),
+                            update_items_lotteries: bool=commands.Param(default=False, description=Strings.data_manager_set_event_items_update_items_lotteries_param_description)):
     await inter.response.defer(with_message=True, ephemeral=True)
 
     if event_year is None or event_week is None:
@@ -323,6 +324,14 @@ class DTDataManager(Base_Cog):
                                                                                                      base_amount2=base_amount2,
                                                                                                      base_amount3=base_amount3,
                                                                                                      base_amount4=base_amount4))
+
+    if update_items_lotteries:
+      result = await items_lottery.process_loterries(self.bot)
+      if result is None:
+        return await message_utils.generate_success_message(inter, Strings.lottery_update_no_active_lotteries)
+
+      results, guesses_cleared = result
+      await message_utils.generate_success_message(inter, Strings.lottery_update_success(results=results, guesses_cleared=guesses_cleared))
 
   @data_manager.sub_command(description=Strings.data_manager_remove_event_items_description)
   @cooldowns.short_cooldown

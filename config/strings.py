@@ -121,6 +121,7 @@ class Strings(metaclass=Formatable):
   data_manager_set_event_items_current_level_param_description = "Current level of event"
   data_manager_set_event_items_item_name_param_description = "Event Deep Town Item {number}"
   data_manager_set_event_items_item_amount_param_description = "Base amount for item {number}"
+  data_manager_set_event_items_update_items_lotteries_param_description = "Update lotteries after setting event items"
   data_manager_set_event_items_item_not_in_database = "Item `{item}` not found in database"
   data_manager_set_event_items_success = "Items for event `{event_year} {event_week}` set\n{item1} - {base_amount1}\n{item2} - {base_amount2}\n{item3} - {base_amount3}\n{item4} - {base_amount4}"
   data_manager_set_event_items_repeated_items = "Inserted not unique items"
@@ -241,3 +242,27 @@ class Strings(metaclass=Formatable):
   settings_admin_role_remove_description = "Remove discord guild admin role"
   settings_admin_role_remove_success = "Removed admin role"
   settings_admin_role_remove_failed = "Admin role is not set for this guild"
+
+  # Event Item Lottery
+  lottery_invalid_item = "`{item_name}` is not valid item"
+
+  lottery_button_listener_invalid_lottery = "Lotery doesn't exist, removing invalid message"
+  lottery_button_listener_removed = "Lotery removed"
+  lottery_button_listener_not_author = "You can't remove this lotery because you are not author"
+  lottery_button_listener_invalid_command = "Invalid lottery message command received"
+
+  lottery_create_description = "Create event items lotery for next event"
+  lottery_create_reward_item_param_description = "Reward item for guessing {item_number} event items right"
+  lottery_create_reward_item_amount_param_description = "Number of reward items for guessing {item_number} event items right"
+  lottery_create_can_show_guesses_param_description = "Can users request current guesses"
+  lottery_create_lottery_already_created = "You already have lottery created for next event"
+  lottery_create_failed_to_get_lottery_message = "INTERNAL ERROR: Failed to get lottery message, lottery not created, message with it was maybe send but it's not valid"
+
+  lottery_guess_description = "Make a guess for next event items"
+  lottery_guess_item_param_description = "Item guess {item_number}"
+  lottery_guess_item_duplicates = "Guess failed, invalid items - duplicates"
+  lottery_guess_registered = "Guess registered for event `{event_year} {event_week}`\n`{items}`"
+
+  lottery_update_description = "Update all lotteries and closed the ended ones"
+  lottery_update_no_active_lotteries = "No active lotteries to update"
+  lottery_update_success = "Processed `{results}` lotteries and cleared `{guesses_cleared}` guesses"

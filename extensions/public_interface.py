@@ -11,7 +11,7 @@ import sqlalchemy
 from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
 from config import cooldowns, Strings
-from utils import dt_helpers, dt_report_generators, message_utils, string_manipulation, dt_identifier_autocomplete
+from utils import dt_helpers, dt_report_generators, message_utils, string_manipulation, dt_autocomplete
 from features.views.paginator import EmbedView
 from database import event_participation_repo, dt_user_repo, dt_guild_repo, dt_guild_member_repo
 from features.views.data_selector import DataSelector
@@ -29,7 +29,7 @@ class PublicInterface(Base_Cog):
   @guild_commands.sub_command(name="report", description=Strings.public_interface_guild_report_description)
   @cooldowns.default_cooldown
   async def guild_report(self, inter: disnake.CommandInteraction,
-                         identifier: str = commands.Param(description=Strings.dt_guild_identifier_param_description, autocomp=dt_identifier_autocomplete.autocomplete_identifier_guild),
+                         identifier: str = commands.Param(description=Strings.dt_guild_identifier_param_description, autocomp=dt_autocomplete.autocomplete_identifier_guild),
                          year: Optional[int] = commands.Param(default=None, description=Strings.dt_event_year_param_description),
                          week: Optional[int] = commands.Param(default=None, min_value=1, description=Strings.dt_event_year_param_description),
                          tight_format: bool = commands.Param(default=False, description=Strings.public_interface_guild_report_tight_format_param_description)):
@@ -42,7 +42,7 @@ class PublicInterface(Base_Cog):
       if week is None:
         week = c_week
 
-    specifier = dt_identifier_autocomplete.identifier_to_specifier(identifier)
+    specifier = dt_autocomplete.identifier_to_specifier(identifier)
     if specifier is None:
       return await message_utils.generate_error_message(inter, Strings.dt_invalid_identifier)
 
@@ -63,10 +63,10 @@ class PublicInterface(Base_Cog):
   @guild_commands.sub_command(name="profile", description=Strings.public_interface_guild_profile_description)
   @cooldowns.default_cooldown
   async def guild_profile(self, inter: disnake.CommandInteraction,
-                          identifier: str = commands.Param(description=Strings.dt_guild_identifier_param_description, autocomp=dt_identifier_autocomplete.autocomplete_identifier_guild)):
+                          identifier: str = commands.Param(description=Strings.dt_guild_identifier_param_description, autocomp=dt_autocomplete.autocomplete_identifier_guild)):
     await inter.response.defer(with_message=True)
 
-    specifier = dt_identifier_autocomplete.identifier_to_specifier(identifier)
+    specifier = dt_autocomplete.identifier_to_specifier(identifier)
     if specifier is None:
       return await message_utils.generate_error_message(inter, Strings.dt_invalid_identifier)
 
@@ -168,10 +168,10 @@ class PublicInterface(Base_Cog):
   @guild_commands.sub_command(name="event_participations", description=Strings.public_interface_guild_participations_description)
   @cooldowns.default_cooldown
   async def guild_event_participations(self, inter: disnake.CommandInteraction,
-                                       identifier: str = commands.Param(description=Strings.dt_guild_identifier_param_description, autocomp=dt_identifier_autocomplete.autocomplete_identifier_guild)):
+                                       identifier: str = commands.Param(description=Strings.dt_guild_identifier_param_description, autocomp=dt_autocomplete.autocomplete_identifier_guild)):
     await inter.response.defer(with_message=True)
 
-    specifier = dt_identifier_autocomplete.identifier_to_specifier(identifier)
+    specifier = dt_autocomplete.identifier_to_specifier(identifier)
     if specifier is None:
       return await message_utils.generate_error_message(inter, Strings.dt_invalid_identifier)
 
@@ -235,10 +235,10 @@ class PublicInterface(Base_Cog):
   @user_command.sub_command(name="event_participations", description=Strings.public_interface_user_event_participations_description)
   @cooldowns.default_cooldown
   async def user_event_participations(self, inter: disnake.CommandInteraction,
-                                      identifier: str=commands.Param(description=Strings.dt_user_identifier_param_description, autocomp=dt_identifier_autocomplete.autocomplete_identifier_user)):
+                                      identifier: str=commands.Param(description=Strings.dt_user_identifier_param_description, autocomp=dt_autocomplete.autocomplete_identifier_user)):
     await inter.response.defer(with_message=True)
 
-    specifier = dt_identifier_autocomplete.identifier_to_specifier(identifier)
+    specifier = dt_autocomplete.identifier_to_specifier(identifier)
     if specifier is None:
       return await message_utils.generate_error_message(inter, Strings.dt_invalid_identifier)
 
@@ -261,10 +261,10 @@ class PublicInterface(Base_Cog):
   @user_command.sub_command(name="profile", description=Strings.public_interface_user_profile_description)
   @cooldowns.default_cooldown
   async def user_profile(self, inter: disnake.CommandInteraction,
-                         identifier:str=commands.Param(description=Strings.dt_user_identifier_param_description, autocomp=dt_identifier_autocomplete.autocomplete_identifier_user)):
+                         identifier:str=commands.Param(description=Strings.dt_user_identifier_param_description, autocomp=dt_autocomplete.autocomplete_identifier_user)):
     await inter.response.defer(with_message=True)
 
-    specifier = dt_identifier_autocomplete.identifier_to_specifier(identifier)
+    specifier = dt_autocomplete.identifier_to_specifier(identifier)
     if specifier is None:
       return await message_utils.generate_error_message(inter, Strings.dt_invalid_identifier)
 
@@ -332,7 +332,8 @@ class PublicInterface(Base_Cog):
   @cooldowns.default_cooldown
   async def event_help(self, inter: disnake.CommandInteraction,
                        year: Optional[int] = commands.Param(default=None, description=Strings.dt_event_year_param_description),
-                       week: Optional[int] = commands.Param(default=None, min_value=1, description=Strings.dt_event_year_param_description)):
+                       week: Optional[int] = commands.Param(default=None, min_value=1, description=Strings.dt_event_year_param_description),
+                       materials_amounts: bool = commands.Param(default=False, description=Strings.public_interface_event_help_materials_amounts_param_description)):
     await inter.response.defer(with_message=True)
 
     if year is None or week is None:
@@ -352,12 +353,15 @@ class PublicInterface(Base_Cog):
 
     await inter.send(f"```\nYear: {year} Week: {week}\n{item_table}\n```")
 
-    event_items_scaling_table = dt_report_generators.get_event_items_scaling_table(event_specification)
-    if event_items_scaling_table is not None:
-      event_items_scaling_table_lines = event_items_scaling_table.split("\n")
-      while event_items_scaling_table_lines:
-        final_string, event_items_scaling_table_lines = string_manipulation.add_string_until_length(event_items_scaling_table_lines, 1800, "\n")
-        await inter.send(f"```\n{final_string}\n```")
+    if materials_amounts:
+      event_items_scaling_table = dt_report_generators.get_event_items_scaling_table(event_specification)
+      if event_items_scaling_table is not None:
+        event_items_scaling_table_lines = event_items_scaling_table.split("\n")
+        while event_items_scaling_table_lines:
+          final_string, event_items_scaling_table_lines = string_manipulation.add_string_until_length(event_items_scaling_table_lines, 1800, "\n")
+          await inter.send(f"```\n{final_string}\n```")
+      else:
+        await message_utils.generate_error_message(inter, Strings.public_interface_event_help_no_item_amount_scaling)
 
   @event_commands.sub_command(name="leaderboard", description=Strings.public_interface_event_leaderboard_specific_description)
   @cooldowns.default_cooldown

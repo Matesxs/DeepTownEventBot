@@ -14,6 +14,7 @@ class DiscordGuild(database.base):
   admin_role_id = Column(String, nullable=True)
 
   tracking_settings = relationship("TrackingSettings", uselist=True, back_populates="guild")
+  lotteries = relationship("DTEventItemLottery", uselist=True, back_populates="guild")
 
   @classmethod
   def from_guild(cls, guild: disnake.Guild):

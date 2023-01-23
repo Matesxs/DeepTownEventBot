@@ -12,7 +12,7 @@ import math
 import re
 
 from features.base_cog import Base_Cog
-from utils import dt_helpers, message_utils, string_manipulation, dt_identifier_autocomplete
+from utils import dt_helpers, message_utils, string_manipulation, dt_autocomplete, items_lottery
 from utils.logger import setup_custom_logger
 from config import cooldowns, Strings, config
 from database import event_participation_repo, tracking_settings_repo, dt_guild_repo, dt_guild_member_repo, guilds_repo, dt_items_repo, dt_blacklist_repo
@@ -37,9 +37,6 @@ class DTDataManager(Base_Cog):
       if not self.data_update_task.is_running():
         self.data_update_task.start()
 
-    self.all_item_names = None
-    self.all_craftable_item_names = None
-
   def cog_unload(self):
     if self.cleanup_task.is_running():
       self.cleanup_task.cancel()
@@ -58,13 +55,13 @@ class DTDataManager(Base_Cog):
   @cooldowns.huge_cooldown
   @commands.is_owner()
   async def update_guild(self, inter: disnake.CommandInteraction,
-                         identifier: str=commands.Param(description=Strings.dt_guild_identifier_param_description, autocomp=dt_identifier_autocomplete.autocomplete_identifier_guild)):
+                         identifier: str=commands.Param(description=Strings.dt_guild_identifier_param_description, autocomp=dt_autocomplete.autocomplete_identifier_guild)):
     await inter.response.defer(with_message=True, ephemeral=True)
 
     if identifier.isnumeric():
       guild_id = int(identifier)
     else:
-      specifier = dt_identifier_autocomplete.identifier_to_specifier(identifier)
+      specifier = dt_autocomplete.identifier_to_specifier(identifier)
       if specifier is None:
         return await message_utils.generate_error_message(inter, Strings.dt_invalid_identifier)
       guild_id = specifier[1]
@@ -181,9 +178,6 @@ class DTDataManager(Base_Cog):
 
     await dt_items_repo.set_dt_item(name, item_type, item_source, value, crafting_time)
 
-    self.all_item_names = await dt_items_repo.get_all_dt_item_names()
-    self.all_craftable_item_names = await dt_items_repo.get_all_craftable_dt_item_names()
-
     if item_type == dt_items_repo.ItemType.CRAFTABLE:
       await message_utils.generate_success_message(inter, Strings.data_manager_add_dt_item_success_craftable(name=name, item_type=item_type, value=value, crafting_time=crafting_time))
     else:
@@ -193,12 +187,9 @@ class DTDataManager(Base_Cog):
   @cooldowns.short_cooldown
   @commands.is_owner()
   async def remove_dt_item(self, inter: disnake.CommandInteraction,
-                           name: str=commands.Param(description=Strings.data_manager_add_remove_dt_item_name_param_description)):
+                           name: str=commands.Param(description=Strings.data_manager_add_remove_dt_item_name_param_description, autocomplete=dt_autocomplete.autocomplete_item)):
     await inter.response.defer(with_message=True, ephemeral=True)
     if await dt_items_repo.remove_dt_item(name):
-
-      self.all_item_names = await dt_items_repo.get_all_dt_item_names()
-      self.all_craftable_item_names = await dt_items_repo.get_all_craftable_dt_item_names()
 
       await message_utils.generate_success_message(inter, Strings.data_manager_remove_dt_item_success(name=name))
     else:
@@ -230,8 +221,8 @@ class DTDataManager(Base_Cog):
   @cooldowns.short_cooldown
   @commands.is_owner()
   async def modify_dt_item_component(self, inter: disnake.CommandInteraction,
-                                  target_item: str=commands.Param(description=Strings.data_manager_modify_dt_item_component_target_item_param_description),
-                                  component_item: str=commands.Param(description=Strings.data_manager_modify_dt_item_component_component_item_param_description),
+                                  target_item: str=commands.Param(description=Strings.data_manager_modify_dt_item_component_target_item_param_description, autocomplete=dt_autocomplete.autocomplete_craftable_item),
+                                  component_item: str=commands.Param(description=Strings.data_manager_modify_dt_item_component_component_item_param_description, autocomplete=dt_autocomplete.autocomplete_item),
                                   amount: float=commands.Param(default=1.0, min_value=0.0, description=Strings.data_manager_modify_dt_item_component_amount_param_description)):
     await inter.response.defer(with_message=True, ephemeral=True)
 
@@ -258,7 +249,7 @@ class DTDataManager(Base_Cog):
   @cooldowns.short_cooldown
   @commands.is_owner()
   async def remove_dt_item_components(self, inter: disnake.CommandInteraction,
-                                      target_item: str=commands.Param(description=Strings.data_manager_remove_dt_item_components_target_item_param_description)):
+                                      target_item: str=commands.Param(description=Strings.data_manager_remove_dt_item_components_target_item_param_description, autocomplete=dt_autocomplete.autocomplete_craftable_item)):
     await inter.response.defer(with_message=True, ephemeral=True)
 
     target_item_ = await dt_items_repo.get_dt_item(target_item)
@@ -276,15 +267,16 @@ class DTDataManager(Base_Cog):
   async def set_event_items(self, inter: disnake.CommandInteraction,
                             event_year: Optional[int]=commands.Param(default=None, min_value=0, description=Strings.dt_event_year_param_description),
                             event_week: Optional[int]=commands.Param(default=None, min_value=0, description=Strings.dt_event_week_param_description),
-                            item1: str=commands.Param(description=Strings.data_manager_set_event_items_item_name_param_description(number=1)),
-                            item2: str=commands.Param(description=Strings.data_manager_set_event_items_item_name_param_description(number=2)),
-                            item3: str=commands.Param(description=Strings.data_manager_set_event_items_item_name_param_description(number=3)),
-                            item4: str=commands.Param(description=Strings.data_manager_set_event_items_item_name_param_description(number=4)),
+                            item1: str=commands.Param(description=Strings.data_manager_set_event_items_item_name_param_description(number=1), autocomplete=dt_autocomplete.autocomplete_item),
+                            item2: str=commands.Param(description=Strings.data_manager_set_event_items_item_name_param_description(number=2), autocomplete=dt_autocomplete.autocomplete_item),
+                            item3: str=commands.Param(description=Strings.data_manager_set_event_items_item_name_param_description(number=3), autocomplete=dt_autocomplete.autocomplete_item),
+                            item4: str=commands.Param(description=Strings.data_manager_set_event_items_item_name_param_description(number=4), autocomplete=dt_autocomplete.autocomplete_item),
                             base_amount1: Optional[int]=commands.Param(default=None, min_value=0, description=Strings.data_manager_set_event_items_item_amount_param_description(number=1)),
                             base_amount2: Optional[int]=commands.Param(default=None, min_value=0, description=Strings.data_manager_set_event_items_item_amount_param_description(number=2)),
                             base_amount3: Optional[int]=commands.Param(default=None, min_value=0, description=Strings.data_manager_set_event_items_item_amount_param_description(number=3)),
                             base_amount4: Optional[int]=commands.Param(default=None, min_value=0, description=Strings.data_manager_set_event_items_item_amount_param_description(number=4)),
-                            current_level: int=commands.Param(default=0, min_value=0, description=Strings.data_manager_set_event_items_current_level_param_description)):
+                            current_level: int=commands.Param(default=0, min_value=0, description=Strings.data_manager_set_event_items_current_level_param_description),
+                            update_items_lotteries: bool=commands.Param(default=False, description=Strings.data_manager_set_event_items_update_items_lotteries_param_description)):
     await inter.response.defer(with_message=True, ephemeral=True)
 
     if event_year is None or event_week is None:
@@ -333,6 +325,14 @@ class DTDataManager(Base_Cog):
                                                                                                      base_amount3=base_amount3,
                                                                                                      base_amount4=base_amount4))
 
+    if update_items_lotteries:
+      result = await items_lottery.process_loterries(self.bot)
+      if result is None:
+        return await message_utils.generate_success_message(inter, Strings.lottery_update_no_active_lotteries)
+
+      results, guesses_cleared = result
+      await message_utils.generate_success_message(inter, Strings.lottery_update_success(results=results, guesses_cleared=guesses_cleared))
+
   @data_manager.sub_command(description=Strings.data_manager_remove_event_items_description)
   @cooldowns.short_cooldown
   @commands.is_owner()
@@ -348,26 +348,6 @@ class DTDataManager(Base_Cog):
       await message_utils.generate_success_message(inter, Strings.data_manager_remove_event_items_success(event_year=event_year, event_week=event_week))
     else:
       await message_utils.generate_error_message(inter, Strings.data_manager_remove_event_items_failed(event_year=event_year, event_week=event_week))
-
-  @set_event_items.autocomplete("item1")
-  @set_event_items.autocomplete("item2")
-  @set_event_items.autocomplete("item3")
-  @set_event_items.autocomplete("item4")
-  @remove_dt_item.autocomplete("name")
-  @modify_dt_item_component.autocomplete("component_item")
-  async def autocomplete_item(self, _, string: str):
-    if self.all_item_names is None:
-      self.all_item_names = await dt_items_repo.get_all_dt_item_names()
-    if string is None or not string: return self.all_item_names[:20]
-    return [item for item in self.all_item_names if string.lower() in item.lower()][:20]
-
-  @modify_dt_item_component.autocomplete("target_item")
-  @remove_dt_item_components.autocomplete("target_item")
-  async def autocomplete_craftable_item(self, _, string: str):
-    if self.all_craftable_item_names is None:
-      self.all_craftable_item_names = await dt_items_repo.get_all_craftable_dt_item_names()
-    if string is None or not string: return self.all_craftable_item_names[:20]
-    return [item for item in self.all_craftable_item_names if string.lower() in item.lower()][:20]
 
   @commands.message_command(name="Load Event Data")
   @cooldowns.long_cooldown
@@ -468,10 +448,10 @@ class DTDataManager(Base_Cog):
   @data_manager.sub_command(description=Strings.data_manager_dump_guild_participation_data_description)
   @cooldowns.huge_cooldown
   async def dump_guild_participation_data(self, inter: disnake.CommandInteraction,
-                                          identifier: str = commands.Param(description=Strings.dt_guild_identifier_param_description, autocomp=dt_identifier_autocomplete.autocomplete_identifier_guild)):
+                                          identifier: str = commands.Param(description=Strings.dt_guild_identifier_param_description, autocomp=dt_autocomplete.autocomplete_identifier_guild)):
     await inter.response.defer(with_message=True, ephemeral=True)
 
-    specifier = dt_identifier_autocomplete.identifier_to_specifier(identifier)
+    specifier = dt_autocomplete.identifier_to_specifier(identifier)
     if specifier is None:
       return await message_utils.generate_error_message(inter, Strings.dt_invalid_identifier)
 

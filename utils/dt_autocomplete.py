@@ -1,7 +1,7 @@
 import re
 from typing import Optional, Tuple
 
-from database import dt_user_repo, dt_guild_repo
+from database import dt_user_repo, dt_guild_repo, dt_items_repo
 from utils import string_manipulation
 
 id_in_identifier_regex = re.compile(r"([A-Z]*) .*\((\d*)\).*")
@@ -29,6 +29,12 @@ async def autocomplete_identifier_guild_and_user(_, string: str):
   if rest > 0:
     result.extend([f"GUILD {string_manipulation.truncate_string(guild.name, 40)} ({guild.id})" for guild in (await dt_guild_repo.get_all_guilds(search=string, limit=20))])
   return result
+
+async def autocomplete_item(_, string: str):
+  return await dt_items_repo.search_items(string, limit=20)
+
+async def autocomplete_craftable_item(_, string: str):
+  return await dt_items_repo.search_craftable_items(string, limit=20)
 
 def identifier_to_specifier(identifier: str) -> Optional[Tuple[str, int]]:
   specifier = id_in_identifier_regex.findall(identifier)

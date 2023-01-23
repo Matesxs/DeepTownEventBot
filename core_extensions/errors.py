@@ -12,6 +12,7 @@ from utils.logger import setup_custom_logger
 from features.base_cog import Base_Cog
 from config import config, Strings
 from features.base_bot import BaseAutoshardedBot
+from features import exceptions
 
 logger = setup_custom_logger(__name__)
 
@@ -46,6 +47,14 @@ class Errors(Base_Cog):
       await message_utils.generate_error_message(ctx, Strings.error_unknown_command)
     elif isinstance(error, commands.CommandOnCooldown):
       await message_utils.generate_error_message(ctx, Strings.error_command_on_cooldown(remaining=round(error.retry_after, 2)))
+    elif isinstance(error, exceptions.NotGuildAdministrator):
+      await message_utils.generate_error_message(ctx, Strings.error_not_administrator)
+    elif isinstance(error, exceptions.NoGuildAdministratorRole):
+      await message_utils.generate_error_message(ctx, Strings.not_administrator_role_set)
+    elif isinstance(error, exceptions.NotGuildOwner):
+      await message_utils.generate_error_message(ctx, Strings.error_not_guild_owner)
+    elif isinstance(error, commands.NotOwner):
+      await message_utils.generate_error_message(ctx, Strings.error_not_owner)
     elif isinstance(error, commands.MissingPermissions):
       await message_utils.generate_error_message(ctx, Strings.error_missing_permission)
     elif isinstance(error, commands.MissingRole):

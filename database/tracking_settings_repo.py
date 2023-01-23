@@ -1,21 +1,30 @@
 import disnake
 from typing import Optional, List, AsyncIterator
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, or_
 
-from database import run_query, run_commit, session
+from database import run_query, run_commit, session, dt_guild_repo
 from database.tables.tracking_settings import TrackingSettings
 from database.guilds_repo import get_or_create_discord_guild
-from database.dt_guild_repo import get_dt_guild
 
 async def get_tracking_settings(guild_id: int, dt_guild_id: int) -> Optional[TrackingSettings]:
   result = await run_query(select(TrackingSettings).filter(TrackingSettings.guild_id == str(guild_id), TrackingSettings.dt_guild_id == dt_guild_id))
   return result.scalar_one_or_none()
 
+async def search_tracked_guilds(guild_id: int, search: Optional[str]=None, limit: int=25) -> List[dt_guild_repo.DTGuild]:
+  if search is not None:
+    if search.isnumeric():
+      result = await run_query(select(dt_guild_repo.DTGuild).join(TrackingSettings).filter(or_(dt_guild_repo.DTGuild.name.ilike(f"%{search}%"), dt_guild_repo.DTGuild.id == int(search)), TrackingSettings.guild_id == str(guild_id)).order_by(dt_guild_repo.DTGuild.name).limit(limit))
+    else:
+      result = await run_query(select(dt_guild_repo.DTGuild).join(TrackingSettings).filter(dt_guild_repo.DTGuild.name.ilike(f"%{search}%"), TrackingSettings.guild_id == str(guild_id)).order_by(dt_guild_repo.DTGuild.name).limit(limit))
+  else:
+    result = await run_query(select(dt_guild_repo.DTGuild).join(TrackingSettings).filter(TrackingSettings.guild_id == str(guild_id)).order_by(dt_guild_repo.DTGuild.name).limit(limit))
+  return result.scalars().all()
+
 async def get_or_create_tracking_settings(guild: disnake.Guild, dt_guild_id: int, announce_channel_id:Optional[int]=None) -> Optional[TrackingSettings]:
   item = await get_tracking_settings(guild.id, dt_guild_id)
   if item is None:
     await get_or_create_discord_guild(guild)
-    if (await get_dt_guild(dt_guild_id)) is None:
+    if (await dt_guild_repo.get_dt_guild(dt_guild_id)) is None:
       return None
 
     item = TrackingSettings(guild_id=str(guild.id), dt_guild_id=dt_guild_id, announce_channel_id=str(announce_channel_id) if announce_channel_id is not None else None)

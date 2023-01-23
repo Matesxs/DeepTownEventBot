@@ -7,7 +7,7 @@ import humanize
 
 from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
-from utils import dt_helpers, dt_report_generators, message_utils, dt_autocomplete
+from utils import dt_helpers, dt_report_generators, message_utils, dt_autocomplete, string_manipulation
 from database import event_participation_repo, tracking_settings_repo
 from config import Strings, cooldowns, config, permissions
 from features.views.paginator import EmbedView
@@ -60,7 +60,7 @@ class DTEventReportAnnouncer(Base_Cog):
   @announcer.sub_command(name="remove", description=Strings.event_report_announcer_remove_tracker_description)
   @cooldowns.default_cooldown
   async def remove_tracker(self, inter: disnake.CommandInteraction,
-                                 identifier: str=commands.Param(description=Strings.dt_guild_identifier_param_description, autocomp=dt_autocomplete.autocomplete_identifier_guild)):
+                                 identifier: str=commands.Param(description=Strings.dt_guild_identifier_param_description)):
     specifier = dt_autocomplete.identifier_to_specifier(identifier)
     if specifier is None:
       return await message_utils.generate_error_message(inter, Strings.dt_invalid_identifier)
@@ -75,6 +75,12 @@ class DTEventReportAnnouncer(Base_Cog):
       await message_utils.generate_success_message(inter, Strings.event_report_announcer_remove_tracker_success(guild=guild_name))
     else:
       await message_utils.generate_error_message(inter, Strings.event_report_announcer_remove_tracker_failed(identifier=specifier[1]))
+
+  @remove_tracker.autocomplete("identifier")
+  async def autocomplete_identifier_tracked_guild(self, inter: disnake.CommandInteraction, string: str):
+    if string is None or not string:
+      return [f"GUILD {string_manipulation.truncate_string(guild.name, 40)} ({guild.id})" for guild in (await tracking_settings_repo.search_tracked_guilds(inter.guild_id, limit=20))]
+    return [f"GUILD {string_manipulation.truncate_string(guild.name, 40)} ({guild.id})" for guild in (await tracking_settings_repo.search_tracked_guilds(inter.guild_id, search=string, limit=20))]
 
   @announcer.sub_command(name="list", description=Strings.event_report_announcer_list_trackers_description)
   @cooldowns.default_cooldown

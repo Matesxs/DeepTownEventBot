@@ -11,7 +11,7 @@ async def get_dt_guild(guild_id:int) -> Optional[DTGuild]:
   result = await run_query(select(DTGuild).filter(DTGuild.id == guild_id))
   return result.scalar_one_or_none()
 
-async def get_all_guilds(search: Optional[str]=None, limit: int=25) -> List[DTGuild]:
+async def search_guilds(search: Optional[str]=None, limit: int=25) -> List[DTGuild]:
   if search is not None:
     if search.isnumeric():
       result = await run_query(select(DTGuild).filter(or_(DTGuild.name.ilike(f"%{search}%"), DTGuild.id == int(search))).order_by(DTGuild.name).limit(limit))

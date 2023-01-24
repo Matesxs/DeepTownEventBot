@@ -20,6 +20,10 @@ class BetterMessageLinks(Base_Cog):
       # logger.info("Invalid message author or not in guild")
       return
 
+    destination_channel_permissions = message.channel.permissions_for(message.guild.me)
+    if not destination_channel_permissions.send_messages:
+      return
+
     matches = message_link_regex.findall(message.content)
     for match in matches:
       if int(match[0]) != message.guild.id:
@@ -28,12 +32,17 @@ class BetterMessageLinks(Base_Cog):
 
       original_message_channel = await object_getters.get_or_fetch_channel(message.guild, int(match[1]))
       if original_message_channel is None:
-        # logger.info(f"Failed to get channel `{match[1]}` of message `{message.id}`")
+        # logger.info(f"Failed to get channel `{match[1]}` from link in `{message.id}`")
+        continue
+
+      source_channel_permissions = original_message_channel.permissions_for(message.guild.me)
+      if not source_channel_permissions.read_messages or not source_channel_permissions.read_message_history:
+        # logger.info(f"Invalid read permissions for channel `{match[1]}` from link in `{message.id}`")
         continue
 
       original_message = await object_getters.get_or_fetch_message(self.bot, original_message_channel, int(match[2]))
       if original_message is None:
-        # logger.info(f"Failed to get message `{match[2]}` of message `{message.id}`")
+        # logger.info(f"Failed to get message `{match[2]}` from link in `{message.id}`")
         continue
 
       attachments = [a for a in original_message.attachments if a.size <= 8_000_000]

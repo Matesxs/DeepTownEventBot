@@ -17,23 +17,23 @@ class BetterMessageLinks(Base_Cog):
   @commands.Cog.listener()
   async def on_message(self, message: disnake.Message):
     if message.author.bot or message.author.system or message.guild is None:
-      logger.info("Invalid message author or not in guild")
+      # logger.info("Invalid message author or not in guild")
       return
 
     matches = message_link_regex.findall(message.content)
     for match in matches:
       if int(match[0]) != message.guild.id:
-        logger.info(f"Message `{message.id}` is from another server")
+        # logger.info(f"Message `{message.id}` is from another server")
         continue
 
       original_message_channel = await object_getters.get_or_fetch_channel(message.guild, int(match[1]))
       if original_message_channel is None:
-        logger.info(f"Failed to get channel `{match[1]}` of message `{message.id}`")
+        # logger.info(f"Failed to get channel `{match[1]}` of message `{message.id}`")
         continue
 
       original_message = await object_getters.get_or_fetch_message(self.bot, original_message_channel, int(match[2]))
       if original_message is None:
-        logger.info(f"Failed to get message `{match[2]}` of message `{message.id}`")
+        # logger.info(f"Failed to get message `{match[2]}` of message `{message.id}`")
         continue
 
       attachments = [a for a in original_message.attachments if a.size <= 8_000_000]

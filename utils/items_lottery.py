@@ -1,7 +1,7 @@
 import asyncio
 import disnake
 import datetime
-from typing import Optional, List, Dict, Union
+from typing import Optional, List, Dict, Union, Tuple
 from table2ascii import table2ascii, Alignment
 
 from config.strings import Strings
@@ -13,7 +13,7 @@ from utils import string_manipulation, object_getters, dt_helpers, message_utils
 logger = setup_custom_logger(__name__)
 
 async def process_loterries(bot: BaseAutoshardedBot):
-  async def process_lottery_result(lottery: dt_event_item_lottery_repo.DTEventItemLottery, result: Optional[Dict[int, List[int]]]):
+  async def process_lottery_result(lottery: dt_event_item_lottery_repo.DTEventItemLottery, result: Tuple[int, Optional[Dict[int, List[int]]]]):
     guild = await lottery.guild.to_object(bot)
 
     destination = await lottery.get_lotery_message(bot)
@@ -36,8 +36,10 @@ async def process_loterries(bot: BaseAutoshardedBot):
       except:
         pass
 
-    if result is None:
-      message = f"```\nItems guess lottery result for event `{lottery.event_specification.event_year} {lottery.event_specification.event_week}`\n**This event didn't have items set so there are no winners**\n```"
+    author = await lottery.get_author(bot)
+
+    if result[1] is None:
+      message = f"```\nItems guess lottery result for event `{lottery.event_specification.event_year} {lottery.event_specification.event_week}` by {author.display_name if author is not None else '*Unknown*'}\nParticipants: {result[0]}\n**This event didn't have items set so there are no winners**\n```"
       if isinstance(destination, disnake.Message):
         await destination.reply(message)
       else:
@@ -45,10 +47,10 @@ async def process_loterries(bot: BaseAutoshardedBot):
     else:
       table_data = []
 
-      positions = list(result.keys())
+      positions = list(result[1].keys())
       positions.sort(reverse=True)
       if not positions:
-        message = f"```\nEvent items lottery result for `{lottery.event_specification.event_year} {lottery.event_specification.event_week}`\n**There are no winners**\n```"
+        message = f"```\nEvent items lottery result for `{lottery.event_specification.event_year} {lottery.event_specification.event_week}` by {author.display_name if author is not None else '*Unknown*'}\nParticipants: {result[0]}\n**There are no winners**\n```"
         if isinstance(destination, disnake.Message):
           await destination.reply(message)
         else:
@@ -75,13 +77,13 @@ async def process_loterries(bot: BaseAutoshardedBot):
         else:
           continue
 
-        winners: List[Optional[disnake.Member]] = await asyncio.gather(*[object_getters.get_or_fetch_member(guild if guild is not None else bot, uid) for uid in result[position]])
+        winners: List[Optional[disnake.Member]] = await asyncio.gather(*[object_getters.get_or_fetch_member(guild if guild is not None else bot, uid) for uid in result[1][position]])
         winner_names = [string_manipulation.truncate_string(w.display_name, 15) for w in winners if w is not None]
         reward = reward_item_amount / len(winner_names)
         table_data.append((position, f"{string_manipulation.format_number(reward)} {reward_item_name}", "\n".join(winner_names)))
 
-      author = await lottery.get_author(bot)
       table_lines = [f"Event items lottery result for `{lottery.event_specification.event_year} {lottery.event_specification.event_week}` by {author.display_name if author is not None else '*Unknown*'}",
+                     f"Participants: {result[0]}",
                      *table2ascii(["Guessed", "Reward each", "Winners"], table_data, alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.LEFT], first_col_heading=True).split("\n")]
       while table_lines:
         final_string, table_lines = string_manipulation.add_string_until_length(table_lines, 2000, "\n")
@@ -91,14 +93,15 @@ async def process_loterries(bot: BaseAutoshardedBot):
           await destination.send(final_string)
         await asyncio.sleep(0.005)
 
+
+
   not_closed_lotteries = await dt_event_item_lottery_repo.get_all_active_lotteries()
   if not not_closed_lotteries:
     return None
 
   results = [(lottery, await dt_event_item_lottery_repo.get_results(lottery)) for lottery in not_closed_lotteries]
   for lottery, result in results:
-    if result is None:
-      await process_lottery_result(lottery, result)
+    await process_lottery_result(lottery, result)
 
   await dt_event_item_lottery_repo.close_all_active_lotteries()
   guesses_cleared = await dt_event_item_lottery_repo.clear_old_guesses()

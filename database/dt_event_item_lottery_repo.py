@@ -2,7 +2,7 @@ import asyncio
 import datetime
 import disnake
 from sqlalchemy import select, delete, update, or_, and_
-from typing import Optional, List, Dict, Union
+from typing import Optional, List, Dict, Union, Tuple
 
 from database import run_query, run_commit, session, dt_items_repo, guilds_repo, event_participation_repo
 from database.tables.dt_event_item_lottery import DTEventItemLottery, DTEventItemLotteryGuess, DTEventItemLotteryGuessedItem
@@ -110,19 +110,20 @@ async def clear_old_guesses() -> int:
   result = await run_query(delete(DTEventItemLotteryGuess).join(event_participation_repo.EventSpecification).filter(or_(event_participation_repo.EventSpecification.event_year != year, event_participation_repo.EventSpecification.event_week != week)), commit=True)
   return result.rowcount
 
-async def get_results(lottery: DTEventItemLottery) -> Optional[Dict[int, List[int]]]:
+async def get_results(lottery: DTEventItemLottery) -> Tuple[int, Optional[Dict[int, List[int]]]]:
   """
   :param lottery: Lottery object
-  :return: dict of number of right guesses and coresponding guesser ids
+  :return: number of guesses, dict of number of right guesses and coresponding guesser ids
   """
+
+  guesses = await get_guesses(int(lottery.guild_id), lottery.event_id)
 
   event_items = list(lottery.event_specification.participation_items)
   if not event_items:
-    return None
+    return len(guesses), None
 
   event_item_names = [ei.item_name for ei in event_items]
   event_item_names_set = set(event_item_names)
-  guesses = await get_guesses(int(lottery.guild_id), lottery.event_id)
 
   results = {}
   for guess in guesses:
@@ -140,4 +141,4 @@ async def get_results(lottery: DTEventItemLottery) -> Optional[Dict[int, List[in
     else:
       results[guessed_right].append(int(author_id))
 
-  return results
+  return len(guesses), results

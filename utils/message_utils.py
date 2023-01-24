@@ -6,8 +6,10 @@ import datetime
 from config import config
 
 async def generate_error_message(ctx: Union[commands.Context, disnake.abc.Messageable, disnake.Message, disnake.MessageInteraction, disnake.ModalInteraction, disnake.ApplicationCommandInteraction], text: str):
+  if hasattr(ctx, "channel") and hasattr(ctx, "guild") and not ctx.channel.permissions_for(ctx.guild.me).send_messages: return
+
   response_embed = disnake.Embed(color=disnake.Color.dark_red(), title=":x: | Error", description=text)
-  if isinstance(ctx, disnake.ModalInteraction) or isinstance(ctx, disnake.ApplicationCommandInteraction) or isinstance(ctx, disnake.MessageInteraction):
+  if isinstance(ctx, (disnake.ModalInteraction, disnake.ApplicationCommandInteraction, disnake.MessageInteraction)):
     return await ctx.send(embed=response_embed, ephemeral=True)
   elif isinstance(ctx, disnake.Message):
     return await ctx.reply(embed=response_embed)
@@ -15,8 +17,10 @@ async def generate_error_message(ctx: Union[commands.Context, disnake.abc.Messag
     return await ctx.send(embed=response_embed, delete_after=config.base.error_duration)
 
 async def generate_success_message(ctx: Union[commands.Context, disnake.abc.Messageable, disnake.Message, disnake.MessageInteraction, disnake.ModalInteraction, disnake.ApplicationCommandInteraction], text: str):
+  if hasattr(ctx, "channel") and hasattr(ctx, "guild") and not ctx.channel.permissions_for(ctx.guild.me).send_messages: return
+
   response_embed = disnake.Embed(color=disnake.Color.green(), title=":white_check_mark: | Success", description=text)
-  if isinstance(ctx, disnake.ModalInteraction) or isinstance(ctx, disnake.ApplicationCommandInteraction) or isinstance(ctx, disnake.MessageInteraction):
+  if isinstance(ctx, (disnake.ModalInteraction, disnake.ApplicationCommandInteraction, disnake.MessageInteraction)):
     return await ctx.send(embed=response_embed, ephemeral=True)
   elif isinstance(ctx, disnake.Message):
     return await ctx.reply(embed=response_embed)
@@ -37,11 +41,10 @@ def add_author_footer(embed: disnake.Embed, author: Union[disnake.User, disnake.
 
 async def delete_message(bot: commands.AutoShardedBot, cnt: Any):
   try:
-    if isinstance(cnt, commands.Context):
-      if cnt.guild is not None or cnt.message.author.id == bot.user.id:
-        await cnt.message.delete()
-    else:
-      if cnt.guild is not None or cnt.message.author.id == bot.user.id:
-        await cnt.delete()
+    if cnt.message.author.id == bot.user.id:
+      await cnt.message.delete()
+
+    if hasattr(cnt, "channel") and hasattr(cnt, "guild") and not cnt.channel.permissions_for(cnt.guild.me).manage_messages: return
+    await cnt.message.delete()
   except:
     pass

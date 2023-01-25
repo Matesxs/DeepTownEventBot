@@ -8,7 +8,7 @@ async def get_dt_item(name: str) -> Optional[DTItem]:
   result = await run_query(select(DTItem).filter(DTItem.name == name))
   return result.scalar_one_or_none()
 
-async def set_dt_item(name: str, item_type: ItemType, item_source: ItemSource, value: Optional[float], crafting_time: Optional[float]) -> DTItem:
+async def set_dt_item(name: str, item_type: ItemType, item_source: ItemSource, value: Optional[float], crafting_time: Optional[float], crafting_batch_size: Optional[int]) -> DTItem:
   item = await get_dt_item(name)
   if item is None:
     item = DTItem(name=name)
@@ -18,6 +18,7 @@ async def set_dt_item(name: str, item_type: ItemType, item_source: ItemSource, v
   item.item_source = item_source
   item.value = value if value is not None else 0
   item.crafting_time = crafting_time if (crafting_time is not None and item_type == ItemType.CRAFTABLE) else 0
+  item.crafting_batch_size = crafting_batch_size if (crafting_batch_size is not None and item_type == ItemType.CRAFTABLE) else 1
 
   await run_commit()
   return item

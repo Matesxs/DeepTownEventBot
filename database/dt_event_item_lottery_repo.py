@@ -4,7 +4,7 @@ import disnake
 from sqlalchemy import select, delete, update, or_, and_
 from typing import Optional, List, Dict, Union, Tuple
 
-from database import run_query, run_commit, session, dt_items_repo, guilds_repo, event_participation_repo
+from database import run_query, run_commit, session, dt_items_repo, discord_objects_repo, event_participation_repo
 from database.tables.dt_event_item_lottery import DTEventItemLottery, DTEventItemLotteryGuess, DTEventItemLotteryGuessedItem
 from utils import dt_helpers
 
@@ -24,7 +24,7 @@ async def create_event_item_lottery(guild: disnake.Guild, author: disnake.User, 
                                     reward_item_g3: Optional[dt_items_repo.DTItem]=None, item_g3_amount: int=0,
                                     reward_item_g2: Optional[dt_items_repo.DTItem]=None, item_g2_amount: int=0,
                                     reward_item_g1: Optional[dt_items_repo.DTItem]=None, item_g1_amount: int=0) -> Optional[DTEventItemLottery]:
-  await guilds_repo.get_or_create_discord_guild(guild, True)
+  await discord_objects_repo.get_or_create_discord_guild(guild, True)
 
   year, week = dt_helpers.get_event_index(datetime.datetime.utcnow() + datetime.timedelta(days=7))
   event_specification = await event_participation_repo.get_or_create_event_specification(year, week)

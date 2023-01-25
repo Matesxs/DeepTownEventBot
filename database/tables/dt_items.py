@@ -1,6 +1,7 @@
 import enum
 from sqlalchemy import Column, ForeignKey, String, Float, Integer, Enum
 from sqlalchemy.orm import relationship
+from typing import List
 import math
 
 import database
@@ -11,7 +12,7 @@ class DTItemComponentMapping(database.base):
   target_item_name = Column(ForeignKey("dt_items.name", ondelete="CASCADE"), primary_key=True)
   component_item_name = Column(ForeignKey("dt_items.name", ondelete="CASCADE"), primary_key=True)
 
-  component = relationship("DTItem", primaryjoin="DTItemComponentMapping.component_item_name==DTItem.name", uselist=False)
+  component:"DTItem" = relationship("DTItem", primaryjoin="DTItemComponentMapping.component_item_name==DTItem.name", uselist=False)
   amount = Column(Float, default=0)
 
 class ItemType(enum.Enum):
@@ -46,18 +47,20 @@ class DTItem(database.base):
   item_source = Column(Enum(ItemSource))
   value = Column(Float, default=0)
   crafting_time = Column(Float, default=0)
+  crafting_batch_size = Column(Integer, default=1)
 
-  components_data = relationship("DTItemComponentMapping", primaryjoin="DTItem.name==DTItemComponentMapping.target_item_name", uselist=True)
+  components_data:List[DTItemComponentMapping] = relationship("DTItemComponentMapping", primaryjoin="DTItem.name==DTItemComponentMapping.target_item_name", uselist=True)
 
   @property
-  def cumulative_crafting_time(self) -> float:
-    crafting_time = self.crafting_time
-
+  def cumulative_crafting_time_per_item(self) -> float:
     if self.item_type == ItemType.CRAFTABLE:
-      for component_data in self.components_data:
-        crafting_time += (component_data.component.cumulative_crafting_time * component_data.amount)
+      crafting_time = self.crafting_time / self.crafting_batch_size
 
-    return crafting_time
+      for component_data in self.components_data:
+        crafting_time += (component_data.component.cumulative_crafting_time_per_item * component_data.amount)
+
+      return crafting_time
+    return 0
 
   @property
   def component_value(self) -> float:
@@ -69,19 +72,19 @@ class DTItem(database.base):
     return value
 
   @property
-  def efficiency(self) -> float:
+  def material_efficiency(self) -> float:
     if self.item_type == ItemType.CRAFTABLE:
       return self.value / self.component_value
     else:
       return 1.0
 
   @property
-  def cumulative_efficency(self) -> float:
-    efficiency = self.efficiency
+  def cumulative_material_efficency(self) -> float:
+    efficiency = self.material_efficiency
 
     if self.item_type == ItemType.CRAFTABLE:
       for component_data in self.components_data:
-        efficiency *= component_data.component.efficiency
+        efficiency *= component_data.component.material_efficiency
 
     return efficiency
 

@@ -241,15 +241,6 @@ class System(Base_Cog):
       result_message, result_message_lines = string_manipulation.add_string_until_length(result_message_lines, 1900, "\n")
       await ctx.send(f"Git pull result\n```diff\n{result_message}\n```")
 
-  @commands.command(brief=Strings.system_get_guilds)
-  @commands.is_owner()
-  async def get_guilds(self, ctx: commands.Context):
-    await message_utils.delete_message(self.bot, ctx)
-
-    guild_strings = [f"{g.name} ({g.id})" for g in self.bot.guilds]
-    while guild_strings:
-      final_message, guild_strings = string_manipulation.add_string_until_length(guild_strings, 1900, "\n")
-      await ctx.send(f"**Guild List**\n```\n{final_message}\n```")
 
 def setup(bot):
   bot.add_cog(System(bot))

@@ -29,7 +29,6 @@ class Strings(metaclass=Formatable):
 
   system_logout_brief = "Turn off bot"
   system_git_pull = "Pull latest version of bot from git repository"
-  system_get_guilds = "Get list of guilds that bot is connected to"
 
   # Errors
   error_command_syntax_error = "Unknown syntax of command"
@@ -39,6 +38,7 @@ class Strings(metaclass=Formatable):
   error_not_administrator = "You are not administrator of this guild"
   not_administrator_role_set = "Your guild dont have set administrator role"
   error_not_owner = "You are not owner of this bot"
+  error_not_developer = "You are not developer of this bot"
   error_missing_permission = "You do not have the permissions to use this command."
   error_missing_role = "You do not have {role} role to use this command"
   error_missing_argument = "Missing {argument} argument of command\n{signature}"
@@ -50,6 +50,13 @@ class Strings(metaclass=Formatable):
   error_blocked_dms = "You have blocked DMs"
   error_not_found = "Not found\n{code} - {text}"
   error_unknown_error = "Unknown error when processing command, report this to bot administrator"
+
+  # Discord manager
+  discord_manager_get_guilds_description = "Get list of guild in which is bot connected"
+  discord_manager_get_guilds_message = "**Guild List**\n```\n{message}\n```"
+
+  discord_manager_pull_data_description = "Pull discord informations to database"
+  discord_manager_pull_data_success = "Data pulled"
 
   # Common
   common_ping_brief = "Ping a bot and get his reponse times"
@@ -96,6 +103,7 @@ class Strings(metaclass=Formatable):
   data_manager_add_dt_item_source_param_description = "Source of item"
   data_manager_add_dt_item_value_param_description = "Event value of one item"
   data_manager_add_dt_item_crafting_time_param_description = "Crafting time of item if craftable"
+  data_manager_add_dt_item_crafting_batch_size_param_description = "Number of crafted items per batch if craftable"
   data_manager_add_dt_item_success_craftable = "Set item `{item_type}` `{name}` to value `{value}` and crafting time `{crafting_time}`"
   data_manager_add_dt_item_success_noncraftable = "Set item `{item_type}` `{name}` to value `{value}`"
 

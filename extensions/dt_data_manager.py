@@ -14,8 +14,8 @@ import re
 from features.base_cog import Base_Cog
 from utils import dt_helpers, message_utils, string_manipulation, dt_autocomplete, items_lottery
 from utils.logger import setup_custom_logger
-from config import cooldowns, Strings, config
-from database import event_participation_repo, tracking_settings_repo, dt_guild_repo, dt_guild_member_repo, guilds_repo, dt_items_repo, dt_blacklist_repo
+from config import cooldowns, Strings, config, permissions
+from database import event_participation_repo, tracking_settings_repo, dt_guild_repo, dt_guild_member_repo, dt_items_repo, dt_blacklist_repo
 from features.views.paginator import EmbedView
 
 logger = setup_custom_logger(__name__)
@@ -164,19 +164,20 @@ class DTDataManager(Base_Cog):
 
   @item_commands.sub_command(name="add", description=Strings.data_manager_add_dt_item_description)
   @cooldowns.short_cooldown
-  @commands.is_owner()
+  @permissions.bot_developer()
   async def add_dt_item(self, inter: disnake.CommandInteraction,
                         name: str=commands.Param(description=Strings.data_manager_add_remove_dt_item_name_param_description),
                         item_type: dt_items_repo.ItemType=commands.Param(description=Strings.data_manager_add_dt_item_type_param_description),
                         item_source: dt_items_repo.ItemSource=commands.Param(description=Strings.data_manager_add_dt_item_source_param_description),
                         value: float=commands.Param(default=0.0, min_value=0.0, description=Strings.data_manager_add_dt_item_value_param_description),
-                        crafting_time: float=commands.Param(default=0.0, min_value=0.0, description=Strings.data_manager_add_dt_item_crafting_time_param_description)):
+                        crafting_time: float=commands.Param(default=0.0, min_value=0.0, description=Strings.data_manager_add_dt_item_crafting_time_param_description),
+                        crafting_batch_size: int=commands.Param(default=1, min_value=1, description=Strings.data_manager_add_dt_item_crafting_batch_size_param_description)):
     await inter.response.defer(with_message=True, ephemeral=True)
 
     item_type = dt_items_repo.ItemType(item_type)
     item_source = dt_items_repo.ItemSource(item_source)
 
-    await dt_items_repo.set_dt_item(name, item_type, item_source, value, crafting_time)
+    await dt_items_repo.set_dt_item(name, item_type, item_source, value, crafting_time, crafting_batch_size)
 
     if item_type == dt_items_repo.ItemType.CRAFTABLE:
       await message_utils.generate_success_message(inter, Strings.data_manager_add_dt_item_success_craftable(name=name, item_type=item_type, value=value, crafting_time=crafting_time))
@@ -185,7 +186,7 @@ class DTDataManager(Base_Cog):
 
   @item_commands.sub_command(name="remove", description=Strings.data_manager_remove_dt_item_description)
   @cooldowns.short_cooldown
-  @commands.is_owner()
+  @permissions.bot_developer()
   async def remove_dt_item(self, inter: disnake.CommandInteraction,
                            name: str=commands.Param(description=Strings.data_manager_add_remove_dt_item_name_param_description, autocomplete=dt_autocomplete.autocomplete_item)):
     await inter.response.defer(with_message=True, ephemeral=True)
@@ -219,7 +220,7 @@ class DTDataManager(Base_Cog):
 
   @item_commands.sub_command(name="modify_component", description=Strings.data_manager_modify_dt_item_component_description)
   @cooldowns.short_cooldown
-  @commands.is_owner()
+  @permissions.bot_developer()
   async def modify_dt_item_component(self, inter: disnake.CommandInteraction,
                                   target_item: str=commands.Param(description=Strings.data_manager_modify_dt_item_component_target_item_param_description, autocomplete=dt_autocomplete.autocomplete_craftable_item),
                                   component_item: str=commands.Param(description=Strings.data_manager_modify_dt_item_component_component_item_param_description, autocomplete=dt_autocomplete.autocomplete_item),
@@ -247,7 +248,7 @@ class DTDataManager(Base_Cog):
 
   @item_commands.sub_command(name="remove_components", description=Strings.data_manager_remove_dt_item_components_description)
   @cooldowns.short_cooldown
-  @commands.is_owner()
+  @permissions.bot_developer()
   async def remove_dt_item_components(self, inter: disnake.CommandInteraction,
                                       target_item: str=commands.Param(description=Strings.data_manager_remove_dt_item_components_target_item_param_description, autocomplete=dt_autocomplete.autocomplete_craftable_item)):
     await inter.response.defer(with_message=True, ephemeral=True)
@@ -263,7 +264,7 @@ class DTDataManager(Base_Cog):
 
   @data_manager.sub_command(description=Strings.data_manager_set_event_items_description)
   @cooldowns.short_cooldown
-  @commands.is_owner()
+  @permissions.bot_developer()
   async def set_event_items(self, inter: disnake.CommandInteraction,
                             event_year: Optional[int]=commands.Param(default=None, min_value=0, description=Strings.dt_event_year_param_description),
                             event_week: Optional[int]=commands.Param(default=None, min_value=0, description=Strings.dt_event_week_param_description),
@@ -335,7 +336,7 @@ class DTDataManager(Base_Cog):
 
   @data_manager.sub_command(description=Strings.data_manager_remove_event_items_description)
   @cooldowns.short_cooldown
-  @commands.is_owner()
+  @permissions.bot_developer()
   async def remove_event_items(self, inter: disnake.CommandInteraction,
                                event_year: Optional[int]=commands.Param(default=None, min_value=0, description=Strings.dt_event_year_param_description),
                                event_week: Optional[int]=commands.Param(default=None, min_value=0, description=Strings.dt_event_week_param_description)):
@@ -592,14 +593,6 @@ class DTDataManager(Base_Cog):
 
     if not self.inactive_guild_data_update_task.is_running() and config.data_manager.inactive_guild_data_pull_rate_hours > 0:
       self.inactive_guild_data_update_task.start()
-
-  @commands.Cog.listener()
-  async def on_guild_joined(self, guild: disnake.Guild):
-    await guilds_repo.get_or_create_discord_guild(guild)
-
-  @commands.Cog.listener()
-  async def on_guild_remove(self, guild: disnake.Guild):
-    await guilds_repo.remove_discord_guild(guild.id)
 
 def setup(bot):
   bot.add_cog(DTDataManager(bot))

@@ -65,12 +65,12 @@ class AutoHelp(Base_Cog):
     pass
 
   @question_and_answer.sub_command(name="add", description=Strings.questions_and_answers_add_description)
-  @commands.is_owner()
+  @permissions.bot_developer()
   async def add_question_and_answer(self, inter: disnake.CommandInteraction):
     await inter.response.send_modal(modal=CreateQuestionAndAnswer())
 
   @question_and_answer.sub_command(name="modify", description=Strings.questions_and_answers_modify_description)
-  @commands.is_owner()
+  @permissions.bot_developer()
   async def modify_question_and_answer(self, inter: disnake.CommandInteraction,
                                        question_id: int=commands.Param(description=Strings.questions_and_answers_id_param_description)):
     question_and_answer = await questions_and_answers_repo.get_question_and_answer(question_id)
@@ -79,7 +79,7 @@ class AutoHelp(Base_Cog):
     await inter.response.send_modal(modal=CreateQuestionAndAnswer(question_and_answer.question, question_and_answer.answer))
 
   @question_and_answer.sub_command(name="remove", description=Strings.questions_and_answers_remove_description)
-  @commands.is_owner()
+  @permissions.bot_developer()
   async def remove_question_and_answer(self, inter: disnake.CommandInteraction,
                                        question_id: int=commands.Param(description=Strings.questions_and_answers_id_param_description)):
     await inter.response.defer(with_message=True, ephemeral=True)
@@ -89,7 +89,8 @@ class AutoHelp(Base_Cog):
       await message_utils.generate_error_message(inter, Strings.questions_and_answers_not_found)
 
   @remove_question_and_answer.autocomplete("question_id")
-  async def remove_question_and_answer_question_id_autocomplete(self, _, string: str):
+  @modify_question_and_answer.autocomplete("question_id")
+  async def question_and_answer_question_id_autocomplete(self, _, string: str):
     question_ids = await questions_and_answers_repo.get_all_ids()
     if string is None or not string:
       return question_ids[:25]

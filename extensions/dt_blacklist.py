@@ -3,7 +3,7 @@ import disnake
 from disnake.ext import commands
 from typing import Optional
 
-from config import cooldowns, Strings, config
+from config import cooldowns, Strings, config, permissions
 from features.base_cog import Base_Cog
 from features.views.paginator import EmbedView
 from database import dt_blacklist_repo, dt_user_repo, dt_guild_repo
@@ -47,7 +47,7 @@ class DTBlacklist(Base_Cog):
     return True
 
   @blacklist_commands.sub_command(name="add", description=Strings.blacklist_add_description)
-  @commands.is_owner()
+  @permissions.bot_developer()
   async def blacklist_add(self, inter: disnake.CommandInteraction,
                           identifier: str=commands.Param(description=Strings.blacklist_identifier_param_description, autocomp=dt_autocomplete.autocomplete_identifier_guild_and_user)):
     await inter.response.defer(with_message=True, ephemeral=True)
@@ -67,7 +67,7 @@ class DTBlacklist(Base_Cog):
     await self.add_to_blacklist(inter, block_type, entity_id)
 
   @commands.message_command(name="Add to Blacklist")
-  @commands.is_owner()
+  @permissions.bot_developer()
   async def msg_com_add_to_blacklist(self, inter: disnake.MessageCommandInteraction):
     target_message = inter.target
 
@@ -100,7 +100,7 @@ class DTBlacklist(Base_Cog):
     return await message_utils.generate_error_message(inter, Strings.blacklist_msg_com_add_invalid_target)
 
   @blacklist_commands.sub_command(name="remove", description=Strings.blacklist_remove_description)
-  @commands.is_owner()
+  @permissions.bot_developer()
   async def blacklist_remove(self, inter: disnake.CommandInteraction,
                           type: dt_blacklist_repo.BlacklistType = commands.Param(description=Strings.blacklist_type_param_description),
                           identifier: int = commands.Param(description=Strings.blacklist_identifier_param_description)):

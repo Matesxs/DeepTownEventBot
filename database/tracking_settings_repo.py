@@ -4,7 +4,7 @@ from sqlalchemy import select, delete, or_
 
 from database import run_query, run_commit, session, dt_guild_repo
 from database.tables.tracking_settings import TrackingSettings
-from database.guilds_repo import get_or_create_discord_guild
+from database.discord_objects_repo import get_or_create_discord_guild
 
 async def get_tracking_settings(guild_id: int, dt_guild_id: int) -> Optional[TrackingSettings]:
   result = await run_query(select(TrackingSettings).filter(TrackingSettings.guild_id == str(guild_id), TrackingSettings.dt_guild_id == dt_guild_id))

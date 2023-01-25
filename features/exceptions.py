@@ -6,3 +6,6 @@ class NotGuildAdministrator(Exception):
 
 class NoGuildAdministratorRole(Exception):
   pass
+
+class NotBotDeveloper(Exception):
+  pass

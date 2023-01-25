@@ -23,7 +23,7 @@ class DTEventItemLotteryGuess(database.base):
   id = Column(database.BigIntegerType, primary_key=True, autoincrement=True)
 
   event_id = Column(database.BigIntegerType, ForeignKey("event_specifications.event_id", ondelete="CASCADE"), nullable=False)
-  guild_id = Column(String, ForeignKey("guilds.id", ondelete="CASCADE"), nullable=False, index=True)
+  guild_id = Column(String, ForeignKey("discord_guilds.id", ondelete="CASCADE"), nullable=False, index=True)
   user_id = Column(String, nullable=False, index=True)
 
   guessed_lotery_items = relationship("DTEventItemLotteryGuessedItem", uselist=True)
@@ -37,7 +37,7 @@ class DTEventItemLottery(database.base):
 
   author_id = Column(String, nullable=False, index=True)
 
-  guild_id = Column(String, ForeignKey("guilds.id", ondelete="CASCADE"), nullable=False, index=True)
+  guild_id = Column(String, ForeignKey("discord_guilds.id", ondelete="CASCADE"), nullable=False, index=True)
   lottery_channel_id = Column(String, nullable=True)
   lottery_message_id = Column(String, nullable=True)
 

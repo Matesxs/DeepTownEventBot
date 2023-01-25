@@ -55,6 +55,8 @@ class Errors(Base_Cog):
       await message_utils.generate_error_message(ctx, Strings.error_not_guild_owner)
     elif isinstance(error, commands.NotOwner):
       await message_utils.generate_error_message(ctx, Strings.error_not_owner)
+    elif isinstance(error, exceptions.NotBotDeveloper):
+      await message_utils.generate_error_message(ctx, Strings.error_not_developer)
     elif isinstance(error, commands.MissingPermissions):
       await message_utils.generate_error_message(ctx, Strings.error_missing_permission)
     elif isinstance(error, commands.MissingRole):

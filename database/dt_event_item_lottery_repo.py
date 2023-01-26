@@ -64,7 +64,7 @@ async def remove_lottery(id_:int) -> bool:
   return result.rowcount > 0
 
 async def get_guess(guild_id: int, author_id: int, event_id: int) -> Optional[DTEventItemLotteryGuess]:
-  result = await run_query(select(DTEventItemLotteryGuess).filter(DTEventItemLotteryGuess.guild_id == str(guild_id), DTEventItemLotteryGuess.user_id == str(author_id), DTEventItemLotteryGuess.event_id == event_id))
+  result = await run_query(select(DTEventItemLotteryGuess).filter(DTEventItemLotteryGuess.guild_id == str(guild_id), DTEventItemLotteryGuess.author_id == str(author_id), DTEventItemLotteryGuess.event_id == event_id))
   return result.scalar_one_or_none()
 
 async def get_next_event_guess(guild_id: int, author_id: int) -> Optional[DTEventItemLotteryGuess]:
@@ -139,7 +139,7 @@ async def get_results(lottery: DTEventItemLottery) -> Tuple[int, Optional[Dict[i
 
   results = {}
   for guess in guesses:
-    author_id = guess.user_id
+    author_id = guess.author_id
     guessed_items = list(guess.guessed_lotery_items)
     if not guessed_items: continue
 

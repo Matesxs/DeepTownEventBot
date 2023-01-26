@@ -24,13 +24,14 @@ async def create_event_item_lottery(guild: disnake.Guild, author: disnake.User, 
                                     reward_item_g3: Optional[dt_items_repo.DTItem]=None, item_g3_amount: int=0,
                                     reward_item_g2: Optional[dt_items_repo.DTItem]=None, item_g2_amount: int=0,
                                     reward_item_g1: Optional[dt_items_repo.DTItem]=None, item_g1_amount: int=0) -> Optional[DTEventItemLottery]:
-  await discord_objects_repo.get_or_create_discord_guild(guild, True)
-
   year, week = dt_helpers.get_event_index(datetime.datetime.utcnow() + datetime.timedelta(days=7))
   event_specification = await event_participation_repo.get_or_create_event_specification(year, week)
 
   if await event_lotery_exist(guild.id, author.id, event_specification.event_id):
     return None
+
+  await discord_objects_repo.get_or_create_discord_guild(guild, False)
+  await discord_objects_repo.get_or_create_discord_user(author, True)
 
   await create_lottery_lock.acquire()
   item = DTEventItemLottery(author_id=str(author.id), guild_id=str(guild.id), lottery_channel_id=str(channel.id), event_id=event_specification.event_id,
@@ -92,7 +93,10 @@ async def make_next_event_guess(guild: disnake.Guild, author: disnake.User, item
     # Guess already made so remove old items
     await run_query(delete(DTEventItemLotteryGuessedItem).filter(DTEventItemLotteryGuessedItem.guess_id == guess.id), commit=True)
   else:
-    guess = DTEventItemLotteryGuess(guild_id=str(guild.id), user_id=str(author.id), event_id=event_specification.event_id)
+    await discord_objects_repo.get_or_create_discord_guild(guild, False)
+    await discord_objects_repo.get_or_create_discord_user(author, True)
+
+    guess = DTEventItemLotteryGuess(guild_id=str(guild.id), author_id=str(author.id), event_id=event_specification.event_id)
     session.add(guess)
     await run_commit()
   create_lottery_guess_lock.release()

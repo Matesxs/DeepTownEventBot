@@ -5,7 +5,7 @@ import database
 class QuestionAndAnswerWhitelist(database.base):
   __tablename__ = "questions_and_answers_whitelist"
 
-  guild_id = Column(String, ForeignKey("guilds.id", ondelete="CASCADE"), primary_key=True)
+  guild_id = Column(String, ForeignKey("discord_guilds.id", ondelete="CASCADE"), primary_key=True)
   channel_id = Column(String, primary_key=True)
 
 class QuestionAndAnswer(database.base):

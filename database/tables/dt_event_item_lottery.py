@@ -18,7 +18,7 @@ class DTEventItemLotteryGuessedItem(database.base):
 
 class DTEventItemLotteryGuess(database.base):
   __tablename__ = "dt_event_item_lottery_guesses"
-  __table_args__ = (UniqueConstraint('guild_id', 'user_id', "event_id"),)
+  __table_args__ = (UniqueConstraint('guild_id', 'author_id', "event_id"),)
 
   id = Column(database.BigIntegerType, primary_key=True, autoincrement=True)
 
@@ -59,17 +59,17 @@ class DTEventItemLottery(database.base):
   event_specification = relationship("EventSpecification", uselist=False)
 
   async def get_lotery_channel(self, bot: BaseAutoshardedBot) -> Optional[Union[disnake.TextChannel, disnake.Thread, disnake.VoiceChannel, disnake.PartialMessageable]]:
-    if self.lotery_channel_id is None: return None
+    if self.lottery_channel_id is None: return None
     guild = await self.guild.to_object(bot)
     if guild is None: return None
-    channel = await object_getters.get_or_fetch_channel(guild, int(self.announce_channel_id))
+    channel = await object_getters.get_or_fetch_channel(guild, int(self.lottery_channel_id))
     if not isinstance(channel, (disnake.TextChannel, disnake.Thread, disnake.VoiceChannel, disnake.PartialMessageable)): return None
     return channel
 
   async def get_lotery_message(self, bot: BaseAutoshardedBot) -> Optional[disnake.Message]:
-    if self.lotery_message_id is None: return None
+    if self.lottery_message_id is None: return None
     channel = await self.get_lotery_channel(bot)
-    lotery_message = await object_getters.get_or_fetch_message(bot, channel, int(self.lotery_message_id))
+    lotery_message = await object_getters.get_or_fetch_message(bot, channel, int(self.lottery_message_id))
     return lotery_message
 
   async def get_author(self, bot: BaseAutoshardedBot) -> Optional[disnake.Member]:

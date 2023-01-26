@@ -15,10 +15,6 @@ class DiscordManager(Base_Cog):
   def __init__(self, bot):
     super(DiscordManager, self).__init__(bot, __file__)
 
-    if self.bot.is_ready():
-      loop = asyncio.get_event_loop()
-      loop.create_task(self.pull_data_seq())
-
   @commands.Cog.listener()
   async def on_ready(self):
     await self.pull_data_seq()
@@ -76,14 +72,6 @@ class DiscordManager(Base_Cog):
   @commands.Cog.listener()
   async def on_member_remove(self, member: disnake.Member):
     await discord_objects_repo.remove_discord_user(member.id)
-
-  @commands.Cog.listener()
-  async def on_guild_update(self, _, after: disnake.Guild):
-    await discord_objects_repo.get_or_create_discord_guild(after)
-
-  @commands.Cog.listener()
-  async def on_member_update(self, _, after: disnake.Member):
-    await discord_objects_repo.get_or_create_discord_user(after)
 
 def setup(bot):
   bot.add_cog(DiscordManager(bot))

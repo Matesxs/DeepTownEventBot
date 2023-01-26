@@ -29,6 +29,12 @@ class DTEventItemLotteryGuess(database.base):
   guessed_lotery_items: List[DTEventItemLotteryGuessedItem] = relationship("DTEventItemLotteryGuessedItem", uselist=True)
   event_specification = relationship("EventSpecification", uselist=False)
   user = relationship("DiscordUser", uselist=False)
+  guild = relationship("DiscordGuild", uselist=False)
+
+  async def get_author(self, bot: BaseAutoshardedBot) -> Optional[disnake.Member]:
+    guild = await self.guild.to_object(bot)
+    if guild is None: return None
+    return await object_getters.get_or_fetch_member(guild, int(self.author_id))
 
 class DTEventItemLottery(database.base):
   __tablename__ = "dt_event_item_lotteries"

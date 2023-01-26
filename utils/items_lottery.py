@@ -152,7 +152,7 @@ async def generate_guesses_tables(bot: BaseAutoshardedBot, lottery: dt_event_ite
   data = []
 
   for guess in lottery.guesses:
-    author = await lottery.get_author(bot) or await lottery.user.to_object(bot)
+    author = await guess.get_author(bot)
     if author is None:
       author_name = guess.user.name
     else:

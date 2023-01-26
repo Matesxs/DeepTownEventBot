@@ -77,5 +77,13 @@ class DiscordManager(Base_Cog):
   async def on_member_remove(self, member: disnake.Member):
     await discord_objects_repo.remove_discord_user(member.id)
 
+  @commands.Cog.listener()
+  async def on_guild_update(self, _, after: disnake.Guild):
+    await discord_objects_repo.get_or_create_discord_guild(after)
+
+  @commands.Cog.listener()
+  async def on_member_update(self, _, after: disnake.Member):
+    await discord_objects_repo.get_or_create_discord_user(after)
+
 def setup(bot):
   bot.add_cog(DiscordManager(bot))

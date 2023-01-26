@@ -24,10 +24,11 @@ class DTEventItemLotteryGuess(database.base):
 
   event_id = Column(database.BigIntegerType, ForeignKey("event_specifications.event_id", ondelete="CASCADE"), nullable=False)
   guild_id = Column(String, ForeignKey("discord_guilds.id", ondelete="CASCADE"), nullable=False, index=True)
-  user_id = Column(String, nullable=False, index=True)
+  author_id = Column(String, ForeignKey("discord_users.id", ondelete="CASCADE"), nullable=False, index=True)
 
   guessed_lotery_items = relationship("DTEventItemLotteryGuessedItem", uselist=True)
   event_specification = relationship("EventSpecification", uselist=False)
+  user = relationship("DiscordUser", uselist=False)
 
 class DTEventItemLottery(database.base):
   __tablename__ = "dt_event_item_lotteries"
@@ -35,9 +36,9 @@ class DTEventItemLottery(database.base):
 
   id = Column(database.BigIntegerType, primary_key=True, unique=True, index=True, autoincrement=True)
 
-  author_id = Column(String, nullable=False, index=True)
-
+  author_id = Column(String, ForeignKey("discord_users.id", ondelete="CASCADE"), nullable=False, index=True)
   guild_id = Column(String, ForeignKey("discord_guilds.id", ondelete="CASCADE"), nullable=False, index=True)
+
   lottery_channel_id = Column(String, nullable=True)
   lottery_message_id = Column(String, nullable=True)
 
@@ -53,13 +54,8 @@ class DTEventItemLottery(database.base):
   guessed_1_reward_item_name = Column(String, ForeignKey("dt_items.name", ondelete="SET NULL"), nullable=True)
   guessed_1_item_reward_amount = Column(Integer, default=0, nullable=False)
 
-  # guessed_4_reward_item = relationship("DTItem", uselist=False, primaryjoin="DTEventItemLottery.guessed_4_reward_item_name==DTItem.name")
-  # guessed_3_reward_item = relationship("DTItem", uselist=False, primaryjoin="DTEventItemLottery.guessed_3_reward_item_name==DTItem.name")
-  # guessed_2_reward_item = relationship("DTItem", uselist=False, primaryjoin="DTEventItemLottery.guessed_2_reward_item_name==DTItem.name")
-  # guessed_1_reward_item = relationship("DTItem", uselist=False, primaryjoin="DTEventItemLottery.guessed_1_reward_item_name==DTItem.name")
-
   guild = relationship("DiscordGuild", uselist=False, back_populates="lotteries")
-  # guesses = relationship("DTEventItemLotteryGuess", uselist=True, primaryjoin="and_(foreign(DTEventItemLottery.guild_id) == DTEventItemLotteryGuess.guild_id, foreign(DTEventItemLottery.event_id) == DTEventItemLotteryGuess.event_id)", viewonly=True)
+  user = relationship("DiscordUser", uselist=False)
   event_specification = relationship("EventSpecification", uselist=False)
 
   async def get_lotery_channel(self, bot: BaseAutoshardedBot) -> Optional[Union[disnake.TextChannel, disnake.Thread, disnake.VoiceChannel, disnake.PartialMessageable]]:

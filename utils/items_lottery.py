@@ -36,7 +36,7 @@ async def process_loterries(bot: BaseAutoshardedBot):
       except:
         pass
 
-    author = await lottery.get_author(bot)
+    author = await lottery.get_author(bot) or await lottery.user.to_object(bot)
 
     if result[1] is None:
       message = f"```\nItems guess lottery result for event `{lottery.event_specification.event_year} {lottery.event_specification.event_week}` by {author.display_name if author is not None else '*Unknown*'}\nParticipants: {result[0]}\n**This event didn't have items set so there are no winners**\n```"

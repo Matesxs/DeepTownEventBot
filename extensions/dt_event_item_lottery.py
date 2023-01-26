@@ -133,15 +133,12 @@ class DTEventItemLottery(Base_Cog):
 
     lottery = await dt_event_item_lottery_repo.get_event_item_lottery(lottery_id)
     if lottery is None:
-      message = await inter.original_message()
-      await message_utils.delete_message(self.bot, message)
+      await message_utils.delete_message(self.bot, inter.message)
       return await message_utils.generate_error_message(inter, Strings.lottery_button_listener_invalid_lottery)
 
     if command == "remove":
       if inter.author.id == int(lottery.author_id) or (int(lottery.author_id) != self.bot.owner_id and (await permissions.predicate_is_guild_administrator(inter))):
-        message = await inter.original_message()
-        await message_utils.delete_message(self.bot, message)
-
+        await message_utils.delete_message(self.bot, inter.message)
         await dt_event_item_lottery_repo.remove_lottery(lottery.id)
         await message_utils.generate_success_message(inter, Strings.lottery_button_listener_removed)
       else:

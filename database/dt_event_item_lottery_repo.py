@@ -122,7 +122,7 @@ async def clear_old_guesses() -> int:
     result = await run_query(delete(DTEventItemLotteryGuess).filter(DTEventItemLotteryGuess.event_id != next_event_specification.event_id), commit=True)
   return result.rowcount
 
-async def get_results(lottery: DTEventItemLottery) -> Tuple[int, Optional[Dict[int, List[int]]]]:
+async def get_results(lottery: DTEventItemLottery) -> Tuple[int, Optional[Dict[int, List[discord_objects_repo.DiscordUser]]]]:
   """
   :param lottery: Lottery object
   :return: number of guesses, dict of number of right guesses and coresponding guesser ids
@@ -139,7 +139,6 @@ async def get_results(lottery: DTEventItemLottery) -> Tuple[int, Optional[Dict[i
 
   results = {}
   for guess in guesses:
-    author_id = guess.author_id
     guessed_items = list(guess.guessed_lotery_items)
     if not guessed_items: continue
 
@@ -149,8 +148,8 @@ async def get_results(lottery: DTEventItemLottery) -> Tuple[int, Optional[Dict[i
     if guessed_right == 0: continue
 
     if guessed_right not in results.keys():
-      results[guessed_right] = [int(author_id)]
+      results[guessed_right] = [guess.user]
     else:
-      results[guessed_right].append(int(author_id))
+      results[guessed_right].append(guess.user)
 
   return len(guesses), results

@@ -1,6 +1,6 @@
 import datetime
 import disnake
-from typing import Optional, Union
+from typing import Optional, Union, List
 from sqlalchemy import String, Integer, ForeignKey, Column, UniqueConstraint, DateTime
 from sqlalchemy.orm import relationship
 
@@ -26,7 +26,7 @@ class DTEventItemLotteryGuess(database.base):
   guild_id = Column(String, ForeignKey("discord_guilds.id", ondelete="CASCADE"), nullable=False, index=True)
   author_id = Column(String, ForeignKey("discord_users.id", ondelete="CASCADE"), nullable=False, index=True)
 
-  guessed_lotery_items = relationship("DTEventItemLotteryGuessedItem", uselist=True)
+  guessed_lotery_items: List[DTEventItemLotteryGuessedItem] = relationship("DTEventItemLotteryGuessedItem", uselist=True)
   event_specification = relationship("EventSpecification", uselist=False)
   user = relationship("DiscordUser", uselist=False)
 
@@ -56,6 +56,7 @@ class DTEventItemLottery(database.base):
 
   guild = relationship("DiscordGuild", uselist=False, back_populates="lotteries")
   user = relationship("DiscordUser", uselist=False)
+  guesses: List["DTEventItemLotteryGuess"] = relationship("DTEventItemLotteryGuess", uselist=True, primaryjoin="and_(foreign(DTEventItemLottery.guild_id) == DTEventItemLotteryGuess.guild_id, foreign(DTEventItemLottery.event_id) == DTEventItemLotteryGuess.event_id)", viewonly=True)
   event_specification = relationship("EventSpecification", uselist=False)
 
   async def get_lotery_channel(self, bot: BaseAutoshardedBot) -> Optional[Union[disnake.TextChannel, disnake.Thread, disnake.VoiceChannel, disnake.PartialMessageable]]:

@@ -1,3 +1,4 @@
+import asyncio
 import disnake
 from typing import Optional
 from disnake.ext import commands
@@ -143,7 +144,9 @@ class DTEventItemLottery(Base_Cog):
       else:
         await message_utils.generate_error_message(inter, Strings.lottery_button_listener_not_author)
     elif command == "show":
-      await message_utils.generate_error_message(inter, "*WIP*")
+      for table in (await items_lottery.generate_guesses_tables(self.bot, lottery)):
+        await inter.send(f"```\n{table}\n```", ephemeral=True)
+        await asyncio.sleep(0.05)
     elif command == "repeat":
       if inter.author.id == int(lottery.author_id) or (int(lottery.author_id) != self.bot.owner_id and (await permissions.predicate_is_guild_administrator(inter))):
         message = await inter.original_response()

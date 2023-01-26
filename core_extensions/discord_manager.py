@@ -15,10 +15,6 @@ class DiscordManager(Base_Cog):
   def __init__(self, bot):
     super(DiscordManager, self).__init__(bot, __file__)
 
-  @commands.Cog.listener()
-  async def on_ready(self):
-    await self.pull_data_seq()
-
   async def pull_data_seq(self):
     logger.info("Starting discord data pull")
 

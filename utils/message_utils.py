@@ -41,7 +41,11 @@ def add_author_footer(embed: disnake.Embed, author: Union[disnake.User, disnake.
 
 async def delete_message(bot: commands.AutoShardedBot, cnt: Any):
   try:
-    if cnt.guild is not None or cnt.message.author.id == bot.user.id:
-      await cnt.message.delete()
+    if isinstance(cnt, commands.Context):
+      if cnt.guild is not None or cnt.message.author.id == bot.user.id:
+        await cnt.message.delete()
+    else:
+      if cnt.guild is not None or cnt.message.author.id == bot.user.id:
+        await cnt.delete()
   except:
     pass

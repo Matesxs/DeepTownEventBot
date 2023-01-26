@@ -8,7 +8,7 @@ from config.strings import Strings
 from features.base_bot import BaseAutoshardedBot
 from database import dt_event_item_lottery_repo, discord_objects_repo
 from utils.logger import setup_custom_logger
-from utils import string_manipulation, object_getters, dt_helpers, message_utils
+from utils import string_manipulation, dt_helpers, message_utils
 
 logger = setup_custom_logger(__name__)
 

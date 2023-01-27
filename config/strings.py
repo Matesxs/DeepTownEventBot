@@ -273,8 +273,11 @@ class Strings(metaclass=Formatable):
   lottery_create_failed_to_get_lottery_message = "INTERNAL ERROR: Failed to get lottery message, lottery not created, message with it was maybe send but it's not valid"
 
   lottery_guess_description = "Make a guess for next event items"
+  lottery_guess_for_description = "Make a guess for next event items for someone else"
   lottery_guess_item_param_description = "Item guess {item_number}"
-  lottery_guess_item_duplicates = "Guess failed, invalid items - duplicates"
+  lottery_guess_for_author_param_description = "User you are making guess for"
+  lottery_guess_no_items = "You provided no items"
+  lottery_guess_item_duplicates = "Detected item duplicates"
   lottery_guess_registered = "Guess registered for event `{event_year} {event_week}`\n`{items}`"
 
   lottery_update_description = "Update all lotteries, closed the ended ones and send results"

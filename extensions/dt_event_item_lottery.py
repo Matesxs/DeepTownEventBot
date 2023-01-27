@@ -12,6 +12,44 @@ from database import dt_items_repo, dt_event_item_lottery_repo
 
 logger = setup_custom_logger(__name__)
 
+async def make_guess(inter: disnake.CommandInteraction,
+                     author: disnake.Member,
+                     guess_item_1: Optional[str],
+                     guess_item_2: Optional[str],
+                     guess_item_3: Optional[str],
+                     guess_item_4: Optional[str]):
+  items = []
+  if guess_item_1 is not None:
+    guess_item_1_ = await dt_items_repo.get_dt_item(guess_item_1)
+    if guess_item_1_ is None:
+      return await message_utils.generate_error_message(inter, Strings.lottery_invalid_item(item_name=guess_item_1))
+    items.append(guess_item_1_)
+  if guess_item_2 is not None:
+    guess_item_2_ = await dt_items_repo.get_dt_item(guess_item_2)
+    if guess_item_2_ is None:
+      return await message_utils.generate_error_message(inter, Strings.lottery_invalid_item(item_name=guess_item_2))
+    items.append(guess_item_2_)
+  if guess_item_3 is not None:
+    guess_item_3_ = await dt_items_repo.get_dt_item(guess_item_3)
+    if guess_item_3_ is None:
+      return await message_utils.generate_error_message(inter, Strings.lottery_invalid_item(item_name=guess_item_3))
+    items.append(guess_item_3_)
+  if guess_item_4 is not None:
+    guess_item_4_ = await dt_items_repo.get_dt_item(guess_item_4)
+    if guess_item_4_ is None:
+      return await message_utils.generate_error_message(inter, Strings.lottery_invalid_item(item_name=guess_item_4))
+    items.append(guess_item_4_)
+
+  if not items:
+    return await message_utils.generate_error_message(inter, Strings.lottery_guess_no_items)
+
+  guess = await dt_event_item_lottery_repo.make_next_event_guess(author, items)
+  if guess is None:
+    return await message_utils.generate_error_message(inter, Strings.lottery_guess_item_duplicates)
+
+  guessed_item_names_string = ", ".join([i.name for i in items])
+  await message_utils.generate_success_message(inter, Strings.lottery_guess_registered(event_year=guess.event_specification.event_year, event_week=guess.event_specification.event_week, items=guessed_item_names_string))
+
 class DTEventItemLottery(Base_Cog):
   def __init__(self, bot):
     super(DTEventItemLottery, self).__init__(bot, __file__)
@@ -77,34 +115,21 @@ class DTEventItemLottery(Base_Cog):
                                guess_item_4: Optional[str] = commands.Param(default=None, description=Strings.lottery_guess_item_param_description(item_number=4), autocomplete=dt_autocomplete.autocomplete_item)):
     await inter.response.defer(with_message=True, ephemeral=True)
 
-    items = []
-    if guess_item_1 is not None:
-      guess_item_1_ = await dt_items_repo.get_dt_item(guess_item_1)
-      if guess_item_1_ is None:
-        return await message_utils.generate_error_message(inter, Strings.lottery_invalid_item(item_name=guess_item_1))
-      items.append(guess_item_1_)
-    if guess_item_2 is not None:
-      guess_item_2_ = await dt_items_repo.get_dt_item(guess_item_2)
-      if guess_item_2_ is None:
-        return await message_utils.generate_error_message(inter, Strings.lottery_invalid_item(item_name=guess_item_2))
-      items.append(guess_item_2_)
-    if guess_item_3 is not None:
-      guess_item_3_ = await dt_items_repo.get_dt_item(guess_item_3)
-      if guess_item_3_ is None:
-        return await message_utils.generate_error_message(inter, Strings.lottery_invalid_item(item_name=guess_item_3))
-      items.append(guess_item_3_)
-    if guess_item_4 is not None:
-      guess_item_4_ = await dt_items_repo.get_dt_item(guess_item_4)
-      if guess_item_4_ is None:
-        return await message_utils.generate_error_message(inter, Strings.lottery_invalid_item(item_name=guess_item_4))
-      items.append(guess_item_4_)
+    await make_guess(inter, inter.author, guess_item_1, guess_item_2, guess_item_3, guess_item_4)
 
-    guess = await dt_event_item_lottery_repo.make_next_event_guess(inter.author, items)
-    if guess is None:
-      return await message_utils.generate_error_message(inter, Strings.lottery_guess_item_duplicates)
+  @lottery_command.sub_command(name="guess_for", description=Strings.lottery_guess_for_description)
+  @commands.guild_only()
+  @permissions.guild_administrator()
+  @cooldowns.long_cooldown
+  async def lottery_make_guess_for(self, inter: disnake.CommandInteraction,
+                                   author: disnake.Member = commands.Param(description=Strings.lottery_guess_for_author_param_description),
+                                   guess_item_1: Optional[str] = commands.Param(default=None, description=Strings.lottery_guess_item_param_description(item_number=1), autocomplete=dt_autocomplete.autocomplete_item),
+                                   guess_item_2: Optional[str] = commands.Param(default=None, description=Strings.lottery_guess_item_param_description(item_number=2), autocomplete=dt_autocomplete.autocomplete_item),
+                                   guess_item_3: Optional[str] = commands.Param(default=None, description=Strings.lottery_guess_item_param_description(item_number=3), autocomplete=dt_autocomplete.autocomplete_item),
+                                   guess_item_4: Optional[str] = commands.Param(default=None, description=Strings.lottery_guess_item_param_description(item_number=4), autocomplete=dt_autocomplete.autocomplete_item)):
+    await inter.response.defer(with_message=True, ephemeral=True)
 
-    guessed_item_names_string = ", ".join([i.name for i in items])
-    await message_utils.generate_success_message(inter, Strings.lottery_guess_registered(event_year=guess.event_specification.event_year, event_week=guess.event_specification.event_week, items=guessed_item_names_string))
+    await make_guess(inter, author, guess_item_1, guess_item_2, guess_item_3, guess_item_4)
 
   @lottery_command.sub_command(name="update", description=Strings.lottery_update_description)
   @commands.is_owner()

@@ -65,7 +65,7 @@ class Strings(metaclass=Formatable):
 
   common_invite_brief = "Send invite link of the bot"
 
-  common_pool_description = "Create pool"
+  common_pool_description = "Create poll"
   common_poll_duration_param_description = "Duration of poll in minutes"
 
   # Global Deep Town stuff

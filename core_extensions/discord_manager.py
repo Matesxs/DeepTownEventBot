@@ -23,7 +23,7 @@ class DiscordManager(Base_Cog):
     await discord_objects_repo.run_commit()
 
     for guild in self.bot.guilds:
-      futures = [discord_objects_repo.get_or_create_discord_user(member, comit=False) for member in guild.members if not member.bot and not member.system]
+      futures = [discord_objects_repo.get_or_create_discord_member(member, comit=False) for member in guild.members if not member.bot and not member.system]
       await asyncio.gather(*futures)
       await asyncio.sleep(0.001)
     await discord_objects_repo.run_commit()
@@ -54,7 +54,8 @@ class DiscordManager(Base_Cog):
     await discord_objects_repo.get_or_create_discord_guild(guild)
 
     for member in guild.members:
-      await discord_objects_repo.get_or_create_discord_user(member, comit=False)
+      if member.bot or member.system: continue
+      await discord_objects_repo.get_or_create_discord_member(member, comit=False)
     await discord_objects_repo.run_commit()
 
   @commands.Cog.listener()
@@ -63,11 +64,13 @@ class DiscordManager(Base_Cog):
 
   @commands.Cog.listener()
   async def on_member_join(self, member: disnake.Member):
-    await discord_objects_repo.get_or_create_discord_user(member)
+    if member.bot or member.system: return
+    await discord_objects_repo.get_or_create_discord_member(member)
 
   @commands.Cog.listener()
   async def on_member_remove(self, member: disnake.Member):
-    await discord_objects_repo.remove_discord_user(member.id)
+    if member.bot or member.system: return
+    await discord_objects_repo.remove_discord_member(member.guild.id, member.id)
 
 def setup(bot):
   bot.add_cog(DiscordManager(bot))

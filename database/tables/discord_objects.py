@@ -1,10 +1,11 @@
 import disnake
 from typing import Optional, Union
-from sqlalchemy import Column, String
+from sqlalchemy import Column, String, ForeignKey
 from sqlalchemy.orm import relationship
 
 import database
 from features.base_bot import BaseAutoshardedBot
+from utils import object_getters
 
 class DiscordUser(database.base):
   __tablename__ = "discord_users"
@@ -14,7 +15,7 @@ class DiscordUser(database.base):
 
   @classmethod
   def from_user(cls, user: Union[disnake.Member, disnake.User]):
-    return cls(id=user.id, name=user.name)
+    return cls(id=str(user.id), name=user.name)
 
   def update(self, user: Union[disnake.Member, disnake.User]):
     self.name = user.name
@@ -24,6 +25,29 @@ class DiscordUser(database.base):
     if user is None:
       user = await bot.fetch_user(int(self.id))
     return user
+
+class DiscordMember(database.base):
+  __tablename__ = "discord_members"
+
+  user_id = Column(String, ForeignKey("discord_users.id", ondelete="CASCADE"), primary_key=True)
+  guild_id = Column(String, ForeignKey("discord_guilds.id", ondelete="CASCADE"), primary_key=True)
+
+  name = Column(String, nullable=False, index=True)
+
+  user = relationship("DiscordUser", uselist=False)
+  guild = relationship("DiscordGuild", uselist=False, back_populates="members")
+
+  @classmethod
+  def from_member(cls, member: disnake.Member):
+    return cls(user_id=str(member.id), guild_id=str(member.guild.id), name=member.display_name)
+
+  def update(self, member: disnake.Member):
+    self.name = member.display_name
+
+  async def to_object(self, bot: BaseAutoshardedBot) -> Optional[disnake.Member]:
+    guild = await self.guild.to_object(bot)
+    if guild is None: return None
+    return await object_getters.get_or_fetch_member(guild, int(self.user_id))
 
 class DiscordGuild(database.base):
   __tablename__ = "discord_guilds"
@@ -35,6 +59,7 @@ class DiscordGuild(database.base):
 
   tracking_settings = relationship("TrackingSettings", uselist=True, back_populates="guild")
   lotteries = relationship("DTEventItemLottery", uselist=True, back_populates="guild")
+  members = relationship("DiscordMember", uselist=True, back_populates="guild")
 
   @classmethod
   def from_guild(cls, guild: disnake.Guild):

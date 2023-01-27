@@ -57,7 +57,7 @@ class DTEventItemLottery(Base_Cog):
       guessed_1_reward_item = guessed_1_reward_item_
 
     orig_message = await inter.original_message()
-    lottery = await dt_event_item_lottery_repo.create_event_item_lottery(inter.guild, inter.author, orig_message.channel,
+    lottery = await dt_event_item_lottery_repo.create_event_item_lottery(inter.author, orig_message.channel,
                                                                          guessed_4_reward_item, guessed_4_reward_item_amount,
                                                                          guessed_3_reward_item, guessed_3_reward_item_amount,
                                                                          guessed_2_reward_item, guessed_2_reward_item_amount,
@@ -99,7 +99,7 @@ class DTEventItemLottery(Base_Cog):
         return await message_utils.generate_error_message(inter, Strings.lottery_invalid_item(item_name=guess_item_4))
       items.append(guess_item_4_)
 
-    guess = await dt_event_item_lottery_repo.make_next_event_guess(inter.guild, inter.author, items)
+    guess = await dt_event_item_lottery_repo.make_next_event_guess(inter.author, items)
     if guess is None:
       return await message_utils.generate_error_message(inter, Strings.lottery_guess_item_duplicates)
 

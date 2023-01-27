@@ -4,7 +4,7 @@ from disnake.ext import commands
 
 from features.base_cog import Base_Cog
 from database import discord_objects_repo
-from config import permissions, cooldowns
+from config import permissions, cooldowns, config
 from config.strings import Strings
 from utils import message_utils, string_manipulation
 from utils.logger import setup_custom_logger
@@ -15,18 +15,37 @@ class DiscordManager(Base_Cog):
   def __init__(self, bot):
     super(DiscordManager, self).__init__(bot, __file__)
 
+    if config.base.sync_discord:
+      if self.bot.is_ready():
+        loop = asyncio.get_event_loop()
+        loop.create_task(self.pull_data_seq())
+
+  @commands.Cog.listener()
+  async def on_ready(self):
+    if config.base.sync_discord:
+      await self.pull_data_seq()
+
   async def pull_data_seq(self):
     logger.info("Starting discord data pull")
 
-    futures = [discord_objects_repo.get_or_create_discord_guild(g, commit=False) async for g in self.bot.fetch_guilds(limit=None)]
-    await asyncio.gather(*futures)
-    await discord_objects_repo.run_commit()
+    discord_guild_object_ids = []
+    async for guild in self.bot.fetch_guilds(limit=None):
+      guild_object = await discord_objects_repo.get_or_create_discord_guild(guild)
+      discord_guild_object_ids.append(guild_object.id)
 
-    for guild in self.bot.guilds:
-      futures = [discord_objects_repo.get_or_create_discord_member(member, comit=False) for member in guild.members if not member.bot and not member.system]
-      await asyncio.gather(*futures)
-      await asyncio.sleep(0.001)
-    await discord_objects_repo.run_commit()
+      discord_member_object_ids = []
+      async for member in guild.fetch_members(limit=None):
+        await asyncio.sleep(0.1)
+        if member.bot or member.system: continue
+
+        member_object = await discord_objects_repo.get_or_create_discord_member(member, comit=False)
+        discord_member_object_ids.append(member_object.user_id)
+
+      await discord_objects_repo.run_commit()
+      await discord_objects_repo.discord_member_cleanup(guild.id, discord_member_object_ids)
+
+    await discord_objects_repo.discord_guild_cleanup(discord_guild_object_ids)
+    await discord_objects_repo.discord_user_cleanup()
     logger.info("Discord data pull finished")
 
   @commands.slash_command()

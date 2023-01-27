@@ -38,7 +38,8 @@ async def process_loterries(bot: BaseAutoshardedBot):
 
     author = await lottery.get_author(bot)
     if author is None:
-      author_name = lottery.user.name
+      author = await discord_objects_repo.get_discord_member(int(lottery.guild_id), int(lottery.author_id))
+      author_name = author.name
     else:
       author_name = author.display_name
 
@@ -94,7 +95,8 @@ async def process_loterries(bot: BaseAutoshardedBot):
           for user in result[1][position]:
             guess_author = await user.to_object(bot)
             if guess_author is None:
-              guess_author_name = user.name
+              guess_author = await discord_objects_repo.get_discord_member(int(lottery.guild_id), int(user.id))
+              guess_author_name = guess_author.name
             else:
               guess_author_name = guess_author.display_name
             winner_names.append(string_manipulation.truncate_string(guess_author_name, 15))
@@ -168,7 +170,8 @@ async def generate_guesses_tables(bot: BaseAutoshardedBot, lottery: dt_event_ite
   for guess in lottery.guesses:
     author = await guess.get_author(bot)
     if author is None:
-      author_name = guess.user.name
+      author = await discord_objects_repo.get_discord_member(int(guess.guild_id), int(guess.author_id))
+      author_name = author.name
     else:
       author_name = author.display_name
 

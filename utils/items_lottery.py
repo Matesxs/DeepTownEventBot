@@ -44,10 +44,15 @@ async def process_loterries(bot: BaseAutoshardedBot):
 
     if result[1] is None:
       message = f"Items guess lottery result for event `{lottery.event_specification.event_year} {lottery.event_specification.event_week}` by {author_name}\nParticipants: {result[0]}\n**This event didn't have items set so there are no winners**"
+      original_destination = destination.jump_url if isinstance(destination, disnake.Message) else None
+
       if isinstance(destination, disnake.Message):
-        await destination.reply(message)
+        destination = await destination.reply(message)
       else:
-        await destination.send(message)
+        destination = await destination.send(message)
+
+      if original_destination is not None:
+        await destination.edit(components=disnake.ui.Button(label="Jump to lottery", url=original_destination, style=disnake.ButtonStyle.primary))
     else:
       table_data = []
 
@@ -55,55 +60,64 @@ async def process_loterries(bot: BaseAutoshardedBot):
       positions.sort(reverse=True)
       if not positions:
         message = f"Event items lottery result for `{lottery.event_specification.event_year} {lottery.event_specification.event_week}` by {author_name}\nParticipants: {result[0]}\n**There are no winners**"
+        original_destination = destination.jump_url if isinstance(destination, disnake.Message) else None
+
         if isinstance(destination, disnake.Message):
-          await destination.reply(message)
+          destination = await destination.reply(message)
         else:
-          await destination.send(message)
-        return
+          destination = await destination.send(message)
 
-      for position in positions:
-        if position == 1:
-          if lottery.guessed_1_reward_item_name is None or lottery.guessed_1_item_reward_amount <= 0: continue
-          reward_item_amount = lottery.guessed_1_item_reward_amount
-          reward_item_name = lottery.guessed_1_reward_item_name
-        elif position == 2:
-          if lottery.guessed_2_reward_item_name is None or lottery.guessed_2_item_reward_amount <= 0: continue
-          reward_item_amount = lottery.guessed_2_item_reward_amount
-          reward_item_name = lottery.guessed_2_reward_item_name
-        elif position == 3:
-          if lottery.guessed_3_reward_item_name is None or lottery.guessed_3_item_reward_amount <= 0: continue
-          reward_item_amount = lottery.guessed_3_item_reward_amount
-          reward_item_name = lottery.guessed_3_reward_item_name
-        elif position == 4:
-          if lottery.guessed_4_reward_item_name is None or lottery.guessed_4_item_reward_amount <= 0: continue
-          reward_item_amount = lottery.guessed_4_item_reward_amount
-          reward_item_name = lottery.guessed_4_reward_item_name
-        else:
-          continue
-
-        winner_names = []
-        for user in result[1][position]:
-          guess_author = await user.to_object(bot)
-          if guess_author is None:
-            guess_author_name = user.name
+        if original_destination is not None:
+          await destination.edit(components=disnake.ui.Button(label="Jump to lottery", url=original_destination, style=disnake.ButtonStyle.primary))
+      else:
+        for position in positions:
+          if position == 1:
+            if lottery.guessed_1_reward_item_name is None or lottery.guessed_1_item_reward_amount <= 0: continue
+            reward_item_amount = lottery.guessed_1_item_reward_amount
+            reward_item_name = lottery.guessed_1_reward_item_name
+          elif position == 2:
+            if lottery.guessed_2_reward_item_name is None or lottery.guessed_2_item_reward_amount <= 0: continue
+            reward_item_amount = lottery.guessed_2_item_reward_amount
+            reward_item_name = lottery.guessed_2_reward_item_name
+          elif position == 3:
+            if lottery.guessed_3_reward_item_name is None or lottery.guessed_3_item_reward_amount <= 0: continue
+            reward_item_amount = lottery.guessed_3_item_reward_amount
+            reward_item_name = lottery.guessed_3_reward_item_name
+          elif position == 4:
+            if lottery.guessed_4_reward_item_name is None or lottery.guessed_4_item_reward_amount <= 0: continue
+            reward_item_amount = lottery.guessed_4_item_reward_amount
+            reward_item_name = lottery.guessed_4_reward_item_name
           else:
-            guess_author_name = guess_author.display_name
-          winner_names.append(string_manipulation.truncate_string(guess_author_name, 15))
+            continue
 
-        reward = reward_item_amount / len(winner_names)
-        table_data.append((position, f"{string_manipulation.format_number(reward)} {reward_item_name}", "\n".join(winner_names)))
+          winner_names = []
+          for user in result[1][position]:
+            guess_author = await user.to_object(bot)
+            if guess_author is None:
+              guess_author_name = user.name
+            else:
+              guess_author_name = guess_author.display_name
+            winner_names.append(string_manipulation.truncate_string(guess_author_name, 15))
 
-      table_lines = [f"Event items lottery result for `{lottery.event_specification.event_year} {lottery.event_specification.event_week}` by {author_name}",
-                     f"Participants: {result[0]}",
-                     *("```\n" + table2ascii(["Guessed", "Reward each", "Winners"], table_data, alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.LEFT], first_col_heading=True) + "\n```").split("\n")]
-      while table_lines:
-        final_string, table_lines = string_manipulation.add_string_until_length(table_lines, 2000, "\n")
-        if isinstance(destination, disnake.Message):
-          destination = await destination.reply(final_string)
-        else:
-          await destination.send(final_string)
-        await asyncio.sleep(0.005)
+          reward = reward_item_amount / len(winner_names)
+          table_data.append((position, f"{string_manipulation.format_number(reward)} {reward_item_name}", "\n".join(winner_names)))
 
+        table_lines = [f"Event items lottery result for `{lottery.event_specification.event_year} {lottery.event_specification.event_week}` by {author_name}",
+                       f"Participants: {result[0]}",
+                       *("```\n" + table2ascii(["Guessed", "Reward each", "Winners"], table_data, alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.LEFT], first_col_heading=True) + "\n```").split("\n")]
+
+        original_destination = destination.jump_url if isinstance(destination, disnake.Message) else None
+
+        while table_lines:
+          final_string, table_lines = string_manipulation.add_string_until_length(table_lines, 1900, "\n")
+          if isinstance(destination, disnake.Message):
+            destination = await destination.reply(final_string)
+          else:
+            destination = await destination.send(final_string)
+          await asyncio.sleep(0.005)
+
+        if isinstance(destination, disnake.Message) and original_destination is not None:
+          await destination.edit(components=disnake.ui.Button(label="Jump to lottery", url=original_destination, style=disnake.ButtonStyle.primary))
 
 
   not_closed_lotteries = await dt_event_item_lottery_repo.get_all_active_lotteries()

@@ -75,8 +75,7 @@ class Strings(metaclass=Formatable):
   dt_guild_not_found = "Deep Town guild with identifier `{identifier}` not found in database"
   dt_user_not_found = "Deep Town user with identifier `{identifier}` not found in database"
   dt_event_data_not_found = "Not found event data for event `{year}` `{week}`"
-  dt_event_year_param_description = "Event year"
-  dt_event_week_param_description = "Event week"
+  dt_event_identifier_param_description = "Event identificator in format 'Event_year Event_week'"
 
   # Data manager
   data_manager_update_guild_description = "Update data of selected guild in database"

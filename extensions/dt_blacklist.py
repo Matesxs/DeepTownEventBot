@@ -1,7 +1,7 @@
 import asyncio
 import disnake
 from disnake.ext import commands
-from typing import Optional
+from typing import Optional, Tuple
 
 from config import cooldowns, Strings, config, permissions
 from features.base_cog import Base_Cog
@@ -49,14 +49,13 @@ class DTBlacklist(Base_Cog):
   @blacklist_commands.sub_command(name="add", description=Strings.blacklist_add_description)
   @permissions.bot_developer()
   async def blacklist_add(self, inter: disnake.CommandInteraction,
-                          identifier: str=commands.Param(description=Strings.blacklist_identifier_param_description, autocomp=dt_autocomplete.autocomplete_identifier_guild_and_user)):
+                          identifier=commands.Param(description=Strings.blacklist_identifier_param_description, autocomp=dt_autocomplete.autocomplete_identifier_guild_and_user, converter=dt_autocomplete.guild_user_identifier_converter)):
     await inter.response.defer(with_message=True, ephemeral=True)
 
-    specifier = dt_autocomplete.identifier_to_specifier(identifier)
-    if specifier is None:
+    if identifier is None:
       return await message_utils.generate_error_message(inter, Strings.blacklist_add_invalid_identifier)
 
-    block_type, entity_id = specifier
+    block_type, entity_id = identifier
     if block_type == "USER":
       block_type = dt_blacklist_repo.BlacklistType.USER
     elif block_type == "GUILD":
@@ -139,7 +138,7 @@ class DTBlacklist(Base_Cog):
   @blacklist_commands.sub_command(description=Strings.blacklist_report_cheater_description)
   @cooldowns.long_cooldown
   async def report_cheater(self, inter: disnake.CommandInteraction,
-                           identifier: str=commands.Param(description=Strings.blacklist_report_identifier_param_description, autocomp=dt_autocomplete.autocomplete_identifier_guild_and_user),
+                           identifier=commands.Param(description=Strings.blacklist_report_identifier_param_description, autocomp=dt_autocomplete.autocomplete_identifier_guild_and_user, converter=dt_autocomplete.guild_user_identifier_converter),
                            reason: Optional[str]=commands.Param(default=None, description=Strings.blacklist_report_reason_param_description, max_length=3000)):
     await inter.response.defer(with_message=True, ephemeral=True)
 
@@ -147,11 +146,10 @@ class DTBlacklist(Base_Cog):
     if announce_channel is None:
       return await message_utils.generate_error_message(inter, Strings.blacklist_report_report_channel_not_found)
 
-    specifier = dt_autocomplete.identifier_to_specifier(identifier)
-    if specifier is None:
+    if identifier is None:
       return await message_utils.generate_error_message(inter, Strings.dt_invalid_identifier)
 
-    report_type, entity_id = specifier
+    report_type, entity_id = identifier
 
     if report_type == "USER":
       user = await dt_user_repo.get_dt_user(entity_id)

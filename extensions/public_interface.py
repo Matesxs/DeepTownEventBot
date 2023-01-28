@@ -5,7 +5,6 @@ import datetime
 from functools import partial
 import humanize
 from table2ascii import table2ascii, Alignment
-from typing import Optional
 import sqlalchemy
 
 from features.base_cog import Base_Cog
@@ -29,27 +28,18 @@ class PublicInterface(Base_Cog):
   @guild_commands.sub_command(name="report", description=Strings.public_interface_guild_report_description)
   @cooldowns.default_cooldown
   async def guild_report(self, inter: disnake.CommandInteraction,
-                         identifier: str = commands.Param(description=Strings.dt_guild_identifier_param_description, autocomp=dt_autocomplete.autocomplete_identifier_guild),
-                         year: Optional[int] = commands.Param(default=None, description=Strings.dt_event_year_param_description),
-                         week: Optional[int] = commands.Param(default=None, min_value=1, description=Strings.dt_event_year_param_description),
+                         identifier = commands.Param(description=Strings.dt_guild_identifier_param_description, autocomp=dt_autocomplete.autocomplete_identifier_guild, converter=dt_autocomplete.guild_user_identifier_converter),
+                         event_identifier = commands.Param(default=None, description=Strings.dt_event_identifier_param_description, autocomplete=dt_autocomplete.autocomplete_event_identifier, converter=dt_autocomplete.event_identifier_converter, convert_defaults=True),
                          tight_format: bool = commands.Param(default=False, description=Strings.public_interface_guild_report_tight_format_param_description)):
     await inter.response.defer(with_message=True)
 
-    if year is None or week is None:
-      c_year, c_week = dt_helpers.get_event_index(datetime.datetime.utcnow())
-      if year is None:
-        year = c_year
-      if week is None:
-        week = c_week
-
-    specifier = dt_autocomplete.identifier_to_specifier(identifier)
-    if specifier is None:
+    if identifier is None:
       return await message_utils.generate_error_message(inter, Strings.dt_invalid_identifier)
 
-    guild_data = await event_participation_repo.get_event_participations(guild_id=specifier[1], year=year, week=week, order_by=[event_participation_repo.EventParticipation.amount.desc()])
+    guild_data = await event_participation_repo.get_event_participations(guild_id=identifier[1], year=event_identifier[0], week=event_identifier[1], order_by=[event_participation_repo.EventParticipation.amount.desc()])
 
     if not guild_data:
-      return await message_utils.generate_error_message(inter, Strings.dt_event_data_not_found(year=year, week=week))
+      return await message_utils.generate_error_message(inter, Strings.dt_event_data_not_found(year=event_identifier[0], week=event_identifier[1]))
 
     send_report_function = partial(dt_report_generators.send_text_guild_event_participation_report, inter, guild_data[0].dt_guild, guild_data, colm_padding=0 if tight_format else 1)
 
@@ -63,16 +53,15 @@ class PublicInterface(Base_Cog):
   @guild_commands.sub_command(name="profile", description=Strings.public_interface_guild_profile_description)
   @cooldowns.long_cooldown
   async def guild_profile(self, inter: disnake.CommandInteraction,
-                          identifier: str = commands.Param(description=Strings.dt_guild_identifier_param_description, autocomp=dt_autocomplete.autocomplete_identifier_guild)):
+                          identifier = commands.Param(description=Strings.dt_guild_identifier_param_description, autocomp=dt_autocomplete.autocomplete_identifier_guild, converter=dt_autocomplete.guild_user_identifier_converter)):
     await inter.response.defer(with_message=True)
 
-    specifier = dt_autocomplete.identifier_to_specifier(identifier)
-    if specifier is None:
+    if identifier is None:
       return await message_utils.generate_error_message(inter, Strings.dt_invalid_identifier)
 
-    guild = await dt_guild_repo.get_dt_guild(specifier[1])
+    guild = await dt_guild_repo.get_dt_guild(identifier[1])
     if not guild:
-      return await message_utils.generate_error_message(inter, Strings.dt_guild_not_found(identifier=identifier))
+      return await message_utils.generate_error_message(inter, Strings.dt_guild_not_found(identifier=identifier[1]))
 
     guild_profile_lists = []
 
@@ -168,16 +157,15 @@ class PublicInterface(Base_Cog):
   @guild_commands.sub_command(name="event_participations", description=Strings.public_interface_guild_participations_description)
   @cooldowns.long_cooldown
   async def guild_event_participations(self, inter: disnake.CommandInteraction,
-                                       identifier: str = commands.Param(description=Strings.dt_guild_identifier_param_description, autocomp=dt_autocomplete.autocomplete_identifier_guild)):
+                                       identifier = commands.Param(description=Strings.dt_guild_identifier_param_description, autocomp=dt_autocomplete.autocomplete_identifier_guild, converter=dt_autocomplete.guild_user_identifier_converter)):
     await inter.response.defer(with_message=True)
 
-    specifier = dt_autocomplete.identifier_to_specifier(identifier)
-    if specifier is None:
+    if identifier is None:
       return await message_utils.generate_error_message(inter, Strings.dt_invalid_identifier)
 
-    guild = await dt_guild_repo.get_dt_guild(specifier[1])
+    guild = await dt_guild_repo.get_dt_guild(identifier[1])
     if not guild:
-      return await message_utils.generate_error_message(inter, Strings.dt_guild_not_found(identifier=identifier))
+      return await message_utils.generate_error_message(inter, Strings.dt_guild_not_found(identifier=identifier[1]))
 
     all_guild_participations = await event_participation_repo.get_guild_event_participations_data(guild.id, ignore_zero_participation_median=True)
 
@@ -235,16 +223,15 @@ class PublicInterface(Base_Cog):
   @user_command.sub_command(name="event_participations", description=Strings.public_interface_user_event_participations_description)
   @cooldowns.long_cooldown
   async def user_event_participations(self, inter: disnake.CommandInteraction,
-                                      identifier: str=commands.Param(description=Strings.dt_user_identifier_param_description, autocomp=dt_autocomplete.autocomplete_identifier_user)):
+                                      identifier=commands.Param(description=Strings.dt_user_identifier_param_description, autocomp=dt_autocomplete.autocomplete_identifier_user, converter=dt_autocomplete.guild_user_identifier_converter)):
     await inter.response.defer(with_message=True)
 
-    specifier = dt_autocomplete.identifier_to_specifier(identifier)
-    if specifier is None:
+    if identifier is None:
       return await message_utils.generate_error_message(inter, Strings.dt_invalid_identifier)
 
-    user = await dt_user_repo.get_dt_user(specifier[1])
+    user = await dt_user_repo.get_dt_user(identifier[1])
     if not user:
-      return await message_utils.generate_error_message(inter, Strings.dt_user_not_found(identifier=identifier))
+      return await message_utils.generate_error_message(inter, Strings.dt_user_not_found(identifier=identifier[1]))
 
     all_participations = await event_participation_repo.get_event_participations(user_id=user.id)
 
@@ -261,16 +248,15 @@ class PublicInterface(Base_Cog):
   @user_command.sub_command(name="profile", description=Strings.public_interface_user_profile_description)
   @cooldowns.long_cooldown
   async def user_profile(self, inter: disnake.CommandInteraction,
-                         identifier:str=commands.Param(description=Strings.dt_user_identifier_param_description, autocomp=dt_autocomplete.autocomplete_identifier_user)):
+                         identifier=commands.Param(description=Strings.dt_user_identifier_param_description, autocomp=dt_autocomplete.autocomplete_identifier_user, converter=dt_autocomplete.guild_user_identifier_converter)):
     await inter.response.defer(with_message=True)
 
-    specifier = dt_autocomplete.identifier_to_specifier(identifier)
-    if specifier is None:
+    if identifier is None:
       return await message_utils.generate_error_message(inter, Strings.dt_invalid_identifier)
 
-    user = await dt_user_repo.get_dt_user(specifier[1])
+    user = await dt_user_repo.get_dt_user(identifier[1])
     if not user:
-      return await message_utils.generate_error_message(inter, Strings.dt_user_not_found(identifier=identifier))
+      return await message_utils.generate_error_message(inter, Strings.dt_user_not_found(identifier=identifier[1]))
 
     current_time = datetime.datetime.utcnow()
     current_year, _ = dt_helpers.get_event_index(current_time)
@@ -331,19 +317,11 @@ class PublicInterface(Base_Cog):
   @event_commands.sub_command(name="help", description=Strings.public_interface_event_help_description)
   @cooldowns.default_cooldown
   async def event_help(self, inter: disnake.CommandInteraction,
-                       year: Optional[int] = commands.Param(default=None, description=Strings.dt_event_year_param_description),
-                       week: Optional[int] = commands.Param(default=None, min_value=1, description=Strings.dt_event_year_param_description),
+                       event_identifier = commands.Param(default=None, description=Strings.dt_event_identifier_param_description, autocomplete=dt_autocomplete.autocomplete_event_identifier, converter=dt_autocomplete.event_identifier_converter, convert_defaults=True),
                        materials_amounts: bool = commands.Param(default=False, description=Strings.public_interface_event_help_materials_amounts_param_description)):
     await inter.response.defer(with_message=True)
 
-    if year is None or week is None:
-      c_year, c_week = dt_helpers.get_event_index(datetime.datetime.utcnow())
-      if year is None:
-        year = c_year
-      if week is None:
-        week = c_week
-
-    event_specification = await event_participation_repo.get_event_specification(year, week)
+    event_specification = await event_participation_repo.get_event_specification(event_identifier[0], event_identifier[1])
     if event_specification is None:
       return await message_utils.generate_error_message(inter, Strings.public_interface_event_help_no_items)
 
@@ -351,7 +329,7 @@ class PublicInterface(Base_Cog):
     if item_table is None:
       return await message_utils.generate_error_message(inter, Strings.public_interface_event_help_no_items)
 
-    await inter.send(f"```\nYear: {year} Week: {week}\n{item_table}\n```")
+    await inter.send(f"```\nYear: {event_identifier[0]} Week: {event_identifier[1]}\n{item_table}\n```")
 
     if materials_amounts:
       event_items_scaling_table = dt_report_generators.get_event_items_scaling_table(event_specification)
@@ -366,23 +344,16 @@ class PublicInterface(Base_Cog):
   @event_commands.sub_command(name="leaderboard", description=Strings.public_interface_event_leaderboard_specific_description)
   @cooldowns.huge_cooldown
   async def global_event_leaderboard(self, inter: disnake.CommandInteraction,
-                                             year: Optional[int]=commands.Param(default=None, description=Strings.dt_event_year_param_description),
-                                             week: Optional[int]=commands.Param(default=None, min_value=1, description=Strings.dt_event_year_param_description),
+                                             event_identifier = commands.Param(default=None, description=Strings.dt_event_identifier_param_description, autocomplete=dt_autocomplete.autocomplete_event_identifier, converter=dt_autocomplete.event_identifier_converter, convert_defaults=True),
                                              user_count: int = commands.Param(default=20, min_value=1, max_value=200, description=Strings.public_interface_event_leaderboard_specific_user_count_param_description)):
     await inter.response.defer(with_message=True)
-    if year is None or week is None:
-      c_year, c_week = dt_helpers.get_event_index(datetime.datetime.utcnow())
-      if year is None:
-        year = c_year
-      if week is None:
-        week = c_week
 
-    global_best_participants = await event_participation_repo.get_event_participants_data(year=year, week=week, limit=user_count)
+    global_best_participants = await event_participation_repo.get_event_participants_data(year=event_identifier[0], week=event_identifier[1], limit=user_count)
     if not global_best_participants:
-      return await message_utils.generate_error_message(inter, Strings.dt_event_data_not_found(year=year, week=week))
+      return await message_utils.generate_error_message(inter, Strings.dt_event_data_not_found(year=event_identifier[0], week=event_identifier[1]))
 
     participant_data = [(idx + 1, string_manipulation.truncate_string(username, 20), string_manipulation.truncate_string(guild_name, 20), string_manipulation.format_number(total_contribution)) for idx, (_, username, _, guild_name, total_contribution, _, _) in enumerate(global_best_participants)]
-    participant_data_table_strings = (f"Year: {year} Week: {week}\n" + table2ascii(header=["No°", "Username", "Guild", "Donate"], body=participant_data, first_col_heading=True, alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.LEFT, Alignment.RIGHT])).split("\n")
+    participant_data_table_strings = (f"Year: {event_identifier[0]} Week: {event_identifier[1]}\n" + table2ascii(header=["No°", "Username", "Guild", "Donate"], body=participant_data, first_col_heading=True, alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.LEFT, Alignment.RIGHT])).split("\n")
 
     while participant_data_table_strings:
       data_string, participant_data_table_strings = string_manipulation.add_string_until_length(participant_data_table_strings, 1900, "\n")

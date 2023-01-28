@@ -55,16 +55,13 @@ class DTDataManager(Base_Cog):
   @cooldowns.huge_cooldown
   @commands.is_owner()
   async def update_guild(self, inter: disnake.CommandInteraction,
-                         identifier: str=commands.Param(description=Strings.dt_guild_identifier_param_description, autocomp=dt_autocomplete.autocomplete_identifier_guild)):
+                         identifier=commands.Param(description=Strings.dt_guild_identifier_param_description, autocomp=dt_autocomplete.autocomplete_identifier_guild, converter=dt_autocomplete.guild_user_identifier_converter)):
     await inter.response.defer(with_message=True, ephemeral=True)
 
-    if identifier.isnumeric():
-      guild_id = int(identifier)
-    else:
-      specifier = dt_autocomplete.identifier_to_specifier(identifier)
-      if specifier is None:
-        return await message_utils.generate_error_message(inter, Strings.dt_invalid_identifier)
-      guild_id = specifier[1]
+    if identifier is None:
+      return await message_utils.generate_error_message(inter, Strings.dt_invalid_identifier)
+
+    guild_id = identifier[1]
 
     data = await dt_helpers.get_dt_guild_data(guild_id, True)
     if data is None:
@@ -266,8 +263,7 @@ class DTDataManager(Base_Cog):
   @cooldowns.short_cooldown
   @permissions.bot_developer()
   async def set_event_items(self, inter: disnake.CommandInteraction,
-                            event_year: Optional[int]=commands.Param(default=None, min_value=0, description=Strings.dt_event_year_param_description),
-                            event_week: Optional[int]=commands.Param(default=None, min_value=0, description=Strings.dt_event_week_param_description),
+                            event_identifier = commands.Param(default=None, description=Strings.dt_event_identifier_param_description, autocomplete=dt_autocomplete.autocomplete_event_identifier, converter=dt_autocomplete.event_identifier_converter, convert_defaults=True),
                             item1: str=commands.Param(description=Strings.data_manager_set_event_items_item_name_param_description(number=1), autocomplete=dt_autocomplete.autocomplete_item),
                             item2: str=commands.Param(description=Strings.data_manager_set_event_items_item_name_param_description(number=2), autocomplete=dt_autocomplete.autocomplete_item),
                             item3: str=commands.Param(description=Strings.data_manager_set_event_items_item_name_param_description(number=3), autocomplete=dt_autocomplete.autocomplete_item),
@@ -279,9 +275,6 @@ class DTDataManager(Base_Cog):
                             current_level: int=commands.Param(default=0, min_value=0, description=Strings.data_manager_set_event_items_current_level_param_description),
                             update_items_lotteries: bool=commands.Param(default=False, description=Strings.data_manager_set_event_items_update_items_lotteries_param_description)):
     await inter.response.defer(with_message=True, ephemeral=True)
-
-    if event_year is None or event_week is None:
-      event_year, event_week = dt_helpers.get_event_index(datetime.datetime.utcnow())
 
     if (await dt_items_repo.get_dt_item(item1)) is None:
       return await message_utils.generate_error_message(inter, Strings.data_manager_set_event_items_item_not_in_database(item=item1))
@@ -299,7 +292,7 @@ class DTDataManager(Base_Cog):
     if len(unique_item_names) != 4:
       return await message_utils.generate_error_message(inter, Strings.data_manager_set_event_items_repeated_items)
 
-    await dt_items_repo.remove_event_participation_items(event_year, event_week)
+    await dt_items_repo.remove_event_participation_items(event_identifier[0], event_identifier[1])
     await asyncio.sleep(0.01)
 
     if current_level != 0:
@@ -308,15 +301,15 @@ class DTDataManager(Base_Cog):
       base_amount3 = math.ceil(base_amount3 / (0.9202166811 * math.exp((current_level + 1) / 8)))
       base_amount4 = math.ceil(base_amount4 / (0.9202166811 * math.exp((current_level + 1) / 8)))
 
-    futures = [dt_items_repo.set_event_item(event_year, event_week, item1, base_amount1, commit=False),
-               dt_items_repo.set_event_item(event_year, event_week, item2, base_amount2, commit=False),
-               dt_items_repo.set_event_item(event_year, event_week, item3, base_amount3, commit=False),
-               dt_items_repo.set_event_item(event_year, event_week, item4, base_amount4, commit=False)]
+    futures = [dt_items_repo.set_event_item(event_identifier[0], event_identifier[1], item1, base_amount1, commit=False),
+               dt_items_repo.set_event_item(event_identifier[0], event_identifier[1], item2, base_amount2, commit=False),
+               dt_items_repo.set_event_item(event_identifier[0], event_identifier[1], item3, base_amount3, commit=False),
+               dt_items_repo.set_event_item(event_identifier[0], event_identifier[1], item4, base_amount4, commit=False)]
     await asyncio.gather(*futures)
     await dt_items_repo.run_commit()
 
-    await message_utils.generate_success_message(inter, Strings.data_manager_set_event_items_success(event_year=event_year,
-                                                                                                     event_week=event_week,
+    await message_utils.generate_success_message(inter, Strings.data_manager_set_event_items_success(event_year=event_identifier[0],
+                                                                                                     event_week=event_identifier[1],
                                                                                                      item1=item1,
                                                                                                      item2=item2,
                                                                                                      item3=item3,
@@ -338,17 +331,13 @@ class DTDataManager(Base_Cog):
   @cooldowns.short_cooldown
   @permissions.bot_developer()
   async def remove_event_items(self, inter: disnake.CommandInteraction,
-                               event_year: Optional[int]=commands.Param(default=None, min_value=0, description=Strings.dt_event_year_param_description),
-                               event_week: Optional[int]=commands.Param(default=None, min_value=0, description=Strings.dt_event_week_param_description)):
+                               event_identifier = commands.Param(default=None, description=Strings.dt_event_identifier_param_description, autocomplete=dt_autocomplete.autocomplete_event_identifier, converter=dt_autocomplete.event_identifier_converter, convert_defaults=True)):
     await inter.response.defer(with_message=True, ephemeral=True)
 
-    if event_year is None or event_week is None:
-      event_year, event_week = dt_helpers.get_event_index(datetime.datetime.utcnow())
-
-    if await dt_items_repo.remove_event_participation_items(event_year, event_week):
-      await message_utils.generate_success_message(inter, Strings.data_manager_remove_event_items_success(event_year=event_year, event_week=event_week))
+    if await dt_items_repo.remove_event_participation_items(event_identifier[0], event_identifier[1]):
+      await message_utils.generate_success_message(inter, Strings.data_manager_remove_event_items_success(event_year=event_identifier[0], event_week=event_identifier[1]))
     else:
-      await message_utils.generate_error_message(inter, Strings.data_manager_remove_event_items_failed(event_year=event_year, event_week=event_week))
+      await message_utils.generate_error_message(inter, Strings.data_manager_remove_event_items_failed(event_year=event_identifier[0], event_week=event_identifier[1]))
 
   @commands.message_command(name="Load Event Data")
   @cooldowns.long_cooldown
@@ -449,17 +438,16 @@ class DTDataManager(Base_Cog):
   @data_manager.sub_command(description=Strings.data_manager_dump_guild_participation_data_description)
   @cooldowns.huge_cooldown
   async def dump_guild_participation_data(self, inter: disnake.CommandInteraction,
-                                          identifier: str = commands.Param(description=Strings.dt_guild_identifier_param_description, autocomp=dt_autocomplete.autocomplete_identifier_guild)):
+                                          identifier = commands.Param(description=Strings.dt_guild_identifier_param_description, autocomp=dt_autocomplete.autocomplete_identifier_guild, converter=dt_autocomplete.guild_user_identifier_converter)):
     await inter.response.defer(with_message=True, ephemeral=True)
 
-    specifier = dt_autocomplete.identifier_to_specifier(identifier)
-    if specifier is None:
+    if identifier is None:
       return await message_utils.generate_error_message(inter, Strings.dt_invalid_identifier)
 
-    dump_data = await event_participation_repo.dump_guild_event_participation_data(specifier[1])
+    dump_data = await event_participation_repo.dump_guild_event_participation_data(identifier[1])
 
     if not dump_data:
-      return await message_utils.generate_error_message(inter, Strings.data_manager_dump_guild_participation_data_no_data(identifier=specifier[1]))
+      return await message_utils.generate_error_message(inter, Strings.data_manager_dump_guild_participation_data_no_data(identifier=identifier[1]))
 
     dataframe = pd.DataFrame(dump_data, columns=["year", "week", "user_id", "username", "amount"], index=None)
 
@@ -467,7 +455,7 @@ class DTDataManager(Base_Cog):
     dataframe.to_csv(data, sep=";", index=False)
 
     data.seek(0)
-    discord_file = disnake.File(data, filename=f"participations_guild_id_{specifier[1]}_dump.csv")
+    discord_file = disnake.File(data, filename=f"participations_guild_id_{identifier[1]}_dump.csv")
 
     await message_utils.generate_success_message(inter, Strings.data_manager_dump_guild_participation_data_success)
     await inter.send(file=discord_file)

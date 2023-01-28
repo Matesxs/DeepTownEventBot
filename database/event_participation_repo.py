@@ -254,6 +254,12 @@ async def dump_guild_event_participation_data(guild_id: int) -> List[Tuple[int, 
   return data
 
 async def search_event_specificators(search: Optional[str]=None, limit: int=25) -> List[Tuple[int, int]]:
+  """
+  :param search: Search phrase
+  :param limit: Number of results
+  :return: Tuple[year, week]
+  """
+
   if search is None:
     result = await run_query(select(EventSpecification.event_year, EventSpecification.event_week).order_by(EventSpecification.event_year.desc(), EventSpecification.event_week.desc()).limit(limit))
   else:
@@ -264,7 +270,7 @@ async def search_event_specificators(search: Optional[str]=None, limit: int=25) 
     if number_of_parts == 0:
       result = await run_query(select(EventSpecification.event_year, EventSpecification.event_week).order_by(EventSpecification.event_year.desc(), EventSpecification.event_week.desc()).limit(limit))
     elif number_of_parts == 1:
-      result = await run_query(select(EventSpecification.event_id, EventSpecification.event_year, EventSpecification.event_week)
+      result = await run_query(select(EventSpecification.event_year, EventSpecification.event_week)
                                .filter(or_(EventSpecification.event_year == search_parts[0], EventSpecification.event_week == search_parts[0]))
                                .order_by(EventSpecification.event_year.desc(), EventSpecification.event_week.desc())
                                .limit(limit))

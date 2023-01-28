@@ -271,9 +271,9 @@ class DTDataManager(Base_Cog):
                             base_amount2: Optional[int]=commands.Param(default=None, min_value=0, description=Strings.data_manager_set_event_items_item_amount_param_description(number=2)),
                             base_amount3: Optional[int]=commands.Param(default=None, min_value=0, description=Strings.data_manager_set_event_items_item_amount_param_description(number=3)),
                             base_amount4: Optional[int]=commands.Param(default=None, min_value=0, description=Strings.data_manager_set_event_items_item_amount_param_description(number=4)),
-                            event_identifier=commands.Param(default=None, description=Strings.dt_event_identifier_param_description, autocomplete=dt_autocomplete.autocomplete_event_identifier, converter=dt_autocomplete.event_identifier_converter, convert_defaults=True),
-                            current_level: int=commands.Param(default=0, min_value=0, description=Strings.data_manager_set_event_items_current_level_param_description),
-                            update_items_lotteries: bool=commands.Param(default=False, description=Strings.data_manager_set_event_items_update_items_lotteries_param_description)):
+                            current_level: int = commands.Param(default=0, min_value=0, description=Strings.data_manager_set_event_items_current_level_param_description),
+                            update_items_lotteries: bool = commands.Param(default=False, description=Strings.data_manager_set_event_items_update_items_lotteries_param_description),
+                            event_identifier=commands.Param(default=None, description=Strings.dt_event_identifier_param_description, autocomplete=dt_autocomplete.autocomplete_event_identifier, converter=dt_autocomplete.event_identifier_converter, convert_defaults=True)):
     await inter.response.defer(with_message=True, ephemeral=True)
 
     if (await dt_items_repo.get_dt_item(item1)) is None:

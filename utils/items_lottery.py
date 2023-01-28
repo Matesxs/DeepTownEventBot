@@ -176,7 +176,7 @@ async def generate_guesses_tables(bot: BaseAutoshardedBot, lottery: dt_event_ite
       author_name = author.display_name
 
     if not guess.guessed_lotery_items: continue
-    data.append((string_manipulation.truncate_string(author_name, 20), "\n".join([i.item_name for i in guess.guessed_lotery_items])))
+    data.append((string_manipulation.truncate_string(author_name, 20), ",\n".join([i.item_name for i in guess.guessed_lotery_items])))
 
   table_lines = table2ascii(["Guesser", "Items"], data).split("\n")
   tables = []

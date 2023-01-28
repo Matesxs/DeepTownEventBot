@@ -12,7 +12,7 @@ from utils.logger import setup_custom_logger
 from config import cooldowns, Strings
 from utils import dt_helpers, dt_report_generators, message_utils, string_manipulation, dt_autocomplete
 from features.views.paginator import EmbedView
-from database import event_participation_repo, dt_user_repo, dt_guild_repo, dt_guild_member_repo
+from database import event_participation_repo, dt_user_repo, dt_guild_repo, dt_guild_member_repo, dt_items_repo
 from features.views.data_selector import DataSelector
 
 logger = setup_custom_logger(__name__)
@@ -340,6 +340,29 @@ class PublicInterface(Base_Cog):
           await inter.send(f"```\n{final_string}\n```")
       else:
         await message_utils.generate_error_message(inter, Strings.public_interface_event_help_no_item_amount_scaling)
+
+  @event_commands.sub_command(name="history", description=Strings.public_interface_event_history_description)
+  @cooldowns.long_cooldown
+  async def event_items_history(self, inter: disnake.CommandInteraction):
+    await inter.response.defer(with_message=True)
+
+    event_item_history_data = await dt_items_repo.get_event_items_history()
+    event_item_history_data = [(f"{item[0]} {item[1]}", item[2] if item[2] is not None else "N/A") for item in event_item_history_data]
+
+    table_strings = table2ascii(["Event", "Items"], event_item_history_data, alignments=[Alignment.LEFT, Alignment.LEFT]).split("\n")
+    pages = []
+    while table_strings:
+      final_string, table_strings = string_manipulation.add_string_until_length(table_strings, 1500, "\n")
+
+      embed = disnake.Embed(title="Event item history", color=disnake.Color.dark_blue(), description=f"```\n{final_string}\n```")
+      message_utils.add_author_footer(embed, inter.author)
+      pages.append(embed)
+
+    if not pages:
+      await message_utils.generate_error_message(inter, Strings.public_interface_event_history_no_events)
+    else:
+      embed_view = EmbedView(inter.author, pages)
+      await embed_view.run(inter)
 
   @event_commands.sub_command(name="leaderboard", description=Strings.public_interface_event_leaderboard_specific_description)
   @cooldowns.huge_cooldown

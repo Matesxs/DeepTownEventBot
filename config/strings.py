@@ -188,6 +188,9 @@ class Strings(metaclass=Formatable):
   public_interface_event_help_no_items = "Items not set for this event"
   public_interface_event_help_no_item_amount_scaling = "Material scaling not available"
 
+  public_interface_event_history_description = "Show history of event items"
+  public_interface_event_history_no_events = "No events in database"
+
   public_interface_event_leaderboard_specific_description = "Show leaderboard of participants in specific event"
   public_interface_event_leaderboard_specific_user_count_param_description = "Number of top users to display"
 

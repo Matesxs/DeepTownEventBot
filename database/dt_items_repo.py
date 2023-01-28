@@ -1,5 +1,5 @@
-from typing import Optional, List
-from sqlalchemy import select, delete
+from typing import Optional, List, Tuple
+from sqlalchemy import select, delete, func, literal_column
 
 from database import run_query, run_commit, session, event_participation_repo
 from database.tables.dt_items import EventItem, DTItem, ItemType, ItemSource, DTItemComponentMapping
@@ -107,3 +107,11 @@ async def remove_event_participation_items(event_year: int, event_week: int) -> 
   result = await run_query(delete(EventItem).filter(EventItem.event_id == event_spec.event_id))
   await run_commit()
   return result.rowcount > 0
+
+async def get_event_items_history(limit: int=500) -> List[Tuple[int, int, Optional[str]]]:
+  result = await run_query(select(event_participation_repo.EventSpecification.event_year, event_participation_repo.EventSpecification.event_week, func.string_agg(EventItem.item_name, literal_column("',\n'")))
+                           .join(EventItem, isouter=True)
+                           .group_by(event_participation_repo.EventSpecification.event_year, event_participation_repo.EventSpecification.event_week)
+                           .order_by(event_participation_repo.EventSpecification.event_year.desc(), event_participation_repo.EventSpecification.event_week.desc())
+                           .limit(limit))
+  return result.all()

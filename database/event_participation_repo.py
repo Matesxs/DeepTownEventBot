@@ -276,8 +276,8 @@ async def search_event_specificators(search: Optional[str]=None, limit: int=25) 
                                .limit(limit))
     else:
       result = await run_query(select(EventSpecification.event_year, EventSpecification.event_week)
-                               .filter(or_(EventSpecification.event_year == search_parts[0], EventSpecification.event_week == search_parts[0],
-                                           EventSpecification.event_year == search_parts[1], EventSpecification.event_week == search_parts[1]))
+                               .filter(or_(and_(EventSpecification.event_year == search_parts[0], EventSpecification.event_week == search_parts[0]),
+                                           and_(EventSpecification.event_year == search_parts[1], EventSpecification.event_week == search_parts[1])))
                                .order_by(EventSpecification.event_year.desc(), EventSpecification.event_week.desc())
                                .limit(limit))
 

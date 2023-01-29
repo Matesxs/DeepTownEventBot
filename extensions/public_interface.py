@@ -6,6 +6,7 @@ from functools import partial
 import humanize
 from table2ascii import table2ascii, Alignment
 import sqlalchemy
+from typing import Optional
 
 from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
@@ -363,6 +364,29 @@ class PublicInterface(Base_Cog):
     else:
       embed_view = EmbedView(inter.author, pages)
       await embed_view.run(inter)
+
+  @event_commands.sub_command(name="stats", description=Strings.public_interface_event_stats_description)
+  @cooldowns.long_cooldown
+  async def event_stat(self, inter: disnake.CommandInteraction,
+                       year: Optional[int]=commands.Param(default=None, description=Strings.public_interface_event_stats_year_param_description, autocomplete=dt_autocomplete.autocomplete_event_year)):
+    await inter.response.defer(with_message=True)
+
+    data = await dt_items_repo.get_event_item_stats(year)
+    if not data:
+      return await message_utils.generate_error_message(inter, Strings.public_interface_event_stats_no_stats)
+
+    table_lines = table2ascii(["Item", "Count", "Last"], data, alignments=[Alignment.LEFT, Alignment.RIGHT, Alignment.LEFT]).split("\n")
+
+    pages = []
+    while table_lines:
+      final_string, table_lines = string_manipulation.add_string_until_length(table_lines, 2000, "\n")
+
+      embed = disnake.Embed(title="Event item statistics" if year is None else f"Event statistics for `{year}`", color=disnake.Color.dark_blue(), description=f"```\n{final_string}\n```")
+      message_utils.add_author_footer(embed, inter.author)
+      pages.append(embed)
+
+    embed_view = EmbedView(inter.author, pages)
+    await embed_view.run(inter)
 
   @event_commands.sub_command(name="leaderboard", description=Strings.public_interface_event_leaderboard_specific_description)
   @cooldowns.huge_cooldown

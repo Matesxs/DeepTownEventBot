@@ -191,6 +191,10 @@ class Strings(metaclass=Formatable):
   public_interface_event_history_description = "Show history of event items"
   public_interface_event_history_no_events = "No events in database"
 
+  public_interface_event_stats_description = "Show statistics about ocurences of items in events"
+  public_interface_event_stats_year_param_description = "Specific year, without it show statistics for whole lifespan"
+  public_interface_event_stats_no_stats = "No statistics available"
+
   public_interface_event_leaderboard_specific_description = "Show leaderboard of participants in specific event"
   public_interface_event_leaderboard_specific_user_count_param_description = "Number of top users to display"
 

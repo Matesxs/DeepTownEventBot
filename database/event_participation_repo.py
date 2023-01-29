@@ -253,7 +253,7 @@ async def dump_guild_event_participation_data(guild_id: int) -> List[Tuple[int, 
     .filter(EventParticipation.dt_guild_id == guild_id))).all()
   return data
 
-async def search_event_specificators(search: Optional[str]=None, limit: int=25) -> List[Tuple[int, int]]:
+async def search_event_identificator(search: Optional[str]=None, limit: int=25) -> List[Tuple[int, int]]:
   """
   :param search: Search phrase
   :param limit: Number of results
@@ -282,3 +282,10 @@ async def search_event_specificators(search: Optional[str]=None, limit: int=25) 
                                .limit(limit))
 
   return result.all()
+
+async def search_event_year(search: Optional[str]=None, limit: int=25) -> List[int]:
+  if search is None or search == "" or not search.isnumeric():
+    result = await run_query(select(EventSpecification.event_year.distinct()).order_by(EventSpecification.event_year.desc()).limit(limit))
+  else:
+    result = await run_query(select(EventSpecification.event_year.distinct()).filter(EventSpecification.event_year == int(search)).order_by(EventSpecification.event_year.desc()).limit(limit))
+  return result.scalars().all()

@@ -46,7 +46,7 @@ def guild_user_identifier_converter(_, identifier: str) -> Optional[Tuple[Option
   return str(specifier[0][0]), int(specifier[0][1])
 
 async def autocomplete_event_identifier(_, string: str):
-  results = await event_participation_repo.search_event_specificators(string, limit=20)
+  results = await event_participation_repo.search_event_identificator(string, limit=20)
   return [f"{result[0]} {result[1]}" for result in results]
 
 def event_identifier_converter(_, string: str) -> Tuple[int, int]:
@@ -58,3 +58,6 @@ def event_identifier_converter(_, string: str) -> Tuple[int, int]:
     int(splits[0]) < 1 or int(splits[1]) < 1:
     return dt_helpers.get_event_index(datetime.datetime.utcnow())
   return int(splits[0]), int(splits[1])
+
+async def autocomplete_event_year(_, string: str):
+  return await event_participation_repo.search_event_year(string, 20)

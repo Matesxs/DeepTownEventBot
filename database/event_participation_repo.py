@@ -61,21 +61,15 @@ async def get_event_participants_data(guild_id: Optional[int] = None, year: Opti
   if order_by is None:
     order_by = [func.avg(EventParticipation.amount).desc()]
 
-  data_query = select(
-    dt_user_repo.DTUser.id,
-    dt_user_repo.DTUser.username,
-    dt_guild_repo.DTGuild.id,
-    dt_guild_repo.DTGuild.name,
-    func.sum(EventParticipation.amount),
-    func.avg(EventParticipation.amount),
-    func.percentile_cont(0.5).within_group(EventParticipation.amount))\
+  data_query = select(dt_user_repo.DTUser.id, dt_user_repo.DTUser.username, dt_guild_repo.DTGuild.id, dt_guild_repo.DTGuild.name, func.sum(EventParticipation.amount), func.avg(EventParticipation.amount), func.percentile_cont(0.5).within_group(EventParticipation.amount))\
     .join(EventSpecification) \
     .join(dt_guild_repo.DTGuild)\
     .join(dt_guild_member_repo.DTGuildMember, and_(dt_guild_member_repo.DTGuildMember.dt_user_id == EventParticipation.dt_user_id, dt_guild_member_repo.DTGuildMember.dt_guild_id == dt_guild_repo.DTGuild.id)) \
     .join(dt_user_repo.DTUser)\
     .filter(*filters, *([dt_guild_member_repo.DTGuildMember.current_member == True] if only_current_members else []))\
     .group_by(dt_user_repo.DTUser.id, dt_user_repo.DTUser.username, dt_guild_repo.DTGuild.id, dt_guild_repo.DTGuild.name)\
-    .order_by(*order_by).limit(limit)
+    .order_by(*order_by)\
+    .limit(limit)
 
   # print(data_query)
   data = (await run_query(data_query)).all()
@@ -84,10 +78,9 @@ async def get_event_participants_data(guild_id: Optional[int] = None, year: Opti
     output_data = []
 
     for user_id, username, guild_id, guild_name, total, average, median in data:
-      additional_data = (await run_query(select(
-        func.avg(EventParticipation.amount),
-        func.percentile_cont(0.5).within_group(EventParticipation.amount))
-        .filter(*filters, EventParticipation.dt_user_id == user_id, EventParticipation.dt_guild_id == guild_id, EventParticipation.amount > 0))).one()
+      additional_data = (await run_query(select(func.avg(EventParticipation.amount), func.percentile_cont(0.5).within_group(EventParticipation.amount))
+        .filter(*filters, EventParticipation.dt_user_id == user_id, EventParticipation.dt_guild_id == guild_id, EventParticipation.amount > 0)))\
+        .one()
 
       ignore_zero_average, ignore_zero_median = 0, 0
       if all(additional_data):
@@ -122,16 +115,10 @@ async def get_event_participation_stats(guild_id: Optional[int]=None, user_id: O
                          .group_by(EventSpecification.event_year, EventSpecification.event_week)\
                          .subquery()
 
-  data = (await run_query(select(
-    func.sum(distinc_amount_query.c.amount),
-    func.avg(distinc_amount_query.c.amount),
-    func.percentile_cont(0.5).within_group(distinc_amount_query.c.amount))))\
-    .one()
+  data = (await run_query(select(func.sum(distinc_amount_query.c.amount), func.avg(distinc_amount_query.c.amount), func.percentile_cont(0.5).within_group(distinc_amount_query.c.amount)))).one()
 
   if ignore_zero_participation_average or ignore_zero_participation_median:
-    additional_data = (await run_query(select(
-      func.avg(distinc_amount_query.c.amount),
-      func.percentile_cont(0.5).within_group(distinc_amount_query.c.amount))
+    additional_data = (await run_query(select(func.avg(distinc_amount_query.c.amount), func.percentile_cont(0.5).within_group(distinc_amount_query.c.amount))
       .filter(distinc_amount_query.c.amount > 0))) \
       .one()
 
@@ -158,12 +145,7 @@ async def get_guild_event_participations_data(guild_id: int, year: Optional[int]
   if week is not None:
     filters.append(EventSpecification.event_week == week)
 
-  data = (await run_query(select(
-      EventSpecification.event_year,
-      EventSpecification.event_week,
-      func.sum(EventParticipation.amount),
-      func.avg(EventParticipation.amount),
-      func.percentile_cont(0.5).within_group(EventParticipation.amount))
+  data = (await run_query(select(EventSpecification.event_year, EventSpecification.event_week, func.sum(EventParticipation.amount), func.avg(EventParticipation.amount), func.percentile_cont(0.5).within_group(EventParticipation.amount))
       .join(EventParticipation)
       .filter(*filters)
       .order_by(EventSpecification.event_year.desc(), EventSpecification.event_week.desc())
@@ -174,11 +156,10 @@ async def get_guild_event_participations_data(guild_id: int, year: Optional[int]
     output_data = []
 
     for year, week, total, average, median in data:
-      additional_data = (await run_query(select(
-        func.avg(EventParticipation.amount),
-        func.percentile_cont(0.5).within_group(EventParticipation.amount))
+      additional_data = (await run_query(select(func.avg(EventParticipation.amount), func.percentile_cont(0.5).within_group(EventParticipation.amount))
         .join(EventSpecification)
-        .filter(EventParticipation.dt_guild_id == guild_id, EventSpecification.event_year == year, EventSpecification.event_week == week, EventParticipation.amount > 0))).one()
+        .filter(EventParticipation.dt_guild_id == guild_id, EventSpecification.event_year == year, EventSpecification.event_week == week, EventParticipation.amount > 0)))\
+        .one()
 
       ignore_zero_average, ignore_zero_median = 0, 0
       if all(additional_data):
@@ -217,7 +198,8 @@ async def generate_or_update_event_participations(guild_data: dt_helpers.DTGuild
   prev_event_year, prev_event_week = dt_helpers.get_event_index(datetime.datetime.utcnow() - datetime.timedelta(days=7))
 
   participation_amounts = [p.last_event_contribution for p in guild_data.players]
-  prev_participation_amounts = [p.amount for p in (await get_event_participations(guild_id=guild_data.id, year=prev_event_year, week=prev_event_week))]
+  prev_event_participations = await get_event_participations(guild_id=guild_data.id, year=prev_event_year, week=prev_event_week)
+  prev_participation_amounts = [p.amount for p in prev_event_participations]
 
   updated = True
   if prev_participation_amounts and participation_amounts and \
@@ -241,12 +223,7 @@ async def dump_guild_event_participation_data(guild_id: int) -> List[Tuple[int, 
   :param guild_id: Deep Town guild id
   :return: event_year, event_week, user_id, username, amount
   """
-  data = (await run_query(select(
-    EventSpecification.event_year,
-    EventSpecification.event_week,
-    EventParticipation.dt_user_id,
-    dt_user_repo.DTUser.username,
-    EventParticipation.amount)
+  data = (await run_query(select(EventSpecification.event_year, EventSpecification.event_week, EventParticipation.dt_user_id, dt_user_repo.DTUser.username, EventParticipation.amount)
     .select_from(EventSpecification)
     .join(EventParticipation)
     .join(dt_user_repo.DTUser)

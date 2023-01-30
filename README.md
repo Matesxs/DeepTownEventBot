@@ -26,6 +26,16 @@ use command to generate it on demand. Many other command are providet for tracki
 * Error catching module
 * Module management system
 
+## Project structure
+Folders:
+* config - anything that should be changed for deployment somewhere else or owner would want to modify
+* core_extensions - bot modules that will load on startup by default and cant be unloaded, so they stay always loaded
+* database - anything database related
+    * tables - definition of tables
+* extensions - bot modules, author can configure in config what modules will be loaded on startup and then control it through commands too
+* features - extensions to functionality
+* utils - helper functions
+
 ## Usage
 ### Direct run (with separated database)
 1) Create config file `config.toml` in `config` folder from `config.template.toml` file and fill needed settings

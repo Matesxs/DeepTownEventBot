@@ -45,7 +45,7 @@ async def create_question_and_answer(question: str, answer: str) -> Optional[Que
   return item
 
 async def all_questions_iterator() -> AsyncIterator[Tuple[int, str]]:
-  result = await run_query(select(QuestionAndAnswer.id, QuestionAndAnswer.question).execution_options(yield_per=10))
+  result = await run_query(select(QuestionAndAnswer.id, QuestionAndAnswer.question).execution_options(yield_per=50))
   for partition in result.partitions():
     for row in partition:
       yield row[0], row[1]

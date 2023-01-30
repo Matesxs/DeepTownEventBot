@@ -49,7 +49,7 @@ async def get_all_guild_trackers(guild_id: int) -> List[TrackingSettings]:
   return result.scalars().all()
 
 async def get_all_trackers() -> AsyncIterator[TrackingSettings]:
-  result = await run_query(select(TrackingSettings).execution_options(yield_per=10))
+  result = await run_query(select(TrackingSettings).execution_options(yield_per=50))
   for partition in result.partitions():
     for row in partition:
       yield row[0]

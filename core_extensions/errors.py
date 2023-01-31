@@ -49,6 +49,8 @@ class Errors(Base_Cog):
       await message_utils.generate_error_message(ctx, Strings.error_command_on_cooldown(remaining=round(error.retry_after, 2)))
     elif isinstance(error, exceptions.NotGuildAdministrator):
       await message_utils.generate_error_message(ctx, Strings.error_not_administrator)
+    elif isinstance(error, exceptions.NoGuildAdministratorRoleAndNotSet):
+      await message_utils.generate_error_message(ctx, Strings.error_not_administrator_and_not_set)
     elif isinstance(error, exceptions.NoGuildAdministratorRole):
       await message_utils.generate_error_message(ctx, Strings.not_administrator_role_set)
     elif isinstance(error, exceptions.NotGuildOwner):

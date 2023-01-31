@@ -36,6 +36,7 @@ class Strings(metaclass=Formatable):
   error_command_on_cooldown = "This command is on cooldown. Please wait {remaining}s"
   error_not_guild_owner = "You are not owner of this guild"
   error_not_administrator = "You are not administrator of this guild"
+  error_not_administrator_and_not_set = "You are owner or administrator of this guild because your guild don't have administrator role set"
   not_administrator_role_set = "Your guild dont have set administrator role"
   error_not_owner = "You are not owner of this bot"
   error_not_developer = "You are not developer of this bot"

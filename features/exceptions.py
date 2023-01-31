@@ -7,5 +7,8 @@ class NotGuildAdministrator(Exception):
 class NoGuildAdministratorRole(Exception):
   pass
 
+class NoGuildAdministratorRoleAndNotSet(Exception):
+  pass
+
 class NotBotDeveloper(Exception):
   pass

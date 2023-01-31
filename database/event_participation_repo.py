@@ -223,6 +223,7 @@ async def dump_guild_event_participation_data(guild_id: int) -> List[Tuple[int, 
   :param guild_id: Deep Town guild id
   :return: event_year, event_week, user_id, username, amount
   """
+
   data = (await run_query(select(EventSpecification.event_year, EventSpecification.event_week, EventParticipation.dt_user_id, dt_user_repo.DTUser.username, EventParticipation.amount)
     .select_from(EventSpecification)
     .join(EventParticipation)
@@ -261,6 +262,12 @@ async def search_event_identificator(search: Optional[str]=None, limit: int=25) 
   return result.all()
 
 async def search_event_year(search: Optional[str]=None, limit: int=25) -> List[int]:
+  """
+  :param search: Search phrase
+  :param limit: Number of results
+  :return: list of years
+  """
+
   if search is None or search == "" or not search.isnumeric():
     result = await run_query(select(EventSpecification.event_year.distinct()).order_by(EventSpecification.event_year.desc()).limit(limit))
   else:

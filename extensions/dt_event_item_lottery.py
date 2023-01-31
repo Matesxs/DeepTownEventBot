@@ -119,7 +119,7 @@ class DTEventItemLottery(Base_Cog):
 
   @lottery_command.sub_command(name="guess_for", description=Strings.lottery_guess_for_description)
   @commands.guild_only()
-  @permissions.guild_administrator()
+  @permissions.guild_administrator_role()
   @cooldowns.long_cooldown
   async def lottery_make_guess_for(self, inter: disnake.CommandInteraction,
                                    author: disnake.Member = commands.Param(description=Strings.lottery_guess_for_author_param_description),
@@ -162,7 +162,7 @@ class DTEventItemLottery(Base_Cog):
       return await message_utils.generate_error_message(inter, Strings.lottery_button_listener_invalid_lottery)
 
     if command == "remove":
-      if inter.author.id == int(lottery.author_id) or (int(lottery.author_id) != self.bot.owner_id and (await permissions.predicate_is_guild_administrator(inter))):
+      if inter.author.id == int(lottery.author_id) or (int(lottery.author_id) != self.bot.owner_id and (await permissions.predicate_guild_administrator_role(inter))):
         await message_utils.delete_message(self.bot, inter.message)
         await dt_event_item_lottery_repo.remove_lottery(lottery.id)
         await message_utils.generate_success_message(inter, Strings.lottery_button_listener_removed)
@@ -173,7 +173,7 @@ class DTEventItemLottery(Base_Cog):
         await inter.send(f"```\n{table}\n```", ephemeral=True)
         await asyncio.sleep(0.05)
     elif command == "repeat":
-      if inter.author.id == int(lottery.author_id) or (int(lottery.author_id) != self.bot.owner_id and (await permissions.predicate_is_guild_administrator(inter))):
+      if inter.author.id == int(lottery.author_id) or (int(lottery.author_id) != self.bot.owner_id and (await permissions.predicate_guild_administrator_role(inter))):
         message = await inter.original_response()
         new_lottery = await lottery.repeat()
         await items_lottery.create_lottery(inter, new_lottery, len(message.components) > 1, message)

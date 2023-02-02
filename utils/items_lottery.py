@@ -153,7 +153,7 @@ async def process_loterries(bot: BaseAutoshardedBot):
 
   return len(results), guesses_cleared
 
-async def create_lottery(inter: Union[disnake.CommandInteraction, disnake.MessageInteraction], lottery: dt_event_item_lottery_repo.DTEventItemLottery, can_show_guesses: bool, message: Optional[disnake.Message]=None):
+async def create_lottery(inter: Union[disnake.CommandInteraction, disnake.MessageInteraction], lottery: dt_event_item_lottery_repo.DTEventItemLottery, message: Optional[disnake.Message]=None):
   table_data = [(4, f"{string_manipulation.format_number(lottery.guessed_4_item_reward_amount)} {string_manipulation.truncate_string(lottery.guessed_4_reward_item_name, 20)}" if lottery.guessed_4_reward_item_name is not None and lottery.guessed_4_item_reward_amount > 0 else "*No Reward*"),
                 (3, f"{string_manipulation.format_number(lottery.guessed_3_item_reward_amount)} {string_manipulation.truncate_string(lottery.guessed_3_reward_item_name, 20)}" if lottery.guessed_3_reward_item_name is not None and lottery.guessed_3_item_reward_amount > 0 else "*No Reward*"),
                 (2, f"{string_manipulation.format_number(lottery.guessed_2_item_reward_amount)} {string_manipulation.truncate_string(lottery.guessed_2_reward_item_name, 20)}" if lottery.guessed_2_reward_item_name is not None and lottery.guessed_2_item_reward_amount > 0 else "*No Reward*"),
@@ -177,7 +177,7 @@ async def create_lottery(inter: Union[disnake.CommandInteraction, disnake.Messag
   await dt_event_item_lottery_repo.run_commit()
 
   buttons = [disnake.ui.Button(emoji="🗑️", custom_id=f"event_item_lottery:remove:{lottery.id}", style=disnake.ButtonStyle.red)]
-  if can_show_guesses:
+  if lottery.can_show_guesses:
     buttons.append(disnake.ui.Button(emoji="🧾", custom_id=f"event_item_lottery:show:{lottery.id}", style=disnake.ButtonStyle.blurple))
   await message.edit(components=buttons)
 

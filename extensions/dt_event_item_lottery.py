@@ -101,7 +101,7 @@ class DTEventItemLottery(Base_Cog):
       guessed_1_reward_item = guessed_1_reward_item_
 
     orig_message = await inter.original_message()
-    lottery = await dt_event_item_lottery_repo.create_event_item_lottery(inter.author, orig_message.channel,
+    lottery = await dt_event_item_lottery_repo.create_event_item_lottery(inter.author, orig_message.channel, can_show_guesses,
                                                                          guessed_4_reward_item, guessed_4_reward_item_amount,
                                                                          guessed_3_reward_item, guessed_3_reward_item_amount,
                                                                          guessed_2_reward_item, guessed_2_reward_item_amount,
@@ -109,7 +109,7 @@ class DTEventItemLottery(Base_Cog):
     if lottery is None:
       return await message_utils.generate_error_message(inter, Strings.lottery_create_lottery_already_created)
 
-    await items_lottery.create_lottery(inter, lottery, can_show_guesses, orig_message)
+    await items_lottery.create_lottery(inter, lottery, orig_message)
 
   @lottery_command.sub_command(name="guess", description=Strings.lottery_guess_description)
   @commands.guild_only()
@@ -175,14 +175,17 @@ class DTEventItemLottery(Base_Cog):
       else:
         await message_utils.generate_error_message(inter, Strings.lottery_button_listener_not_author)
     elif command == "show":
-      for table in (await items_lottery.generate_guesses_tables(self.bot, lottery)):
-        await inter.send(f"```\n{table}\n```", ephemeral=True)
-        await asyncio.sleep(0.05)
+      if lottery.can_show_guesses:
+        for table in (await items_lottery.generate_guesses_tables(self.bot, lottery)):
+          await inter.send(f"```\n{table}\n```", ephemeral=True)
+          await asyncio.sleep(0.05)
+      else:
+        await message_utils.generate_error_message(inter, "Invalid command, you can't show guesses for this lottery")
     elif command == "repeat":
       if inter.author.id == int(lottery.author_id) or (int(lottery.author_id) != self.bot.owner_id and (await permissions.predicate_guild_administrator_role(inter))):
         message = await inter.original_response()
         new_lottery = await lottery.repeat()
-        await items_lottery.create_lottery(inter, new_lottery, len(message.components) > 1, message)
+        await items_lottery.create_lottery(inter, new_lottery, message)
       else:
         await message_utils.generate_error_message(inter, Strings.lottery_button_listener_not_author)
     else:

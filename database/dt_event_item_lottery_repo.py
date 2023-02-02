@@ -19,7 +19,7 @@ async def event_lotery_exist(guild_id: int, author_id: int, event_id: int) -> bo
   result = await run_query(select(DTEventItemLottery.id).filter(DTEventItemLottery.guild_id == str(guild_id), DTEventItemLottery.author_id == str(author_id), DTEventItemLottery.event_id == event_id))
   return result.scalar_one_or_none() is not None
 
-async def create_event_item_lottery(author: disnake.Member, channel: Union[disnake.TextChannel, disnake.Thread, disnake.VoiceChannel, disnake.PartialMessageable],
+async def create_event_item_lottery(author: disnake.Member, channel: Union[disnake.TextChannel, disnake.Thread, disnake.VoiceChannel, disnake.PartialMessageable], can_show_guesses: bool,
                                     reward_item_g4: Optional[dt_items_repo.DTItem]=None, item_g4_amount: int=0,
                                     reward_item_g3: Optional[dt_items_repo.DTItem]=None, item_g3_amount: int=0,
                                     reward_item_g2: Optional[dt_items_repo.DTItem]=None, item_g2_amount: int=0,
@@ -33,7 +33,7 @@ async def create_event_item_lottery(author: disnake.Member, channel: Union[disna
   await discord_objects_repo.get_or_create_discord_member(author, True)
 
   await create_lottery_lock.acquire()
-  item = DTEventItemLottery(author_id=str(author.id), guild_id=str(author.guild.id), lottery_channel_id=str(channel.id), event_id=event_specification.event_id,
+  item = DTEventItemLottery(author_id=str(author.id), guild_id=str(author.guild.id), lottery_channel_id=str(channel.id), event_id=event_specification.event_id, can_show_guesses=can_show_guesses,
                             guessed_4_reward_item_name=reward_item_g4.name if reward_item_g4 is not None else None, guessed_4_item_reward_amount=item_g4_amount if reward_item_g4 is not None else 0,
                             guessed_3_reward_item_name=reward_item_g3.name if reward_item_g3 is not None else None, guessed_3_item_reward_amount=item_g3_amount if reward_item_g3 is not None else 0,
                             guessed_2_reward_item_name=reward_item_g2.name if reward_item_g2 is not None else None, guessed_2_item_reward_amount=item_g2_amount if reward_item_g2 is not None else 0,

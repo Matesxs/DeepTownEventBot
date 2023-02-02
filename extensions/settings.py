@@ -60,7 +60,7 @@ class Settings(Base_Cog):
 
   @better_message_links_commands.sub_command(name="disable", description=Strings.settings_better_message_links_disable_description)
   async def better_message_links_disable(self, inter: disnake.CommandInteraction):
-    guild = discord_objects_repo.get_or_create_discord_guild(inter.guild)
+    guild = await discord_objects_repo.get_or_create_discord_guild(inter.guild)
     guild.enable_better_message_links = False
     await discord_objects_repo.run_commit()
 

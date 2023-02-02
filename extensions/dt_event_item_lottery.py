@@ -73,7 +73,10 @@ class DTEventItemLottery(Base_Cog):
                            can_show_guesses: bool=commands.Param(default=False, description=Strings.lottery_create_can_show_guesses_param_description)):
     await inter.response.defer(with_message=True)
 
-    if (guessed_4_reward_item is None or guessed_4_reward_item_amount == 0) and (guessed_3_reward_item is None or guessed_3_reward_item_amount == 0) and (guessed_2_reward_item is None or guessed_2_reward_item_amount == 0) and (guessed_1_reward_item is None or guessed_1_reward_item_amount == 0):
+    if (guessed_4_reward_item is None or guessed_4_reward_item_amount == 0) and \
+        (guessed_3_reward_item is None or guessed_3_reward_item_amount == 0) and \
+        (guessed_2_reward_item is None or guessed_2_reward_item_amount == 0) and \
+        (guessed_1_reward_item is None or guessed_1_reward_item_amount == 0):
       return await message_utils.generate_error_message(inter, Strings.lottery_create_no_reward_set)
 
     if guessed_4_reward_item is not None:

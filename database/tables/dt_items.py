@@ -9,8 +9,8 @@ import database
 class DTItemComponentMapping(database.base):
   __tablename__ = "dt_item_component_mapping"
 
-  target_item_name = Column(ForeignKey("dt_items.name", ondelete="CASCADE"), primary_key=True)
-  component_item_name = Column(ForeignKey("dt_items.name", ondelete="CASCADE"), primary_key=True)
+  target_item_name = Column(ForeignKey("dt_items.name", ondelete="CASCADE", onupdate="CASCADE"), primary_key=True)
+  component_item_name = Column(ForeignKey("dt_items.name", ondelete="CASCADE", onupdate="CASCADE"), primary_key=True)
 
   component:"DTItem" = relationship("DTItem", primaryjoin="DTItemComponentMapping.component_item_name==DTItem.name", uselist=False)
   amount = Column(Float, default=0)
@@ -94,8 +94,8 @@ class DTItem(database.base):
 class EventItem(database.base):
   __tablename__ = "event_items"
 
-  event_id = Column(database.BigIntegerType, ForeignKey("event_specifications.event_id", ondelete="CASCADE"), primary_key=True)
-  item_name = Column(String, ForeignKey("dt_items.name", ondelete="CASCADE"), primary_key=True)
+  event_id = Column(database.BigIntegerType, ForeignKey("event_specifications.event_id", ondelete="CASCADE", onupdate="CASCADE"), primary_key=True)
+  item_name = Column(String, ForeignKey("dt_items.name", ondelete="CASCADE", onupdate="CASCADE"), primary_key=True)
   base_amount = Column(Integer)
 
   item = relationship("DTItem", uselist=False)

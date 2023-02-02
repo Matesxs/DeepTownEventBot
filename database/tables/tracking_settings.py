@@ -10,8 +10,8 @@ from utils import object_getters
 class TrackingSettings(database.base):
   __tablename__ = "tracking_settings"
 
-  guild_id = Column(String, ForeignKey("discord_guilds.id", ondelete="CASCADE"), primary_key=True)
-  dt_guild_id = Column(database.BigIntegerType, ForeignKey("dt_guilds.id", ondelete="CASCADE"), primary_key=True)
+  guild_id = Column(String, ForeignKey("discord_guilds.id", ondelete="CASCADE", onupdate="CASCADE"), primary_key=True)
+  dt_guild_id = Column(database.BigIntegerType, ForeignKey("dt_guilds.id", ondelete="CASCADE", onupdate="CASCADE"), primary_key=True)
 
   announce_channel_id = Column(String, nullable=True)
 

@@ -20,13 +20,11 @@ class Settings(Base_Cog):
   @cooldowns.default_cooldown
   @commands.guild_only()
   async def admin_role_commands(self, inter: disnake.CommandInteraction):
-    pass
+    await inter.response.defer(with_message=True, ephemeral=True)
 
   @admin_role_commands.sub_command(name="set", description=Strings.settings_admin_role_set_description)
   async def admin_role_set(self, inter: disnake.CommandInteraction,
                            admin_role: disnake.Role=commands.Param(description=Strings.settings_admin_role_set_admin_role_param_description)):
-    await inter.response.defer(with_message=True, ephemeral=True)
-
     if admin_role is not None and hasattr(admin_role, "id"):
       guild = await discord_objects_repo.get_or_create_discord_guild(inter.guild)
       guild.admin_role_id = str(admin_role.id)
@@ -37,8 +35,6 @@ class Settings(Base_Cog):
 
   @admin_role_commands.sub_command(name="remove", description=Strings.settings_admin_role_remove_description)
   async def admin_role_remove(self, inter: disnake.CommandInteraction):
-    await inter.response.defer(with_message=True, ephemeral=True)
-
     guild = await discord_objects_repo.get_or_create_discord_guild(inter.guild)
     if guild.admin_role_id is not None:
       guild.admin_role_id = None
@@ -46,6 +42,29 @@ class Settings(Base_Cog):
 
       return await message_utils.generate_success_message(inter, Strings.settings_admin_role_remove_success)
     await message_utils.generate_error_message(inter, Strings.settings_admin_role_remove_failed)
+
+  @settings_commands.sub_command_group(name="better_message_links")
+  @permissions.guild_administrator_role()
+  @cooldowns.default_cooldown
+  @commands.guild_only()
+  async def better_message_links_commands(self, inter: disnake.CommandInteraction):
+    await inter.response.defer(with_message=True, ephemeral=True)
+
+  @better_message_links_commands.sub_command(name="enable", description=Strings.settings_better_message_links_enable_description)
+  async def better_message_links_enable(self, inter: disnake.CommandInteraction):
+    guild = await discord_objects_repo.get_or_create_discord_guild(inter.guild)
+    guild.enable_better_message_links = True
+    await discord_objects_repo.run_commit()
+
+    await message_utils.generate_success_message(inter, Strings.settings_better_message_links_enable_success)
+
+  @better_message_links_commands.sub_command(name="disable", description=Strings.settings_better_message_links_disable_description)
+  async def better_message_links_disable(self, inter: disnake.CommandInteraction):
+    guild = discord_objects_repo.get_or_create_discord_guild(inter.guild)
+    guild.enable_better_message_links = False
+    await discord_objects_repo.run_commit()
+
+    await message_utils.generate_success_message(inter, Strings.settings_better_message_links_disabled_success)
 
 def setup(bot):
   bot.add_cog(Settings(bot))

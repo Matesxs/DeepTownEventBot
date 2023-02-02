@@ -264,6 +264,12 @@ class Strings(metaclass=Formatable):
   settings_admin_role_remove_success = "Removed admin role"
   settings_admin_role_remove_failed = "Admin role is not set for this guild"
 
+  settings_better_message_links_enable_description = "Enable better message link for this guild"
+  settings_better_message_links_enable_success = "Better message links enabled"
+
+  settings_better_message_links_disable_description = "Disable better message link for this guild"
+  settings_better_message_links_disabled_success = "Better message links disabled"
+
   # Event Item Lottery
   lottery_invalid_item = "`{item_name}` is not valid item"
 

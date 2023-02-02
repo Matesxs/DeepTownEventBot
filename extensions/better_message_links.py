@@ -5,6 +5,7 @@ import re
 from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
 from utils import object_getters, string_manipulation
+from database import discord_objects_repo
 
 logger = setup_custom_logger(__name__)
 
@@ -18,6 +19,9 @@ class BetterMessageLinks(Base_Cog):
   async def on_message(self, message: disnake.Message):
     if message.author.bot or message.author.system or message.guild is None:
       # logger.info("Invalid message author or not in guild")
+      return
+
+    if not (await discord_objects_repo.better_message_links_enabled(message.guild.id)):
       return
 
     destination_channel_permissions = message.channel.permissions_for(message.guild.me)

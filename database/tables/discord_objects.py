@@ -1,6 +1,6 @@
 import disnake
 from typing import Optional, Union
-from sqlalchemy import Column, String, ForeignKey
+from sqlalchemy import Column, String, ForeignKey, Boolean
 from sqlalchemy.orm import relationship
 
 import database
@@ -29,8 +29,8 @@ class DiscordUser(database.base):
 class DiscordMember(database.base):
   __tablename__ = "discord_members"
 
-  user_id = Column(String, ForeignKey("discord_users.id", ondelete="CASCADE"), primary_key=True)
-  guild_id = Column(String, ForeignKey("discord_guilds.id", ondelete="CASCADE"), primary_key=True)
+  user_id = Column(String, ForeignKey("discord_users.id", ondelete="CASCADE", onupdate="CASCADE"), primary_key=True)
+  guild_id = Column(String, ForeignKey("discord_guilds.id", ondelete="CASCADE", onupdate="CASCADE"), primary_key=True)
 
   name = Column(String, nullable=False, index=True)
 
@@ -56,6 +56,8 @@ class DiscordGuild(database.base):
   name = Column(String, nullable=False, index=True)
 
   admin_role_id = Column(String, nullable=True)
+
+  enable_better_message_links = Column(Boolean, default=True, nullable=False)
 
   tracking_settings = relationship("TrackingSettings", uselist=True, back_populates="guild")
   lotteries = relationship("DTEventItemLottery", uselist=True, back_populates="guild")

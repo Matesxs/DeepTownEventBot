@@ -13,8 +13,8 @@ from utils import dt_helpers
 class DTEventItemLotteryGuessedItem(database.base):
   __tablename__ = "dt_event_item_lotery_guessed_items"
 
-  guess_id = Column(database.BigIntegerType, ForeignKey("dt_event_item_lottery_guesses.id", ondelete="CASCADE"), primary_key=True)
-  item_name = Column(String, ForeignKey("dt_items.name", ondelete="CASCADE"), primary_key=True)
+  guess_id = Column(database.BigIntegerType, ForeignKey("dt_event_item_lottery_guesses.id", ondelete="CASCADE", onupdate="CASCADE"), primary_key=True)
+  item_name = Column(String, ForeignKey("dt_items.name", ondelete="CASCADE", onupdate="CASCADE"), primary_key=True)
 
 class DTEventItemLotteryGuess(database.base):
   __tablename__ = "dt_event_item_lottery_guesses"
@@ -22,9 +22,9 @@ class DTEventItemLotteryGuess(database.base):
 
   id = Column(database.BigIntegerType, primary_key=True, autoincrement=True)
 
-  event_id = Column(database.BigIntegerType, ForeignKey("event_specifications.event_id", ondelete="CASCADE"), nullable=False)
-  guild_id = Column(String, ForeignKey("discord_guilds.id", ondelete="CASCADE"), nullable=False, index=True)
-  author_id = Column(String, ForeignKey("discord_users.id", ondelete="CASCADE"), nullable=False, index=True)
+  event_id = Column(database.BigIntegerType, ForeignKey("event_specifications.event_id", ondelete="CASCADE", onupdate="CASCADE"), nullable=False)
+  guild_id = Column(String, ForeignKey("discord_guilds.id", ondelete="CASCADE", onupdate="CASCADE"), nullable=False, index=True)
+  author_id = Column(String, ForeignKey("discord_users.id", ondelete="CASCADE", onupdate="CASCADE"), nullable=False, index=True)
 
   guessed_lotery_items: List[DTEventItemLotteryGuessedItem] = relationship("DTEventItemLotteryGuessedItem", uselist=True)
   event_specification = relationship("EventSpecification", uselist=False)
@@ -42,22 +42,22 @@ class DTEventItemLottery(database.base):
 
   id = Column(database.BigIntegerType, primary_key=True, unique=True, index=True, autoincrement=True)
 
-  author_id = Column(String, ForeignKey("discord_users.id", ondelete="CASCADE"), nullable=False, index=True)
-  guild_id = Column(String, ForeignKey("discord_guilds.id", ondelete="CASCADE"), nullable=False, index=True)
+  author_id = Column(String, ForeignKey("discord_users.id", ondelete="CASCADE", onupdate="CASCADE"), nullable=False, index=True)
+  guild_id = Column(String, ForeignKey("discord_guilds.id", ondelete="CASCADE", onupdate="CASCADE"), nullable=False, index=True)
 
   lottery_channel_id = Column(String, nullable=True)
   lottery_message_id = Column(String, nullable=True)
 
-  event_id = Column(database.BigIntegerType, ForeignKey("event_specifications.event_id", ondelete="CASCADE"), nullable=False)
+  event_id = Column(database.BigIntegerType, ForeignKey("event_specifications.event_id", ondelete="CASCADE", onupdate="CASCADE"), nullable=False)
   closed_at = Column(DateTime, nullable=True, default=None)
 
-  guessed_4_reward_item_name = Column(String, ForeignKey("dt_items.name", ondelete="SET NULL"), nullable=True)
+  guessed_4_reward_item_name = Column(String, ForeignKey("dt_items.name", ondelete="SET NULL", onupdate="CASCADE"), nullable=True)
   guessed_4_item_reward_amount = Column(Integer, default=0, nullable=False)
-  guessed_3_reward_item_name = Column(String, ForeignKey("dt_items.name", ondelete="SET NULL"), nullable=True)
+  guessed_3_reward_item_name = Column(String, ForeignKey("dt_items.name", ondelete="SET NULL", onupdate="CASCADE"), nullable=True)
   guessed_3_item_reward_amount = Column(Integer, default=0, nullable=False)
-  guessed_2_reward_item_name = Column(String, ForeignKey("dt_items.name", ondelete="SET NULL"), nullable=True)
+  guessed_2_reward_item_name = Column(String, ForeignKey("dt_items.name", ondelete="SET NULL", onupdate="CASCADE"), nullable=True)
   guessed_2_item_reward_amount = Column(Integer, default=0, nullable=False)
-  guessed_1_reward_item_name = Column(String, ForeignKey("dt_items.name", ondelete="SET NULL"), nullable=True)
+  guessed_1_reward_item_name = Column(String, ForeignKey("dt_items.name", ondelete="SET NULL", onupdate="CASCADE"), nullable=True)
   guessed_1_item_reward_amount = Column(Integer, default=0, nullable=False)
 
   guild = relationship("DiscordGuild", uselist=False, back_populates="lotteries")

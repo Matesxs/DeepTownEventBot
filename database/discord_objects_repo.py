@@ -28,6 +28,10 @@ async def remove_discord_guild(guild_id: int):
 async def discord_guild_cleanup(current_guild_ids: List[str]):
   await run_query(delete(DiscordGuild).filter(DiscordGuild.id.notin_(current_guild_ids)), commit=True)
 
+async def better_message_links_enabled(guild_id: int) -> bool:
+  result = (await run_query(select(DiscordGuild.enable_better_message_links).filter(DiscordGuild.id == str(guild_id)))).scalar_one_or_none()
+  return result if result is not None else False
+
 async def get_discord_user(user_id: int) -> Optional[DiscordUser]:
   result = await run_query(select(DiscordUser).filter(DiscordUser.id == str(user_id)))
   return result.scalar_one_or_none()

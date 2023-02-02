@@ -7,6 +7,7 @@ import humanize
 from table2ascii import table2ascii, Alignment
 import sqlalchemy
 from typing import Optional
+import pandas as pd
 
 from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
@@ -140,8 +141,12 @@ class PublicInterface(Base_Cog):
     await asyncio.sleep(0.1)
 
     # Event participations
+    raw_event_participation_data = await event_participation_repo.get_guild_event_participations_data(guild.id, ignore_zero_participation_median=True)
+    event_participation_dataframe = pd.DataFrame.from_records(raw_event_participation_data, columns=["Year", "Week", "Total", "Average", "Median"])
+    print(event_participation_dataframe.head(20))
+
     event_participations_data = []
-    for year, week, total, average, median in (await event_participation_repo.get_guild_event_participations_data(guild.id, ignore_zero_participation_median=True)):
+    for year, week, total, average, median in raw_event_participation_data:
       best_participants = await event_participation_repo.get_event_participants_data(guild.id, year, week, limit=1) if total != 0 else None
       event_participations_data.append((year, week, (string_manipulation.truncate_string(best_participants[0][1], 10) if best_participants is not None else "N/A"), string_manipulation.format_number(best_participants[0][4]) if best_participants else "0", string_manipulation.format_number(average), string_manipulation.format_number(median)))
 

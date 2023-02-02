@@ -131,12 +131,15 @@ def generate_participations_page_strings(participations: List[EventParticipation
 
   return output_pages
 
-def get_event_items_table(event_specification: EventSpecification, colm_padding: int=1) -> Optional[str]:
+def get_event_items_table(event_specification: EventSpecification, colm_padding: int=1, only_names: bool=True) -> Optional[str]:
   if event_specification is None: return None
   if not event_specification.participation_items: return None
 
-  event_items_data = [(string_manipulation.truncate_string(eitem.item.name, 20), f"{string_manipulation.format_number(eitem.item.value, 2)}", f"{string_manipulation.format_number(eitem.item.value / eitem.item.cumulative_crafting_time_per_item, 2) if eitem.item.cumulative_crafting_time_per_item > 0 else '-'}", f"{string_manipulation.format_number(eitem.item.cumulative_material_efficency * 100, 2)}") for eitem in event_specification.participation_items]
-  return table2ascii(["Name", "Value", "Value/s", "Material Eff"], event_items_data, alignments=[Alignment.LEFT, Alignment.RIGHT, Alignment.RIGHT, Alignment.RIGHT], cell_padding=colm_padding)
+  if not only_names:
+    event_items_data = [(string_manipulation.truncate_string(eitem.item.name, 20), f"{string_manipulation.format_number(eitem.item.value, 2)}", f"{string_manipulation.format_number(eitem.item.value / eitem.item.cumulative_crafting_time_per_item, 2) if eitem.item.cumulative_crafting_time_per_item > 0 else '-'}", f"{string_manipulation.format_number(eitem.item.cumulative_material_efficency * 100, 2)}") for eitem in event_specification.participation_items]
+    return table2ascii(["Name", "Value", "Value/s", "Material Eff"], event_items_data, alignments=[Alignment.LEFT, Alignment.RIGHT, Alignment.RIGHT, Alignment.RIGHT], cell_padding=colm_padding)
+  event_items_data = [(string_manipulation.truncate_string(eitem.item.name, 20), ) for eitem in event_specification.participation_items]
+  return table2ascii(["Item"], event_items_data, alignments=[Alignment.LEFT], cell_padding=colm_padding)
 
 def get_event_items_scaling_table(event_specification: EventSpecification, levels: int=30, colm_padding: int=1) -> Optional[str]:
   if event_specification is None: return None

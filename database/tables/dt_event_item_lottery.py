@@ -87,7 +87,7 @@ class DTEventItemLottery(database.base):
   async def repeat(self):
     next_year, next_week = dt_helpers.get_event_index(datetime.datetime.utcnow() + datetime.timedelta(days=7))
     event_specification = await event_participation_repo.get_or_create_event_specification(next_year, next_week)
-    new_item = DTEventItemLottery(author_id=self.author_id, guild_id=self.guild_id, lottery_channel_id=self.lotery_channel_id, event_id=event_specification.event_id,
+    new_item = DTEventItemLottery(author_id=self.author_id, guild_id=self.guild_id, lottery_channel_id=self.lottery_channel_id, event_id=event_specification.event_id,
                                   guessed_1_reward_item_name=self.guessed_1_reward_item_name, guessed_1_item_reward_amount=self.guessed_1_item_reward_amount,
                                   guessed_2_reward_item_name=self.guessed_2_reward_item_name, guessed_2_item_reward_amount=self.guessed_2_item_reward_amount,
                                   guessed_3_reward_item_name=self.guessed_3_reward_item_name, guessed_3_item_reward_amount=self.guessed_3_item_reward_amount,

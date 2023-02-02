@@ -8,7 +8,7 @@ from config.strings import Strings
 from features.base_bot import BaseAutoshardedBot
 from database import dt_event_item_lottery_repo, discord_objects_repo
 from utils.logger import setup_custom_logger
-from utils import string_manipulation, dt_helpers, message_utils
+from utils import string_manipulation, dt_helpers, message_utils, dt_report_generators
 
 logger = setup_custom_logger(__name__)
 
@@ -57,10 +57,12 @@ async def process_loterries(bot: BaseAutoshardedBot):
     else:
       table_data = []
 
+      event_items_table = dt_report_generators.get_event_items_table(lottery.event_specification, only_names=True)
+
       positions = list(result[1].keys())
       positions.sort(reverse=True)
       if not positions:
-        message = f"Event items lottery result for `{lottery.event_specification.event_year} {lottery.event_specification.event_week}` by {author_name}\nParticipants: {result[0]}\n**There are no winners**"
+        message = f"Event items lottery result for `{lottery.event_specification.event_year} {lottery.event_specification.event_week}` by {author_name}\nParticipants: {result[0]}\n```\n{event_items_table}\n```\n**There are no winners**"
         original_destination = destination.jump_url if isinstance(destination, disnake.Message) else None
 
         if isinstance(destination, disnake.Message):
@@ -106,6 +108,7 @@ async def process_loterries(bot: BaseAutoshardedBot):
 
         table_lines = [f"Event items lottery result for `{lottery.event_specification.event_year} {lottery.event_specification.event_week}` by {author_name}",
                        f"Participants: {result[0]}",
+                       *(f"```\n{event_items_table}\n```".split("\n")),
                        *("```\n" + table2ascii(["Guessed", "Reward each", "Winners"], table_data, alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.LEFT], first_col_heading=True) + "\n```").split("\n")]
 
         original_destination = destination.jump_url if isinstance(destination, disnake.Message) else None

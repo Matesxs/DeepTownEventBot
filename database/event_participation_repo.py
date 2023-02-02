@@ -1,7 +1,7 @@
 import datetime
 import statistics
 from typing import Optional, List, Tuple, Any
-from sqlalchemy import func, and_, select, or_
+from sqlalchemy import func, and_, select, or_, Integer
 
 from database import run_query, run_commit, session
 from database.tables.event_participation import EventParticipation, EventSpecification
@@ -48,7 +48,7 @@ async def get_event_participants_data(guild_id: Optional[int] = None, year: Opti
   :param ignore_zero_participation_median: Ignore zero participations for calculation of median
   :param ignore_zero_participation_average: Ignore zero participations for calculation of average
   :param only_current_members: Get stats only from current members
-  :return: user id, username, guild id, guild name, total, average, median
+  :return: List[Tuple[user id, username, guild id, guild name, total, average, median]]
   """
   filters = []
   if guild_id is not None:
@@ -137,7 +137,7 @@ async def get_guild_event_participations_data(guild_id: int, year: Optional[int]
   :param limit: Limit of retrieved data rows
   :param ignore_zero_participation_median: Ignore zero participations for calculation of median
   :param ignore_zero_participation_average: Ignore zero participations for calculation of average
-  :return: event_year, event_week, total, average, median
+  :return: List[Tuple[event_year, event_week, total, average, median]]
   """
   filters = [EventParticipation.dt_guild_id == guild_id]
   if year is not None:

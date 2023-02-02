@@ -118,12 +118,12 @@ async def process_loterries(bot: BaseAutoshardedBot):
             winner_names.append(string_manipulation.truncate_string(guess_author_name, 15))
 
           reward = reward_item_amount / len(winner_names)
-          table_data.append((position, f"{string_manipulation.format_number(reward)} {reward_item_name}", "\n".join(winner_names)))
+          table_data.append((position, f"{string_manipulation.format_number(reward)} {reward_item_name}", ",\n".join(winner_names)))
 
         table_lines = [f"Event items lottery result for `{lottery.event_specification.event_year} {lottery.event_specification.event_week}` by {author_name}",
                        f"Participants: {result[0]}",
                        *(f"```\n{event_items_table}\n```".split("\n")),
-                       *("Results:\n```\n" + table2ascii(["Guessed", "Reward each", "Winners"], table_data, alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.LEFT], first_col_heading=True) + "\n```").split("\n")]
+                       *("```\n" + table2ascii(["Guessed", "Reward each", "Winners"], table_data, alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.LEFT], first_col_heading=True) + "\n```").split("\n")]
 
         original_destination = destination.jump_url if isinstance(destination, disnake.Message) else None
 

@@ -131,7 +131,7 @@ def generate_participations_page_strings(participations: List[EventParticipation
 
   return output_pages
 
-def get_event_items_table(event_specification: EventSpecification, colm_padding: int=1, only_names: bool=True) -> Optional[str]:
+def get_event_items_table(event_specification: EventSpecification, colm_padding: int=1, only_names: bool=False) -> Optional[str]:
   if event_specification is None: return None
   if not event_specification.participation_items: return None
 

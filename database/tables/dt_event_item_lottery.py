@@ -52,6 +52,7 @@ class DTEventItemLottery(database.base):
   closed_at = Column(DateTime, nullable=True, default=None)
 
   can_show_guesses = Column(Boolean, nullable=False, default=False)
+  auto_repeat = Column(Boolean, nullable=False, default=False)
 
   guessed_4_reward_item_name = Column(String, ForeignKey("dt_items.name", ondelete="SET NULL", onupdate="CASCADE"), nullable=True)
   guessed_4_item_reward_amount = Column(Integer, default=0, nullable=False)
@@ -64,6 +65,7 @@ class DTEventItemLottery(database.base):
 
   guild = relationship("DiscordGuild", uselist=False, back_populates="lotteries")
   user = relationship("DiscordUser", uselist=False)
+  member = relationship("DiscordMember", uselist=False, primaryjoin="and_(foreign(DTEventItemLottery.guild_id) == DiscordMember.guild_id, foreign(DTEventItemLottery.author_id) == DiscordMember.user_id)", viewonly=True)
   guesses: List["DTEventItemLotteryGuess"] = relationship("DTEventItemLotteryGuess", uselist=True, primaryjoin="and_(foreign(DTEventItemLottery.guild_id) == DTEventItemLotteryGuess.guild_id, foreign(DTEventItemLottery.event_id) == DTEventItemLotteryGuess.event_id)", viewonly=True)
   event_specification = relationship("EventSpecification", uselist=False)
 
@@ -94,4 +96,3 @@ class DTEventItemLottery(database.base):
     self.closed_at = None
 
     await database.run_commit()
-    return self

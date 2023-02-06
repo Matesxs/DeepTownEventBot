@@ -284,7 +284,6 @@ class Strings(metaclass=Formatable):
   lottery_create_reward_item_amount_param_description = "Number of reward items for guessing {item_number} event items right"
   lottery_create_can_show_guesses_param_description = "Can users request current guesses"
   lottery_create_no_reward_set = "You set no reward items"
-  lottery_create_failed_to_get_lottery_message = "INTERNAL ERROR: Failed to get lottery message, lottery not created, message with it was maybe send but it's not valid"
 
   lottery_guess_description = "Make a guess for next event items"
   lottery_guess_for_description = "Make a guess for next event items for someone else"

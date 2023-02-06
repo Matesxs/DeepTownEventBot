@@ -109,7 +109,7 @@ class DTEventItemLottery(Base_Cog):
     if lottery is None:
       return await message_utils.generate_error_message(inter, Strings.lottery_already_created)
 
-    await items_lottery.create_lottery(inter, lottery, orig_message)
+    await items_lottery.create_lottery(inter.author, orig_message, lottery, True)
 
   @lottery_command.sub_command(name="guess", description=Strings.lottery_guess_description)
   @commands.guild_only()
@@ -185,11 +185,28 @@ class DTEventItemLottery(Base_Cog):
       if inter.author.id == int(lottery.author_id):
         next_event_lottery = await dt_event_item_lottery_repo.get_next_event_item_lottery_by_constrained(int(lottery.author_id), int(lottery.guild_id))
         if next_event_lottery is not None:
-          message = await inter.original_response()
-          new_lottery = await lottery.repeat()
-          await items_lottery.create_lottery(inter, new_lottery, message)
+          message = await inter.original_message()
+          await lottery.repeat()
+          await items_lottery.create_lottery(inter.author, message, lottery, False)
         else:
           await message_utils.generate_error_message(inter, Strings.lottery_already_created)
+      else:
+        await message_utils.generate_error_message(inter, Strings.lottery_button_listener_not_author)
+    elif command == "auto_repeat":
+      if inter.author.id == int(lottery.author_id):
+        lottery.auto_repeat = not lottery.auto_repeat
+        await dt_event_item_lottery_repo.run_commit()
+
+        buttons = [disnake.ui.Button(emoji="🗑️", custom_id=f"event_item_lottery:remove:{lottery.id}", style=disnake.ButtonStyle.red)]
+        if lottery.can_show_guesses:
+          buttons.append(disnake.ui.Button(emoji="🧾", custom_id=f"event_item_lottery:show:{lottery.id}", style=disnake.ButtonStyle.blurple))
+
+        if lottery.auto_repeat:
+          buttons.append(disnake.ui.Button(emoji="🔁", custom_id=f"event_item_lottery:auto_repeat:{lottery.id}", style=disnake.ButtonStyle.success))
+        else:
+          buttons.append(disnake.ui.Button(emoji="🔁", custom_id=f"event_item_lottery:auto_repeat:{lottery.id}", style=disnake.ButtonStyle.danger))
+
+        await inter.edit_original_response(components=buttons)
       else:
         await message_utils.generate_error_message(inter, Strings.lottery_button_listener_not_author)
     else:

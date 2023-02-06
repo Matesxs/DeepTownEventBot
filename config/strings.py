@@ -276,6 +276,7 @@ class Strings(metaclass=Formatable):
   lottery_button_listener_invalid_lottery = "Lotery doesn't exist, removing invalid message"
   lottery_button_listener_removed = "Lotery removed"
   lottery_button_listener_not_author = "You are not author of this lottery"
+  lottery_already_created = "You already have lottery for next week created!"
   lottery_button_listener_invalid_command = "Invalid lottery message command received"
 
   lottery_create_description = "Create event items lotery for next event"
@@ -283,7 +284,6 @@ class Strings(metaclass=Formatable):
   lottery_create_reward_item_amount_param_description = "Number of reward items for guessing {item_number} event items right"
   lottery_create_can_show_guesses_param_description = "Can users request current guesses"
   lottery_create_no_reward_set = "You set no reward items"
-  lottery_create_lottery_already_created = "You already have lottery created for next event"
   lottery_create_failed_to_get_lottery_message = "INTERNAL ERROR: Failed to get lottery message, lottery not created, message with it was maybe send but it's not valid"
 
   lottery_guess_description = "Make a guess for next event items"

@@ -15,6 +15,15 @@ async def get_event_item_lottery(id_: int) -> Optional[DTEventItemLottery]:
   result = await run_query(select(DTEventItemLottery).filter(DTEventItemLottery.id == id_))
   return result.scalar_one_or_none()
 
+async def get_event_item_lottery_by_constrained(author_id: int, guild_id: int, event_id: int) -> Optional[DTEventItemLottery]:
+  result = await run_query(select(DTEventItemLottery).filter(DTEventItemLottery.author_id == str(author_id), DTEventItemLottery.guild_id == str(guild_id), DTEventItemLottery.event_id == event_id))
+  return result.scalar_one_or_none()
+
+async def get_next_event_item_lottery_by_constrained(author_id: int, guild_id: int) -> Optional[DTEventItemLottery]:
+  next_year, next_week = dt_helpers.get_event_index(datetime.datetime.utcnow() + datetime.timedelta(days=7))
+  event_specification = await event_participation_repo.get_or_create_event_specification(next_year, next_week)
+  return await get_event_item_lottery_by_constrained(author_id, guild_id, event_specification.event_id)
+
 async def event_lotery_exist(guild_id: int, author_id: int, event_id: int) -> bool:
   result = await run_query(select(DTEventItemLottery.id).filter(DTEventItemLottery.guild_id == str(guild_id), DTEventItemLottery.author_id == str(author_id), DTEventItemLottery.event_id == event_id))
   return result.scalar_one_or_none() is not None

@@ -107,7 +107,7 @@ class DTEventItemLottery(Base_Cog):
                                                                          guessed_2_reward_item, guessed_2_reward_item_amount,
                                                                          guessed_1_reward_item, guessed_1_reward_item_amount)
     if lottery is None:
-      return await message_utils.generate_error_message(inter, Strings.lottery_create_lottery_already_created)
+      return await message_utils.generate_error_message(inter, Strings.lottery_already_created)
 
     await items_lottery.create_lottery(inter, lottery, orig_message)
 
@@ -183,9 +183,13 @@ class DTEventItemLottery(Base_Cog):
         await message_utils.generate_error_message(inter, "Invalid command, you can't show guesses for this lottery")
     elif command == "repeat":
       if inter.author.id == int(lottery.author_id):
-        message = await inter.original_response()
-        new_lottery = await lottery.repeat()
-        await items_lottery.create_lottery(inter, new_lottery, message)
+        next_event_lottery = await dt_event_item_lottery_repo.get_next_event_item_lottery_by_constrained(int(lottery.author_id), int(lottery.guild_id))
+        if next_event_lottery is not None:
+          message = await inter.original_response()
+          new_lottery = await lottery.repeat()
+          await items_lottery.create_lottery(inter, new_lottery, message)
+        else:
+          await message_utils.generate_error_message(inter, Strings.lottery_already_created)
       else:
         await message_utils.generate_error_message(inter, Strings.lottery_button_listener_not_author)
     else:

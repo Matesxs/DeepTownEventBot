@@ -275,7 +275,7 @@ class Strings(metaclass=Formatable):
 
   lottery_button_listener_invalid_lottery = "Lotery doesn't exist, removing invalid message"
   lottery_button_listener_removed = "Lotery removed"
-  lottery_button_listener_not_author = "You can't remove this lotery because you are not author"
+  lottery_button_listener_not_author = "You are not author of this lottery"
   lottery_button_listener_invalid_command = "Invalid lottery message command received"
 
   lottery_create_description = "Create event items lotery for next event"

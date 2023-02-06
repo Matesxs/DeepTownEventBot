@@ -182,7 +182,7 @@ class DTEventItemLottery(Base_Cog):
       else:
         await message_utils.generate_error_message(inter, "Invalid command, you can't show guesses for this lottery")
     elif command == "repeat":
-      if inter.author.id == int(lottery.author_id) or (int(lottery.author_id) != self.bot.owner_id and (await permissions.predicate_guild_administrator_role(inter))):
+      if inter.author.id == int(lottery.author_id):
         message = await inter.original_response()
         new_lottery = await lottery.repeat()
         await items_lottery.create_lottery(inter, new_lottery, message)

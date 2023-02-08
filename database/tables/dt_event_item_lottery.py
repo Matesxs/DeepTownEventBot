@@ -51,7 +51,6 @@ class DTEventItemLottery(database.base):
   event_id = Column(database.BigIntegerType, ForeignKey("event_specifications.event_id", ondelete="CASCADE", onupdate="CASCADE"), nullable=False)
   closed_at = Column(DateTime, nullable=True, default=None)
 
-  can_show_guesses = Column(Boolean, nullable=False, default=False)
   auto_repeat = Column(Boolean, nullable=False, default=False)
 
   guessed_4_reward_item_name = Column(String, ForeignKey("dt_items.name", ondelete="SET NULL", onupdate="CASCADE"), nullable=True)

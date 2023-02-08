@@ -179,9 +179,7 @@ async def create_lottery(author: Union[str, disnake.Member], source_message: dis
   lottery.lottery_message_id = str(source_message.id)
   await dt_event_item_lottery_repo.run_commit()
 
-  buttons = [disnake.ui.Button(emoji="🗑️", custom_id=f"event_item_lottery:remove:{lottery.id}", style=disnake.ButtonStyle.red)]
-  if lottery.can_show_guesses:
-    buttons.append(disnake.ui.Button(emoji="🧾", custom_id=f"event_item_lottery:show:{lottery.id}", style=disnake.ButtonStyle.blurple))
+  buttons = [disnake.ui.Button(emoji="🗑️", custom_id=f"event_item_lottery:remove:{lottery.id}", style=disnake.ButtonStyle.red), disnake.ui.Button(emoji="🧾", custom_id=f"event_item_lottery:show:{lottery.id}", style=disnake.ButtonStyle.blurple)]
 
   if lottery.auto_repeat:
     buttons.append(disnake.ui.Button(emoji="🔁", custom_id=f"event_item_lottery:auto_repeat:{lottery.id}", style=disnake.ButtonStyle.success))

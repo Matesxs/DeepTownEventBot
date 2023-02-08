@@ -282,7 +282,6 @@ class Strings(metaclass=Formatable):
   lottery_create_description = "Create event items lotery for next event"
   lottery_create_reward_item_param_description = "Reward item for guessing {item_number} event items right"
   lottery_create_reward_item_amount_param_description = "Number of reward items for guessing {item_number} event items right"
-  lottery_create_can_show_guesses_param_description = "Can users request current guesses"
   lottery_create_no_reward_set = "You set no reward items"
 
   lottery_guess_description = "Make a guess for next event items"

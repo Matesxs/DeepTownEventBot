@@ -69,8 +69,7 @@ class DTEventItemLottery(Base_Cog):
                            guessed_2_reward_item: Optional[str] = commands.Param(default=None, description=Strings.lottery_create_reward_item_param_description(item_number=2), autocomplete=dt_autocomplete.autocomplete_item),
                            guessed_2_reward_item_amount: int = commands.Param(default=0, min_value=0, description=Strings.lottery_create_reward_item_amount_param_description(item_number=2)),
                            guessed_1_reward_item: Optional[str] = commands.Param(default=None, description=Strings.lottery_create_reward_item_param_description(item_number=1), autocomplete=dt_autocomplete.autocomplete_item),
-                           guessed_1_reward_item_amount: int = commands.Param(default=0, min_value=0, description=Strings.lottery_create_reward_item_amount_param_description(item_number=1)),
-                           can_show_guesses: bool=commands.Param(default=False, description=Strings.lottery_create_can_show_guesses_param_description)):
+                           guessed_1_reward_item_amount: int = commands.Param(default=0, min_value=0, description=Strings.lottery_create_reward_item_amount_param_description(item_number=1))):
     await inter.response.defer(with_message=True)
 
     if (guessed_4_reward_item is None or guessed_4_reward_item_amount == 0) and \
@@ -101,7 +100,7 @@ class DTEventItemLottery(Base_Cog):
       guessed_1_reward_item = guessed_1_reward_item_
 
     orig_message = await inter.original_message()
-    lottery = await dt_event_item_lottery_repo.create_event_item_lottery(inter.author, orig_message.channel, can_show_guesses,
+    lottery = await dt_event_item_lottery_repo.create_event_item_lottery(inter.author, orig_message.channel,
                                                                          guessed_4_reward_item, guessed_4_reward_item_amount,
                                                                          guessed_3_reward_item, guessed_3_reward_item_amount,
                                                                          guessed_2_reward_item, guessed_2_reward_item_amount,

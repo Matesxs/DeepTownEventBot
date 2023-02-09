@@ -119,6 +119,13 @@ async def process_loterries(bot: BaseAutoshardedBot):
           reward = reward_item_amount / len(winner_names)
           table_data.append((position, f"{string_manipulation.format_number(reward)} {reward_item_name}", ",\n".join(winner_names)))
 
+        if not table_data:
+          message = f"Event items lottery result for `{lottery.event_specification.event_year} {lottery.event_specification.event_week}` by {author_name}\nParticipants: {result[0]}\n```\n{event_items_table}\n```\n**There are no winners**"
+          if isinstance(destination, disnake.Message):
+            return await destination.reply(message)
+          else:
+            return await destination.send(message)
+
         table_lines = [f"Event items lottery result for `{lottery.event_specification.event_year} {lottery.event_specification.event_week}` by {author_name}",
                        f"Participants: {result[0]}",
                        *(f"```\n{event_items_table}\n```".split("\n")),

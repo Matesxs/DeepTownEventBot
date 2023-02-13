@@ -1,7 +1,7 @@
 from typing import Optional, List
 from sqlalchemy import or_, select, delete
 
-from database import run_commit, run_query, session
+from database import run_commit, run_query, add_item
 from database.tables.dt_user import DTUser
 from utils.dt_helpers import DTUserData
 from database import dt_blacklist_repo
@@ -26,8 +26,7 @@ async def create_dummy_dt_user(id: int) -> Optional[DTUser]:
       return None
 
     item = DTUser(id=id, username="Unknown", level=-1, depth=-1)
-    session.add(item)
-    await run_commit()
+    await add_item(item)
   return item
 
 async def remove_user(id: int) -> bool:
@@ -41,9 +40,9 @@ async def get_and_update_dt_user(user_data: DTUserData) -> Optional[DTUser]:
       return None
 
     item = DTUser.from_DTUserData(user_data)
-    session.add(item)
+    await add_item(item)
   else:
     item.update(user_data)
+    await run_commit()
 
-  await run_commit()
   return item

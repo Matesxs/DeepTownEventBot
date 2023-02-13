@@ -2,7 +2,7 @@ import disnake
 from typing import Optional, Union, List
 from sqlalchemy import select, delete
 
-from database import run_commit, run_query, session
+from database import run_commit, run_query, add_item
 from database.tables.discord_objects import DiscordGuild, DiscordUser, DiscordMember
 
 async def get_discord_guild(guild_id: int) -> Optional[DiscordGuild]:
@@ -13,7 +13,7 @@ async def get_or_create_discord_guild(guild: disnake.Guild, commit: bool=True) -
   guild_it = await get_discord_guild(guild.id)
   if guild_it is None:
     guild_it = DiscordGuild.from_guild(guild)
-    session.add(guild_it)
+    await add_item(guild_it)
   else:
     guild_it.update(guild)
 
@@ -40,7 +40,7 @@ async def get_or_create_discord_user(user: Union[disnake.Member, disnake.User], 
   item = await get_discord_user(user.id)
   if item is None:
     item = DiscordUser.from_user(user)
-    session.add(item)
+    await add_item(item)
   else:
     item.update(user)
 
@@ -72,7 +72,7 @@ async def get_or_create_discord_member(member: disnake.Member, comit: bool=True)
     await get_or_create_discord_user(member, comit=True)
 
     item = DiscordMember.from_member(member)
-    session.add(item)
+    await add_item(item)
   else:
     item.update(member)
 

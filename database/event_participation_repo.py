@@ -1,9 +1,9 @@
 import datetime
 import statistics
 from typing import Optional, List, Tuple, Any
-from sqlalchemy import func, and_, select, or_, Integer
+from sqlalchemy import func, and_, select, or_
 
-from database import run_query, run_commit, session
+from database import run_query, run_commit, add_item
 from database.tables.event_participation import EventParticipation, EventSpecification
 from database.dt_guild_member_repo import get_and_update_dt_guild_members, create_dummy_dt_guild_member
 from database import dt_user_repo, dt_guild_repo, dt_guild_member_repo
@@ -17,8 +17,7 @@ async def get_or_create_event_specification(year: int, week: int) -> EventSpecif
   item = await get_event_specification(year, week)
   if item is None:
     item = EventSpecification(event_year=year, event_week=week)
-    session.add(item)
-    await run_commit()
+    await add_item(item)
   return item
 
 async def get_event_participations(user_id: Optional[int] = None, guild_id: Optional[int] = None, year: Optional[int] = None, week: Optional[int] = None, order_by: Optional[List[Any]] = None, limit: int = 500) -> List[EventParticipation]:
@@ -183,8 +182,7 @@ async def get_and_update_event_participation(user_id: int, guild_id: int, event_
     specification = await get_or_create_event_specification(event_year, event_week)
 
     item = EventParticipation(event_id=specification.event_id, dt_guild_id=guild_id, dt_user_id=user_id, amount=participation_amount)
-    session.add(item)
-    await run_commit()
+    await add_item(item)
   else:
     item.amount = participation_amount
 

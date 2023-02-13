@@ -48,6 +48,21 @@ async def run_commit():
   await asyncio.to_thread(session.commit)
   session_lock.release()
 
+async def add_item(item):
+  await session_lock.acquire()
+  session.add(item)
+  await asyncio.to_thread(session.commit)
+  session_lock.release()
+  return item
+
+async def add_items(items):
+  await session_lock.acquire()
+  for item in items:
+    session.add(item)
+  await asyncio.to_thread(session.commit)
+  session_lock.release()
+  return items
+
 BigIntegerType = BigInteger()
 BigIntegerType = BigIntegerType.with_variant(postgresql.BIGINT(), 'postgresql')
 BigIntegerType = BigIntegerType.with_variant(sqlite.INTEGER(), 'sqlite')

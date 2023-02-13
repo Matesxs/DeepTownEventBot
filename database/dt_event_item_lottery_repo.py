@@ -1,15 +1,11 @@
-import asyncio
 import datetime
 import disnake
 from sqlalchemy import select, delete, update, or_, and_
 from typing import Optional, List, Dict, Union, Tuple
 
-from database import run_query, run_commit, session, dt_items_repo, discord_objects_repo, event_participation_repo
+from database import run_query, run_commit, add_item, add_items, session, dt_items_repo, discord_objects_repo, event_participation_repo
 from database.tables.dt_event_item_lottery import DTEventItemLottery, DTEventItemLotteryGuess, DTEventItemLotteryGuessedItem
 from utils import dt_helpers
-
-create_lottery_lock = asyncio.Lock()
-create_lottery_guess_lock = asyncio.Lock()
 
 async def get_event_item_lottery(id_: int) -> Optional[DTEventItemLottery]:
   result = await run_query(select(DTEventItemLottery).filter(DTEventItemLottery.id == id_))
@@ -41,15 +37,12 @@ async def create_event_item_lottery(author: disnake.Member, channel: Union[disna
 
   await discord_objects_repo.get_or_create_discord_member(author, True)
 
-  await create_lottery_lock.acquire()
   item = DTEventItemLottery(author_id=str(author.id), guild_id=str(author.guild.id), lottery_channel_id=str(channel.id), event_id=event_specification.event_id,
                             guessed_4_reward_item_name=reward_item_g4.name if reward_item_g4 is not None else None, guessed_4_item_reward_amount=item_g4_amount if reward_item_g4 is not None else 0,
                             guessed_3_reward_item_name=reward_item_g3.name if reward_item_g3 is not None else None, guessed_3_item_reward_amount=item_g3_amount if reward_item_g3 is not None else 0,
                             guessed_2_reward_item_name=reward_item_g2.name if reward_item_g2 is not None else None, guessed_2_item_reward_amount=item_g2_amount if reward_item_g2 is not None else 0,
                             guessed_1_reward_item_name=reward_item_g1.name if reward_item_g1 is not None else None, guessed_1_item_reward_amount=item_g1_amount if reward_item_g1 is not None else 0)
-  session.add(item)
-  await run_commit()
-  create_lottery_lock.release()
+  await add_item(item)
 
   return item
 
@@ -98,7 +91,6 @@ async def make_next_event_guess(author: disnake.Member, items: List[dt_items_rep
   year, week = dt_helpers.get_event_index(datetime.datetime.utcnow() + datetime.timedelta(days=7))
   event_specification = await event_participation_repo.get_or_create_event_specification(year, week)
 
-  await create_lottery_guess_lock.acquire()
   guess = await get_guess(author.guild.id, author.id, event_specification.event_id)
 
   if guess is not None:
@@ -108,15 +100,9 @@ async def make_next_event_guess(author: disnake.Member, items: List[dt_items_rep
     await discord_objects_repo.get_or_create_discord_member(author, True)
 
     guess = DTEventItemLotteryGuess(guild_id=str(author.guild.id), author_id=str(author.id), event_id=event_specification.event_id)
-    session.add(guess)
-    await run_commit()
-  create_lottery_guess_lock.release()
+    await add_item(guess)
 
-  for item in items:
-    guess_item = DTEventItemLotteryGuessedItem(guess_id=guess.id, item_name=item.name)
-    session.add(guess_item)
-
-  await run_commit()
+  await add_items([DTEventItemLotteryGuessedItem(guess_id=guess.id, item_name=item.name) for item in items])
 
   return guess
 

@@ -2,7 +2,7 @@ from typing import List, Tuple, Optional, AsyncIterator
 import disnake
 from sqlalchemy import select, delete
 
-from database import run_query, run_commit, session, discord_objects_repo
+from database import run_query, run_commit, add_item, discord_objects_repo
 from database.tables.questions_and_answers import QuestionAndAnswer, QuestionAndAnswerWhitelist
 
 async def is_on_whitelist(guild_id: int, channel_id: int) -> bool:
@@ -16,9 +16,8 @@ async def add_to_whitelist(guild: disnake.Guild, channel_id: int) -> bool:
   await discord_objects_repo.get_or_create_discord_guild(guild)
 
   item = QuestionAndAnswerWhitelist(guild_id=str(guild.id), channel_id=str(channel_id))
-  session.add(item)
+  await add_item(item)
 
-  await run_commit()
   return True
 
 async def remove_from_whitelist(guild_id: int, channel_id: int) -> bool:
@@ -39,7 +38,7 @@ async def create_question_and_answer(question: str, answer: str) -> Optional[Que
     return None
 
   item = QuestionAndAnswer(question=question, answer=answer)
-  session.add(item)
+  await add_item(item)
 
   await run_commit()
   return item

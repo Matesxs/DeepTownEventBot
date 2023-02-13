@@ -2,7 +2,7 @@ import disnake
 from typing import Optional, List, AsyncIterator
 from sqlalchemy import select, delete, or_
 
-from database import run_query, run_commit, session, dt_guild_repo
+from database import run_query, run_commit, add_item, dt_guild_repo
 from database.tables.tracking_settings import TrackingSettings
 from database.discord_objects_repo import get_or_create_discord_guild
 
@@ -28,7 +28,7 @@ async def get_or_create_tracking_settings(guild: disnake.Guild, dt_guild_id: int
       return None
 
     item = TrackingSettings(guild_id=str(guild.id), dt_guild_id=dt_guild_id, announce_channel_id=str(announce_channel_id) if announce_channel_id is not None else None)
-    session.add(item)
+    await add_item(item)
   else:
     item.announce_channel_id=str(announce_channel_id) if announce_channel_id is not None else None
 

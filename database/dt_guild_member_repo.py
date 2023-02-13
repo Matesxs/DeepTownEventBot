@@ -1,7 +1,7 @@
 from typing import Optional, List
 from sqlalchemy import func, select, update
 
-from database import run_query, run_commit, session
+from database import run_query, add_item
 from database.tables.dt_guild_member import DTGuildMember
 from database.dt_guild_repo import get_and_update_dt_guild, create_dummy_dt_guild
 from database.dt_user_repo import get_and_update_dt_user, create_dummy_dt_user
@@ -21,8 +21,8 @@ async def create_dummy_dt_guild_member(user_id: int, guild_id: int) -> Optional[
       return None
 
     item = DTGuildMember(dt_user_id=user_id, dt_guild_id=guild_id, current_member=False)
-    session.add(item)
-    await run_commit()
+    await add_item(item)
+
   return item
 
 async def get_and_update_dt_guild_members(guild_data: DTGuildData) -> Optional[List[DTGuildMember]]:
@@ -38,8 +38,7 @@ async def get_and_update_dt_guild_members(guild_data: DTGuildData) -> Optional[L
     item = await get_dt_guild_member(player_data.id, guild_data.id)
     if item is None:
       item = DTGuildMember(dt_user_id=player_data.id, dt_guild_id=guild_data.id)
-      session.add(item)
-      await run_commit()
+      await add_item(item)
     else:
       item.current_member = True
 

@@ -2,7 +2,7 @@ from typing import Optional, List
 
 from sqlalchemy import select, delete
 
-from database import run_query, run_commit, session
+from database import run_query, run_commit, add_item
 from database.tables.dt_blacklist import BlacklistType, DTBlacklistItem
 
 async def get_blacklist_item(bl_type: BlacklistType, identifier: int) -> Optional[DTBlacklistItem]:
@@ -27,8 +27,8 @@ async def create_blacklist_item(bl_type: BlacklistType, identifier: int, additio
   if item is not None: return None
 
   item = DTBlacklistItem(bl_type=BlacklistType(bl_type), identifier=identifier, additional_data=additional_data)
-  session.add(item)
-  await run_commit()
+  await add_item(item)
+
   return item
 
 async def remove_blacklist_item(bl_type: BlacklistType, identifier: int) -> bool:

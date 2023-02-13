@@ -1,7 +1,7 @@
 from typing import Optional, List, Tuple
 from sqlalchemy import or_, select, delete
 
-from database import run_commit, run_query, session
+from database import run_commit, run_query, add_item
 from database.tables.dt_guild import DTGuild
 from database import dt_blacklist_repo, event_participation_guild_repo
 from utils.dt_helpers import DTGuildData
@@ -28,8 +28,7 @@ async def create_dummy_dt_guild(id: int) -> Optional[DTGuild]:
       return None
 
     item = DTGuild(id=id, name="Unknown", level=-1)
-    session.add(item)
-    await run_commit()
+    await add_item(item)
 
   return item
 
@@ -40,7 +39,7 @@ async def get_and_update_dt_guild(guild_data: DTGuildData) -> Optional[DTGuild]:
       return None
 
     item = DTGuild(id=guild_data.id, name=guild_data.name, level=guild_data.level)
-    session.add(item)
+    await add_item(item)
   else:
     item.is_active = await event_participation_guild_repo.get_guild_activity(item.id, config.data_manager.guild_activity_check_events, config.data_manager.guild_activity_check_participation_threshold)
 

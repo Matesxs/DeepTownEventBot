@@ -1,7 +1,7 @@
 from typing import Optional, List, Tuple
 from sqlalchemy import select, delete, func, literal_column
 
-from database import run_query, run_commit, session, event_participation_repo
+from database import run_query, run_commit, add_item, session, event_participation_repo
 from database.tables.dt_items import EventItem, DTItem, ItemType, ItemSource, DTItemComponentMapping
 
 async def get_dt_item(name: str) -> Optional[DTItem]:
@@ -12,7 +12,7 @@ async def set_dt_item(name: str, item_type: ItemType, item_source: ItemSource, v
   item = await get_dt_item(name)
   if item is None:
     item = DTItem(name=name)
-    session.add(item)
+    await add_item(item)
 
   item.item_type = item_type
   item.item_source = item_source
@@ -61,12 +61,12 @@ async def set_component_mapping(target_item_name: str, component_item_name: str,
     if target_item is None or component_item is None or target_item.item_type != ItemType.CRAFTABLE:
       return None
 
-    item = DTItemComponentMapping(target_item_name=target_item_name, component_item_name=component_item_name)
-    session.add(item)
+    item = DTItemComponentMapping(target_item_name=target_item_name, component_item_name=component_item_name, amount=amount)
+    await add_item(item)
+  else:
+    item.amount = amount
+    await run_commit()
 
-  item.amount = amount
-
-  await run_commit()
   return item
 
 async def remove_component_mapping(target_item_name: str, component_item_name: str) -> bool:

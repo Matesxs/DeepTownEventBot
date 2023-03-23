@@ -29,7 +29,6 @@ async def process_loterries(bot: BaseAutoshardedBot):
         embed.description = f"**Ended**\n" + embed.description
 
         buttons = [disnake.ui.Button(label="Delete", emoji="❌", custom_id=f"event_item_lottery:remove:{lottery.id}", style=disnake.ButtonStyle.red),
-        buttons = [disnake.ui.Button(label="Delete", emoji="❌", custom_id=f"event_item_lottery:remove:{lottery.id}", style=disnake.ButtonStyle.red),
                    disnake.ui.Button(label="Repeat", emoji="🔂", custom_id=f"event_item_lottery:repeat:{lottery.id}", style=disnake.ButtonStyle.primary)]
 
         await destination.edit(embed=embed, components=buttons)

@@ -28,7 +28,7 @@ async def process_loterries(bot: BaseAutoshardedBot):
         embed = destination.embeds[0]
         embed.description = f"**Ended**\n" + embed.description
 
-        buttons = [disnake.ui.Button(label="Delete", emoji="❌", custom_id=f"event_item_lottery:remove:{lottery.id}", style=disnake.ButtonStyle.red),
+        buttons = [disnake.ui.Button(label="Delete", emoji="♻️", custom_id=f"event_item_lottery:remove:{lottery.id}", style=disnake.ButtonStyle.red),
                    disnake.ui.Button(label="Repeat", emoji="🔂", custom_id=f"event_item_lottery:repeat:{lottery.id}", style=disnake.ButtonStyle.primary)]
 
         await destination.edit(embed=embed, components=buttons)
@@ -165,7 +165,7 @@ async def process_loterries(bot: BaseAutoshardedBot):
   return len(results), guesses_cleared
 
 def get_lottery_buttons(lottery):
-  buttons = [disnake.ui.Button(label="Delete", emoji="❌", custom_id=f"event_item_lottery:remove:{lottery.id}", style=disnake.ButtonStyle.red),
+  buttons = [disnake.ui.Button(label="Delete", emoji="♻️", custom_id=f"event_item_lottery:remove:{lottery.id}", style=disnake.ButtonStyle.red),
              disnake.ui.Button(label="Show participants", emoji="🧾", custom_id=f"event_item_lottery:show:{lottery.id}", style=disnake.ButtonStyle.blurple),
              disnake.ui.Button(label="Split rewards", emoji="🪓", custom_id=f"event_item_lottery:split_rewards:{lottery.id}", style=disnake.ButtonStyle.success if lottery.split_rewards else disnake.ButtonStyle.danger),
              disnake.ui.Button(label="Auto Repeat", emoji="🔁", custom_id=f"event_item_lottery:auto_repeat:{lottery.id}", style=disnake.ButtonStyle.success if lottery.auto_repeat else disnake.ButtonStyle.danger)]

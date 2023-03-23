@@ -52,6 +52,7 @@ class DTEventItemLottery(database.base):
   closed_at = Column(DateTime, nullable=True, default=None)
 
   auto_repeat = Column(Boolean, nullable=False, default=False)
+  split_rewards = Column(Boolean, nullable=False, default=False)
 
   guessed_4_reward_item_name = Column(String, ForeignKey("dt_items.name", ondelete="SET NULL", onupdate="CASCADE"), nullable=True)
   guessed_4_item_reward_amount = Column(Integer, default=0, nullable=False)

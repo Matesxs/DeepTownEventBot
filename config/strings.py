@@ -280,6 +280,7 @@ class Strings(metaclass=Formatable):
   lottery_button_listener_invalid_command = "Invalid lottery message command received"
 
   lottery_create_description = "Create event items lotery for next event"
+  lottery_create_split_rewards_param_description = "Split reward amounts between winners"
   lottery_create_reward_item_param_description = "Reward item for guessing {item_number} event items right"
   lottery_create_reward_item_amount_param_description = "Number of reward items for guessing {item_number} event items right"
   lottery_create_no_reward_set = "You set no reward items"

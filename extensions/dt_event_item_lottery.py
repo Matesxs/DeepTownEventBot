@@ -62,6 +62,7 @@ class DTEventItemLottery(Base_Cog):
   @commands.guild_only()
   @cooldowns.long_cooldown
   async def create_lottery(self, inter: disnake.CommandInteraction,
+                           split_rewards: bool = commands.Param(description=Strings.lottery_create_split_rewards_param_description),
                            guessed_4_reward_item: Optional[str] = commands.Param(default=None, description=Strings.lottery_create_reward_item_param_description(item_number=4), autocomplete=dt_autocomplete.autocomplete_item),
                            guessed_4_reward_item_amount: int=commands.Param(default=0, min_value=0, description=Strings.lottery_create_reward_item_amount_param_description(item_number=4)),
                            guessed_3_reward_item: Optional[str] = commands.Param(default=None, description=Strings.lottery_create_reward_item_param_description(item_number=3), autocomplete=dt_autocomplete.autocomplete_item),
@@ -100,7 +101,7 @@ class DTEventItemLottery(Base_Cog):
       guessed_1_reward_item = guessed_1_reward_item_
 
     orig_message = await inter.original_message()
-    lottery = await dt_event_item_lottery_repo.create_event_item_lottery(inter.author, orig_message.channel,
+    lottery = await dt_event_item_lottery_repo.create_event_item_lottery(inter.author, orig_message.channel, split_rewards,
                                                                          guessed_4_reward_item, guessed_4_reward_item_amount,
                                                                          guessed_3_reward_item, guessed_3_reward_item_amount,
                                                                          guessed_2_reward_item, guessed_2_reward_item_amount,
@@ -188,19 +189,20 @@ class DTEventItemLottery(Base_Cog):
           await message_utils.generate_error_message(inter, Strings.lottery_already_created)
       else:
         await message_utils.generate_error_message(inter, Strings.lottery_button_listener_not_author)
+    elif command == "split_rewards":
+      if inter.author.id == int(lottery.author_id):
+        lottery.split_rewards = not lottery.split_rewards
+        await dt_event_item_lottery_repo.run_commit()
+
+        await inter.edit_original_response(components=items_lottery.get_lottery_buttons(lottery))
+      else:
+        await message_utils.generate_error_message(inter, Strings.lottery_button_listener_not_author)
     elif command == "auto_repeat":
       if inter.author.id == int(lottery.author_id):
         lottery.auto_repeat = not lottery.auto_repeat
         await dt_event_item_lottery_repo.run_commit()
 
-        buttons = [disnake.ui.Button(emoji="🗑️", custom_id=f"event_item_lottery:remove:{lottery.id}", style=disnake.ButtonStyle.red), disnake.ui.Button(emoji="🧾", custom_id=f"event_item_lottery:show:{lottery.id}", style=disnake.ButtonStyle.blurple)]
-
-        if lottery.auto_repeat:
-          buttons.append(disnake.ui.Button(emoji="🔁", custom_id=f"event_item_lottery:auto_repeat:{lottery.id}", style=disnake.ButtonStyle.success))
-        else:
-          buttons.append(disnake.ui.Button(emoji="🔁", custom_id=f"event_item_lottery:auto_repeat:{lottery.id}", style=disnake.ButtonStyle.danger))
-
-        await inter.edit_original_response(components=buttons)
+        await inter.edit_original_response(components=items_lottery.get_lottery_buttons(lottery))
       else:
         await message_utils.generate_error_message(inter, Strings.lottery_button_listener_not_author)
     else:

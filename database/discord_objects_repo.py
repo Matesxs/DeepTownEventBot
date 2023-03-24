@@ -1,6 +1,6 @@
 import disnake
 from typing import Optional, Union, List
-from sqlalchemy import select, delete
+from sqlalchemy import select, delete, text
 
 from database import run_commit, run_query, add_item
 from database.tables.discord_objects import DiscordGuild, DiscordUser, DiscordMember
@@ -54,12 +54,12 @@ async def remove_discord_user(user_id: int):
   await run_commit()
 
 async def discord_user_cleanup():
-  await run_query(f"""
+  await run_query(text(f"""
   DELETE
   FROM discord_users
   WHERE (discord_users.id NOT IN (SELECT DISTINCT discord_members.user_id
                                   FROM discord_members));
-  """, commit=True)
+  """), commit=True)
 
 async def get_discord_member(guild_id: int, user_id: int) -> Optional[DiscordMember]:
   result = await run_query(select(DiscordMember).filter(DiscordMember.guild_id == str(guild_id), DiscordMember.user_id == str(user_id)))

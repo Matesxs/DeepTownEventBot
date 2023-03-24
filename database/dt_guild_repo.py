@@ -1,5 +1,5 @@
 from typing import Optional, List, Tuple
-from sqlalchemy import or_, select, delete
+from sqlalchemy import or_, select, delete, text
 
 from database import run_commit, run_query, add_item
 from database.tables.dt_guild import DTGuild
@@ -73,25 +73,25 @@ async def get_guild_level_leaderboard() -> List[Tuple[int, int, str, int]]:
   :return: standing, guild id, guild name, guild level
   """
 
-  result = await run_query(f"""
+  result = await run_query(text(f"""
   SELECT position, id, name, level
   FROM (SELECT ROW_NUMBER() OVER(ORDER BY level DESC) AS position, id, name, level
         FROM dt_guilds
         WHERE is_active=TRUE
         ORDER BY level DESC) as pin
   ORDER BY level DESC;
-  """)
+  """))
 
   return result.all()
 
 async def get_guild_position(guild_id: int) -> Optional[int]:
-  result = await run_query(f"""
+  result = await run_query(text(f"""
     SELECT position
     FROM (SELECT ROW_NUMBER() OVER(ORDER BY level DESC) AS position, id, name, level
           FROM dt_guilds
           WHERE is_active=TRUE
           ORDER BY level DESC) as pin
     WHERE id={guild_id};
-    """)
+    """))
 
   return result.scalar_one_or_none()

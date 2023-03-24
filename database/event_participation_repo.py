@@ -226,7 +226,8 @@ async def dump_guild_event_participation_data(guild_id: int) -> List[Tuple[int, 
     .select_from(EventSpecification)
     .join(EventParticipation)
     .join(dt_user_repo.DTUser)
-    .filter(EventParticipation.dt_guild_id == guild_id))).all()
+    .filter(EventParticipation.dt_guild_id == guild_id)
+    .order_by(EventSpecification.event_year.desc(), EventSpecification.event_week.desc()))).all()
   return data
 
 async def search_event_identificator(search: Optional[str]=None, limit: int=25) -> List[Tuple[int, int]]:

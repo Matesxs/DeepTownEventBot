@@ -24,9 +24,8 @@ class DTEventReportAnnouncer(Base_Cog):
     if self.result_announce_task.is_running():
       self.result_announce_task.cancel()
 
-  @commands.slash_command()
+  @commands.slash_command(dm_permission=False)
   @permissions.guild_administrator_role()
-  @commands.guild_only()
   async def announcer(self, inter: disnake.CommandInteraction):
     pass
 

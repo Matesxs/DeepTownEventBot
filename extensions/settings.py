@@ -11,14 +11,13 @@ class Settings(Base_Cog):
   def __init__(self, bot):
     super(Settings, self).__init__(bot, __file__)
 
-  @commands.slash_command(name="settings")
+  @commands.slash_command(name="settings", dm_permission=False)
   async def settings_commands(self, inter: disnake.CommandInteraction):
     pass
 
   @settings_commands.sub_command_group(name="admin_role")
   @permissions.guild_owner()
   @cooldowns.default_cooldown
-  @commands.guild_only()
   async def admin_role_commands(self, inter: disnake.CommandInteraction):
     await inter.response.defer(with_message=True, ephemeral=True)
 
@@ -46,7 +45,6 @@ class Settings(Base_Cog):
   @settings_commands.sub_command_group(name="better_message_links")
   @permissions.guild_administrator_role()
   @cooldowns.default_cooldown
-  @commands.guild_only()
   async def better_message_links_commands(self, inter: disnake.CommandInteraction):
     await inter.response.defer(with_message=True, ephemeral=True)
 

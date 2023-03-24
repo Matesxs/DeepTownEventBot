@@ -35,7 +35,7 @@ except Exception:
   exit(-1)
 
 session_lock = asyncio.Lock()
-async def run_query(statement: Any, commit: bool=False) -> Union[Result, CursorResult]:
+async def run_query(statement: Any, commit: bool=False) -> Result:
   await session_lock.acquire()
   result = await asyncio.to_thread(session.execute, statement)
   if commit:

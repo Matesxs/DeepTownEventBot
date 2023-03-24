@@ -1,6 +1,6 @@
 import enum
 from sqlalchemy import Column, ForeignKey, String, Float, Integer, Enum
-from sqlalchemy.orm import relationship
+from sqlalchemy.orm import relationship, Mapped
 from typing import List
 import math
 
@@ -12,7 +12,7 @@ class DTItemComponentMapping(database.base):
   target_item_name = Column(ForeignKey("dt_items.name", ondelete="CASCADE", onupdate="CASCADE"), primary_key=True)
   component_item_name = Column(ForeignKey("dt_items.name", ondelete="CASCADE", onupdate="CASCADE"), primary_key=True)
 
-  component:"DTItem" = relationship("DTItem", primaryjoin="DTItemComponentMapping.component_item_name==DTItem.name", uselist=False)
+  component:Mapped["DTItem"] = relationship("DTItem", primaryjoin="DTItemComponentMapping.component_item_name==DTItem.name", uselist=False)
   amount = Column(Float, default=0)
 
 class ItemType(enum.Enum):
@@ -49,7 +49,7 @@ class DTItem(database.base):
   crafting_time = Column(Float, default=0)
   crafting_batch_size = Column(Integer, default=1)
 
-  components_data:List[DTItemComponentMapping] = relationship("DTItemComponentMapping", primaryjoin="DTItem.name==DTItemComponentMapping.target_item_name", uselist=True)
+  components_data:Mapped[List[DTItemComponentMapping]] = relationship("DTItemComponentMapping", primaryjoin="DTItem.name==DTItemComponentMapping.target_item_name", uselist=True)
 
   @property
   def cumulative_crafting_time_per_item(self) -> float:

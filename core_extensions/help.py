@@ -135,7 +135,7 @@ class Help(Base_Cog):
   async def help(self, inter: disnake.CommandInteraction):
     await inter.response.defer(with_message=True)
 
-    command_descriptiors = [*generate_slash_command_data(self.bot.slash_commands), *(await generate_message_command_data(inter.bot.cogs.values(), inter))]
+    command_descriptiors = [*generate_slash_command_data(self.bot.slash_commands), *(await generate_message_command_data(self.bot.cogs.values(), inter))]
     pages = generate_help_pages(command_descriptiors, inter.author)
 
     if pages:

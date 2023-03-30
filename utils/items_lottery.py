@@ -146,7 +146,7 @@ async def process_loterries(bot: BaseAutoshardedBot):
 
     if lottery.auto_repeat:
       next_event_lottery = await dt_event_item_lottery_repo.get_next_event_item_lottery_by_constrained(int(lottery.author_id), int(lottery.guild_id))
-      if next_event_lottery is not None:
+      if next_event_lottery is None:
         await lottery.repeat()
         await create_lottery(author or author_name, (await lottery.get_lotery_message(bot)) or destination, lottery, False)
 

@@ -167,8 +167,10 @@ class DTEventItemLottery(Base_Cog):
       await message_utils.delete_message(self.bot, inter.message)
       return await message_utils.generate_error_message(inter, Strings.lottery_button_listener_invalid_lottery)
 
+    is_author = (inter.author.id == int(lottery.author_id)) or (inter.author.id == self.bot.owner_id)
+
     if command == "remove":
-      if inter.author.id == int(lottery.author_id) or (int(lottery.author_id) != self.bot.owner_id and (await permissions.predicate_guild_administrator_role(inter))):
+      if is_author or (await permissions.predicate_guild_administrator_role(inter)):
         await message_utils.delete_message(self.bot, inter.message)
         await dt_event_item_lottery_repo.remove_lottery(lottery.id)
         await message_utils.generate_success_message(inter, Strings.lottery_button_listener_removed)
@@ -179,18 +181,18 @@ class DTEventItemLottery(Base_Cog):
         await inter.send(f"```\n{table}\n```", ephemeral=True)
         await asyncio.sleep(0.05)
     elif command == "repeat":
-      if inter.author.id == int(lottery.author_id):
+      if is_author:
         next_event_lottery = await dt_event_item_lottery_repo.get_next_event_item_lottery_by_constrained(int(lottery.author_id), int(lottery.guild_id))
-        if next_event_lottery is not None:
+        if next_event_lottery is None:
           message = await inter.original_message()
           await lottery.repeat()
-          await items_lottery.create_lottery(inter.author, message, lottery, False)
+          await items_lottery.create_lottery(lottery.member.name, message, lottery, False)
         else:
           await message_utils.generate_error_message(inter, Strings.lottery_already_created)
       else:
         await message_utils.generate_error_message(inter, Strings.lottery_button_listener_not_author)
     elif command == "split_rewards":
-      if inter.author.id == int(lottery.author_id):
+      if is_author:
         lottery.split_rewards = not lottery.split_rewards
         await dt_event_item_lottery_repo.run_commit()
 
@@ -198,7 +200,7 @@ class DTEventItemLottery(Base_Cog):
       else:
         await message_utils.generate_error_message(inter, Strings.lottery_button_listener_not_author)
     elif command == "auto_repeat":
-      if inter.author.id == int(lottery.author_id):
+      if is_author:
         lottery.auto_repeat = not lottery.auto_repeat
         await dt_event_item_lottery_repo.run_commit()
 

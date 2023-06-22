@@ -19,9 +19,9 @@ from features.views.data_selector import DataSelector
 
 logger = setup_custom_logger(__name__)
 
-class PublicInterface(Base_Cog):
+class DTDataInterface(Base_Cog):
   def __init__(self, bot):
-    super(PublicInterface, self).__init__(bot, __file__)
+    super(DTDataInterface, self).__init__(bot, __file__)
 
   @commands.slash_command(name="guild")
   async def guild_commands(self, inter: disnake.CommandInteraction):
@@ -412,4 +412,4 @@ class PublicInterface(Base_Cog):
       await inter.send(f"```\n{data_string}\n```")
 
 def setup(bot):
-  bot.add_cog(PublicInterface(bot))
+  bot.add_cog(DTDataInterface(bot))

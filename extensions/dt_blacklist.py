@@ -101,26 +101,26 @@ class DTBlacklist(Base_Cog):
   @blacklist_commands.sub_command(name="remove", description=Strings.blacklist_remove_description)
   @permissions.bot_developer()
   async def blacklist_remove(self, inter: disnake.CommandInteraction,
-                          type: dt_blacklist_repo.BlacklistType = commands.Param(description=Strings.blacklist_type_param_description),
-                          identifier: int = commands.Param(description=Strings.blacklist_identifier_param_description)):
+                             type_: dt_blacklist_repo.BlacklistType = commands.Param(description=Strings.blacklist_type_param_description, name="type"),
+                             identifier: int = commands.Param(description=Strings.blacklist_identifier_param_description)):
     await inter.response.defer(with_message=True, ephemeral=True)
-    type = dt_blacklist_repo.BlacklistType(type)
+    type_ = dt_blacklist_repo.BlacklistType(type_)
 
-    if await dt_blacklist_repo.remove_blacklist_item(type, identifier):
-      await message_utils.generate_success_message(inter, Strings.blacklist_remove_success(identifier=identifier, type=type))
+    if await dt_blacklist_repo.remove_blacklist_item(type_, identifier):
+      await message_utils.generate_success_message(inter, Strings.blacklist_remove_success(identifier=identifier, type=type_))
     else:
-      await message_utils.generate_error_message(inter, Strings.blacklist_remove_failed(identifier=identifier, type=type))
+      await message_utils.generate_error_message(inter, Strings.blacklist_remove_failed(identifier=identifier, type=type_))
 
   @blacklist_commands.sub_command(name="list", description=Strings.blacklist_list_description)
   @cooldowns.default_cooldown
   async def blacklist_list(self, inter: disnake.CommandInteraction,
-                           type: Optional[dt_blacklist_repo.BlacklistType] = commands.Param(default=None, description=Strings.blacklist_type_param_description)):
+                           type_: Optional[dt_blacklist_repo.BlacklistType] = commands.Param(default=None, description=Strings.blacklist_type_param_description, name="type")):
     await inter.response.defer(with_message=True)
 
-    if type is not None:
-      type = dt_blacklist_repo.BlacklistType(type)
+    if type_ is not None:
+      type_ = dt_blacklist_repo.BlacklistType(type_)
 
-    blacklist_items = await dt_blacklist_repo.get_blacklist_items(type)
+    blacklist_items = await dt_blacklist_repo.get_blacklist_items(type_)
 
     blacklist_data = [(bitem.identifier, bitem.bl_type, string_manipulation.truncate_string(bitem.additional_data, 20)) for bitem in blacklist_items]
     blacklist_table_lines = table2ascii(["Identifier", "Type", "Specific Data"], blacklist_data, alignments=[Alignment.LEFT, Alignment.LEFT, Alignment.LEFT]).split("\n")

@@ -61,7 +61,7 @@ async def get_all_ids() -> List[int]:
   result = await run_query(select(QuestionAndAnswer.id))
   return result.scalars().all()
 
-async def remove_question(id: int) -> bool:
-  result = await run_query(delete(QuestionAndAnswer).filter(QuestionAndAnswer.id == id))
+async def remove_question(id_: int) -> bool:
+  result = await run_query(delete(QuestionAndAnswer).filter(QuestionAndAnswer.id == id_))
   await run_commit()
   return result.rowcount > 0

@@ -161,7 +161,7 @@ class DTDataManager(Base_Cog):
 
   @item_commands.sub_command(name="add", description=Strings.data_manager_add_dt_item_description)
   @cooldowns.short_cooldown
-  @permissions.bot_developer()
+  @commands.is_owner()
   async def add_dt_item(self, inter: disnake.CommandInteraction,
                         name: str=commands.Param(description=Strings.data_manager_add_remove_dt_item_name_param_description),
                         item_type: dt_items_repo.ItemType=commands.Param(description=Strings.data_manager_add_dt_item_type_param_description),
@@ -183,7 +183,7 @@ class DTDataManager(Base_Cog):
 
   @item_commands.sub_command(name="remove", description=Strings.data_manager_remove_dt_item_description)
   @cooldowns.short_cooldown
-  @permissions.bot_developer()
+  @commands.is_owner()
   async def remove_dt_item(self, inter: disnake.CommandInteraction,
                            name: str=commands.Param(description=Strings.data_manager_add_remove_dt_item_name_param_description, autocomplete=dt_autocomplete.autocomplete_item)):
     await inter.response.defer(with_message=True, ephemeral=True)
@@ -217,7 +217,7 @@ class DTDataManager(Base_Cog):
 
   @item_commands.sub_command(name="modify_component", description=Strings.data_manager_modify_dt_item_component_description)
   @cooldowns.short_cooldown
-  @permissions.bot_developer()
+  @commands.is_owner()
   async def modify_dt_item_component(self, inter: disnake.CommandInteraction,
                                   target_item: str=commands.Param(description=Strings.data_manager_modify_dt_item_component_target_item_param_description, autocomplete=dt_autocomplete.autocomplete_craftable_item),
                                   component_item: str=commands.Param(description=Strings.data_manager_modify_dt_item_component_component_item_param_description, autocomplete=dt_autocomplete.autocomplete_item),
@@ -245,7 +245,7 @@ class DTDataManager(Base_Cog):
 
   @item_commands.sub_command(name="remove_components", description=Strings.data_manager_remove_dt_item_components_description)
   @cooldowns.short_cooldown
-  @permissions.bot_developer()
+  @commands.is_owner()
   async def remove_dt_item_components(self, inter: disnake.CommandInteraction,
                                       target_item: str=commands.Param(description=Strings.data_manager_remove_dt_item_components_target_item_param_description, autocomplete=dt_autocomplete.autocomplete_craftable_item)):
     await inter.response.defer(with_message=True, ephemeral=True)
@@ -288,8 +288,7 @@ class DTDataManager(Base_Cog):
     if (await dt_items_repo.get_dt_item(item4)) is None:
       return await message_utils.generate_error_message(inter, Strings.data_manager_set_event_items_item_not_in_database(item=item4))
 
-    unique_item_names = list(set(list([item1, item2, item3, item4])))
-    if len(unique_item_names) != 4:
+    if len(list(set(list([item1, item2, item3, item4])))) != 4:
       return await message_utils.generate_error_message(inter, Strings.data_manager_set_event_items_repeated_items)
 
     await dt_items_repo.remove_event_participation_items(event_identifier[0], event_identifier[1])
@@ -435,30 +434,30 @@ class DTDataManager(Base_Cog):
     except:
       pass
 
-  @data_manager.sub_command(description=Strings.data_manager_dump_guild_participation_data_description)
-  @cooldowns.huge_cooldown
-  async def dump_guild_participation_data(self, inter: disnake.CommandInteraction,
-                                          identifier = commands.Param(description=Strings.dt_guild_identifier_param_description, autocomp=dt_autocomplete.autocomplete_identifier_guild, converter=dt_autocomplete.guild_user_identifier_converter)):
-    await inter.response.defer(with_message=True, ephemeral=True)
-
-    if identifier is None:
-      return await message_utils.generate_error_message(inter, Strings.dt_invalid_identifier)
-
-    dump_data = await event_participation_repo.dump_guild_event_participation_data(identifier[1])
-
-    if not dump_data:
-      return await message_utils.generate_error_message(inter, Strings.data_manager_dump_guild_participation_data_no_data(identifier=identifier[1]))
-
-    dataframe = pd.DataFrame(dump_data, columns=["year", "week", "user_id", "username", "amount"], index=None)
-
-    data = io.BytesIO()
-    dataframe.to_csv(data, sep=";", index=False)
-
-    data.seek(0)
-    discord_file = disnake.File(data, filename=f"participations_guild_id_{identifier[1]}_dump.csv")
-
-    await message_utils.generate_success_message(inter, Strings.data_manager_dump_guild_participation_data_success)
-    await inter.send(file=discord_file)
+  # @data_manager.sub_command(description=Strings.data_manager_dump_guild_participation_data_description)
+  # @cooldowns.huge_cooldown
+  # async def dump_guild_participation_data(self, inter: disnake.CommandInteraction,
+  #                                         identifier = commands.Param(description=Strings.dt_guild_identifier_param_description, autocomp=dt_autocomplete.autocomplete_identifier_guild, converter=dt_autocomplete.guild_user_identifier_converter)):
+  #   await inter.response.defer(with_message=True, ephemeral=True)
+  #
+  #   if identifier is None:
+  #     return await message_utils.generate_error_message(inter, Strings.dt_invalid_identifier)
+  #
+  #   dump_data = await event_participation_repo.dump_guild_event_participation_data(identifier[1])
+  #
+  #   if not dump_data:
+  #     return await message_utils.generate_error_message(inter, Strings.data_manager_dump_guild_participation_data_no_data(identifier=identifier[1]))
+  #
+  #   dataframe = pd.DataFrame(dump_data, columns=["year", "week", "user_id", "username", "amount"], index=None)
+  #
+  #   data = io.BytesIO()
+  #   dataframe.to_csv(data, sep=";", index=False)
+  #
+  #   data.seek(0)
+  #   discord_file = disnake.File(data, filename=f"participations_guild_id_{identifier[1]}_dump.csv")
+  #
+  #   await message_utils.generate_success_message(inter, Strings.data_manager_dump_guild_participation_data_success)
+  #   await inter.send(file=discord_file)
 
   @tasks.loop(hours=config.data_manager.cleanup_rate_days * 24)
   async def cleanup_task(self):

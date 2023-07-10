@@ -39,9 +39,9 @@ def add_author_footer(embed: disnake.Embed, author: Union[disnake.User, disnake.
     embed.timestamp = datetime.datetime.now(tz=datetime.timezone.utc)
 
   if additional_text is not None:
-    embed.set_footer(icon_url=author.display_avatar.url, text=' | '.join((str(author), *additional_text)))
+    embed.set_footer(icon_url=author.display_avatar.url, text=' | '.join((author.display_name, *additional_text)))
   else:
-    embed.set_footer(icon_url=author.display_avatar.url, text=str(author))
+    embed.set_footer(icon_url=author.display_avatar.url, text=author.display_name)
 
   return embed
 

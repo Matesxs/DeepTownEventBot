@@ -6,6 +6,9 @@ from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
 from utils import object_getters, string_manipulation
 from database import discord_objects_repo
+from config import permissions, cooldowns
+from config.strings import Strings
+from utils import message_utils
 
 logger = setup_custom_logger(__name__)
 
@@ -73,6 +76,32 @@ class BetterMessageLinks(Base_Cog):
 
       if other_files:
         await repost_message.reply(files=other_files) # To separate files under the first better repost message
+
+  @commands.slash_command(name="better_message_links")
+  @permissions.guild_administrator_role()
+  @cooldowns.default_cooldown
+  async def better_message_links_commands(self, inter: disnake.CommandInteraction):
+    pass
+
+  @better_message_links_commands.sub_command(name="enable", description=Strings.settings_better_message_links_enable_description)
+  async def better_message_links_enable(self, inter: disnake.CommandInteraction):
+    await inter.response.defer(with_message=True, ephemeral=True)
+
+    guild = await discord_objects_repo.get_or_create_discord_guild(inter.guild)
+    guild.enable_better_message_links = True
+    await discord_objects_repo.run_commit()
+
+    await message_utils.generate_success_message(inter, Strings.settings_better_message_links_enable_success)
+
+  @better_message_links_commands.sub_command(name="disable", description=Strings.settings_better_message_links_disable_description)
+  async def better_message_links_disable(self, inter: disnake.CommandInteraction):
+    await inter.response.defer(with_message=True, ephemeral=True)
+
+    guild = await discord_objects_repo.get_or_create_discord_guild(inter.guild)
+    guild.enable_better_message_links = False
+    await discord_objects_repo.run_commit()
+
+    await message_utils.generate_success_message(inter, Strings.settings_better_message_links_disabled_success)
 
 def setup(bot):
   bot.add_cog(BetterMessageLinks(bot))

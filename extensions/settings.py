@@ -42,27 +42,5 @@ class Settings(Base_Cog):
       return await message_utils.generate_success_message(inter, Strings.settings_admin_role_remove_success)
     await message_utils.generate_error_message(inter, Strings.settings_admin_role_remove_failed)
 
-  @settings_commands.sub_command_group(name="better_message_links")
-  @permissions.guild_administrator_role()
-  @cooldowns.default_cooldown
-  async def better_message_links_commands(self, inter: disnake.CommandInteraction):
-    await inter.response.defer(with_message=True, ephemeral=True)
-
-  @better_message_links_commands.sub_command(name="enable", description=Strings.settings_better_message_links_enable_description)
-  async def better_message_links_enable(self, inter: disnake.CommandInteraction):
-    guild = await discord_objects_repo.get_or_create_discord_guild(inter.guild)
-    guild.enable_better_message_links = True
-    await discord_objects_repo.run_commit()
-
-    await message_utils.generate_success_message(inter, Strings.settings_better_message_links_enable_success)
-
-  @better_message_links_commands.sub_command(name="disable", description=Strings.settings_better_message_links_disable_description)
-  async def better_message_links_disable(self, inter: disnake.CommandInteraction):
-    guild = await discord_objects_repo.get_or_create_discord_guild(inter.guild)
-    guild.enable_better_message_links = False
-    await discord_objects_repo.run_commit()
-
-    await message_utils.generate_success_message(inter, Strings.settings_better_message_links_disabled_success)
-
 def setup(bot):
   bot.add_cog(Settings(bot))

@@ -45,7 +45,7 @@ class DTDataInterface(Base_Cog):
 
     send_report_function = partial(dt_report_generators.send_text_guild_event_participation_report, guild=guild_data[0].dt_guild, participations=guild_data, colm_padding=0 if tight_format else 1)
 
-    reporter_settings = DataSelector(inter.author, ["ID", "Level", "Depth", "Online", "Standing"], ["No°", "Name", "Donate"])
+    reporter_settings = DataSelector(inter.author, ["No°", "Name", "Donate"], ["No°", "ID", "Name", "Level", "Depth", "Online", "Donate", "Standing"])
     await reporter_settings.run(inter)
     ret = await reporter_settings.wait()
 

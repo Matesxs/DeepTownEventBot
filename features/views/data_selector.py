@@ -33,17 +33,19 @@ class DataSelectorDropdown(disnake.ui.Select):
       return await message_utils.generate_error_message(inter, "You are not author of this settings")
 
 class DataSelector(disnake.ui.View):
-  def __init__(self, author: disnake.User, not_selected: List[str], selected: List[str], min_selected: int=1, max_selected: Optional[int]=None, invisible: bool=False):
+  def __init__(self, author: disnake.User, selected: List[str], all_values: List[str], min_selected: int=1, max_selected: Optional[int]=None, invisible: bool=False, delete_after: bool=False):
     super(DataSelector, self).__init__(timeout=600)
 
     self.author = author
     self.message = None
-    self.available_colms = not_selected + selected
     self.invisible = invisible
+    self.delete_after = delete_after
 
-    self.result = selected
+    self.available_colms = list(set(all_values))
+    self.selected = list(set(selected))
+    self.selected = [i for i in self.selected if i in self.available_colms]
 
-    self.selector = DataSelectorDropdown(author, not_selected, selected, min_selected, max_selected)
+    self.selector = DataSelectorDropdown(author, [i for i in self.available_colms if i not in self.selected], self.selected, min_selected, max_selected)
     self.add_item(self.selector)
 
   async def run(self, ctx):
@@ -54,17 +56,20 @@ class DataSelector(disnake.ui.View):
       self.message = await ctx.send(view=self)
 
   def get_results(self):
-    return [colm for colm in self.available_colms if colm in self.result]
+    return [colm for colm in self.available_colms if colm in self.selected] # Only to keep order
 
-  @disnake.ui.button(style=disnake.ButtonStyle.green, label="Generate")
-  async def generate_button(self, button: disnake.ui.Button, inter: disnake.MessageInteraction):
+  @disnake.ui.button(style=disnake.ButtonStyle.green, label="Select")
+  async def select_button(self, button: disnake.ui.Button, inter: disnake.MessageInteraction):
     if self.selector.values is not None and self.selector.values:
-      self.result = self.selector.values
+      self.selected = self.selector.values
 
-    button.disabled = True
-    self.selector.disabled = True
+    if self.delete_after:
+      await self.on_timeout()
+    else:
+      button.disabled = True
+      self.selector.disabled = True
+      await inter.response.edit_message(view=self)
 
-    await inter.response.edit_message(view=self)
     self.stop()
 
   async def interaction_check(self, interaction: disnake.MessageInteraction) -> bool:
@@ -77,6 +82,7 @@ class DataSelector(disnake.ui.View):
   async def on_timeout(self) -> None:
     try:
       await self.message.delete()
+      self.message = None
     except:
       pass
   

@@ -133,8 +133,7 @@ class DTEventReportAnnouncer(Base_Cog):
       announce_channel = await tracker.get_announce_channel(self.bot)
       if announce_channel is None:
         # Announce channel not found so the tracker is not valid anymore
-        await asyncio.to_thread(tracking_settings_repo.session.delete, tracker)
-        await tracking_settings_repo.run_commit()
+        await tracking_settings_repo.remove_tracking_settings(int(tracker.guild_id), tracker.dt_guild_id)
         continue
 
       participations = await event_participation_repo.get_event_participations(guild_id=int(tracker.dt_guild_id), year=year, week=week, order_by=[event_participation_repo.EventParticipation.amount.desc()])

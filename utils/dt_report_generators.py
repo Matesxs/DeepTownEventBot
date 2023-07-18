@@ -90,7 +90,7 @@ def generate_participation_strings(participations: List[EventParticipation], col
 
   return table2ascii(body=data_list, header=sorted_colms, alignments=alligments, cell_padding=colm_padding, first_col_heading="No°" in colms).split("\n")
 
-async def send_text_guild_event_participation_report(report_channel: Union[disnake.TextChannel, disnake.Thread, disnake.VoiceChannel, disnake.PartialMessageable, disnake.ApplicationCommandInteraction, commands.Context], guild: DTGuild, participations: List[EventParticipation], colms: Optional[List[str]]=None, colm_padding: int=1, show_event_items: bool=True):
+async def send_text_guild_event_participation_report(output: Union[disnake.TextChannel, disnake.Thread, disnake.VoiceChannel, disnake.PartialMessageable, disnake.ApplicationCommandInteraction, commands.Context, disnake.Message], guild: DTGuild, participations: List[EventParticipation], colms: Optional[List[str]]=None, colm_padding: int=1, show_event_items: bool=True):
   if not participations: return
   if colms is None:
     colms = ["No°", "Name", "Level", "Donate"]
@@ -117,8 +117,15 @@ async def send_text_guild_event_participation_report(report_channel: Union[disna
     final_string, strings = string_manipulation.add_string_until_length(strings, 1900, "\n")
     announce_strings.append(f"```\n{final_string}\n```")
 
-  for announce_string in announce_strings:
-    await report_channel.send(announce_string)
+  if announce_strings:
+    if isinstance(output, disnake.Message):
+      await output.edit(announce_strings[0], embeds=[], components=None)
+
+      for announce_string in announce_strings[1:]:
+        await output.channel.send(announce_string)
+    else:
+      for announce_string in announce_strings:
+        await output.send(announce_string)
 
 def generate_participations_page_strings(participations: List[EventParticipation]) -> List[str]:
   header = ["Year", "Week", "Guild", "Donate"]

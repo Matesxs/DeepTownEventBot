@@ -43,14 +43,14 @@ class DTDataInterface(Base_Cog):
     if not guild_data:
       return await message_utils.generate_error_message(inter, Strings.dt_event_data_not_found(year=event_identifier[0], week=event_identifier[1]))
 
-    send_report_function = partial(dt_report_generators.send_text_guild_event_participation_report, inter, guild_data[0].dt_guild, guild_data, colm_padding=0 if tight_format else 1)
+    send_report_function = partial(dt_report_generators.send_text_guild_event_participation_report, guild=guild_data[0].dt_guild, participations=guild_data, colm_padding=0 if tight_format else 1)
 
-    reporter_settings = DataSelector(inter.author, ["ID", "Level", "Depth", "Online", "Standing"], ["No°", "Name", "Donate"], invisible=True)
+    reporter_settings = DataSelector(inter.author, ["ID", "Level", "Depth", "Online", "Standing"], ["No°", "Name", "Donate"])
     await reporter_settings.run(inter)
     ret = await reporter_settings.wait()
 
     if not ret:
-      await send_report_function(reporter_settings.get_results())
+      await send_report_function(output=reporter_settings.message, colms=reporter_settings.get_results())
 
   @guild_commands.sub_command(name="profile", description=Strings.public_interface_guild_profile_description)
   @cooldowns.long_cooldown

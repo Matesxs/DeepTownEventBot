@@ -1,7 +1,7 @@
 import datetime
 import statistics
 from typing import Optional, List, Tuple, Any
-from sqlalchemy import func, and_, select, or_
+from sqlalchemy import func, and_, select, or_, delete
 
 from database import run_query, run_commit, add_item
 from database.tables.event_participation import EventParticipation, EventSpecification
@@ -173,6 +173,12 @@ async def get_event_participation(user_id: int, guild_id: int, event_year: int, 
   result = await run_query(select(EventParticipation).filter(EventSpecification.event_year == event_year, EventSpecification.event_week == event_week, EventParticipation.dt_user_id == user_id, EventParticipation.dt_guild_id == guild_id).join(EventSpecification))
   return result.scalar_one_or_none()
 
+async def remove_event_participations(guild_id: int, event_year: int, event_week: int, user_id_filter: Optional[List[int]] = None):
+  if user_id_filter is not None:
+    await run_query(delete(EventParticipation).filter(EventSpecification.event_year == event_year, EventSpecification.event_week == event_week, EventParticipation.dt_guild_id == guild_id, EventParticipation.dt_user_id.not_in(user_id_filter)), commit=True)
+  else:
+    await run_query(delete(EventParticipation).filter(EventSpecification.event_year == event_year, EventSpecification.event_week == event_week, EventParticipation.dt_guild_id == guild_id), commit=True)
+
 async def get_and_update_event_participation(user_id: int, guild_id: int, event_year: int, event_week: int, participation_amount: int) -> Optional[EventParticipation]:
   item = await get_event_participation(user_id, guild_id, event_year, event_week)
   if item is None:
@@ -199,16 +205,19 @@ async def generate_or_update_event_participations(guild_data: dt_helpers.DTGuild
   prev_event_participations = await get_event_participations(guild_id=guild_data.id, year=prev_event_year, week=prev_event_week)
   prev_participation_amounts = [p.amount for p in prev_event_participations]
 
-  updated = True
+  new_event_started = True
   if prev_participation_amounts and participation_amounts and \
       sum(participation_amounts) == sum(prev_participation_amounts) and \
       statistics.mean(participation_amounts) == statistics.mean(prev_participation_amounts) and \
       statistics.median(participation_amounts) == statistics.median(prev_participation_amounts):
-    updated = False
+    new_event_started = False
+
+  # Remove all participations from users that were currently not in guild
+  await remove_event_participations(guild_data.id, event_year, event_week, [player_data.id for player_data in guild_data.players])
 
   participations = []
   for player_data in guild_data.players:
-    participation = await get_and_update_event_participation(player_data.id, guild_data.id, event_year, event_week, player_data.last_event_contribution if updated else 0)
+    participation = await get_and_update_event_participation(player_data.id, guild_data.id, event_year, event_week, player_data.last_event_contribution if new_event_started else 0)
     if participation is not None:
       participations.append(participation)
 

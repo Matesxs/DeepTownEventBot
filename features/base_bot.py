@@ -8,44 +8,33 @@ import traceback
 from utils import message_utils, object_getters, command_utils
 from config import config
 from utils.logger import setup_custom_logger
-from database import init_tables
-from features.git_manipulation import Git
 
 logger = setup_custom_logger(__name__)
 
-intents = disnake.Intents.none()
-intents.guilds = True
-intents.members = True
-intents.emojis = True
-intents.messages = True
-intents.message_content = True
-intents.reactions = True
-intents.presences = False
-intents.typing = False
-intents.voice_states = False
-
 class BaseAutoshardedBot(commands.AutoShardedBot):
-  def __init__(self):
+  def __init__(self, prefix, intents, core_extensions_folder, extensions_folder, default_extensions):
     super(BaseAutoshardedBot, self).__init__(
-      command_prefix=commands.when_mentioned_or(config.base.command_prefix),
+      command_prefix=commands.when_mentioned_or(prefix),
       help_command=None,
       case_insensitive=True,
       allowed_mentions=disnake.AllowedMentions(roles=False, everyone=False, users=True),
-      intents=intents
+      intents=intents,
+      sync_commands=True,
+      sync_commands_on_cog_unload=True
     )
     self.initialized = False
-
-    self.git = Git()
 
     self.last_error = None
     self.start_time = datetime.datetime.utcnow()
 
-    self.event(self.on_ready)
-    init_tables()
+    self.core_extensions_folder = core_extensions_folder
+    self.extensions_folder = extensions_folder
 
-    for cog in command_utils.get_cogs_in_folder("core_extensions"):
+    self.event(self.on_ready)
+
+    for cog in command_utils.get_cogs_in_folder(self.core_extensions_folder):
       try:
-        self.load_extension(f"core_extensions.{cog}")
+        self.load_extension(f"{self.core_extensions_folder}.{cog}")
         logger.info(f"{cog} loaded")
       except commands.ExtensionNotFound:
         logger.warning(f"Failed to load {cog} module - Not found")
@@ -55,9 +44,9 @@ class BaseAutoshardedBot(commands.AutoShardedBot):
         exit(-2)
     logger.info("Protected modules loaded")
 
-    for cog in config.base.default_loaded_extensions:
+    for cog in default_extensions:
       try:
-        self.load_extension(f"extensions.{cog}")
+        self.load_extension(f"{self.extensions_folder}.{cog}")
         logger.info(f"{cog} loaded")
       except commands.ExtensionNotFound:
         logger.warning(f"Failed to load {cog} module - Not found")

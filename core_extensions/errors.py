@@ -21,11 +21,19 @@ class Errors(Base_Cog):
     super(Errors, self).__init__(bot, __file__)
 
   @commands.Cog.listener()
-  async def on_command_error(self, ctx, error):
+  async def on_command_error(self, ctx: commands.Context, error):
     await self.command_error_handling(ctx, error)
 
   @commands.Cog.listener()
-  async def on_slash_command_error(self, inter, error):
+  async def on_slash_command_error(self, inter: disnake.ApplicationCommandInteraction, error):
+    await self.command_error_handling(inter, error)
+
+  @commands.Cog.listener()
+  async def on_user_command_error(self, inter: disnake.ApplicationCommandInteraction, error):
+    await self.command_error_handling(inter, error)
+
+  @commands.Cog.listener()
+  async def on_message_command_error(self, inter: disnake.ApplicationCommandInteraction, error):
     await self.command_error_handling(inter, error)
 
   async def command_error_handling(self, ctx, error):

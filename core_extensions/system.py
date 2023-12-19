@@ -12,6 +12,7 @@ from utils.logger import setup_custom_logger
 from features.views.paginator import EmbedView
 from features.base_bot import BaseAutoshardedBot
 from utils import command_utils, message_utils, string_manipulation
+from features.git_manipulation import Git
 
 logger = setup_custom_logger(__name__)
 
@@ -62,6 +63,8 @@ class System(Base_Cog):
     global global_bot_reference
     global_bot_reference = bot
     super(System, self).__init__(bot, __file__)
+
+    self.git = Git()
 
   @commands.slash_command(name="extensions")
   async def extensions(self, inter: disnake.CommandInteraction):
@@ -236,7 +239,7 @@ class System(Base_Cog):
   async def git_pull(self, ctx: commands.Context):
     await message_utils.delete_message(self.bot, ctx)
 
-    result_message_lines = str(await self.bot.git.pull()).split("\n")
+    result_message_lines = str(await self.git.pull()).split("\n")
     while result_message_lines:
       result_message, result_message_lines = string_manipulation.add_string_until_length(result_message_lines, 1900, "\n")
       await ctx.send(f"Git pull result\n```diff\n{result_message}\n```")

@@ -178,7 +178,7 @@ class DTEventItemLottery(Base_Cog):
         await message_utils.generate_error_message(inter, Strings.lottery_button_listener_not_author)
     elif command == "show":
       for table in (await items_lottery.generate_guesses_tables(self.bot, lottery)):
-        await inter.send(f"```\n{table}\n```", ephemeral=True)
+        await inter.send(f"```\n{table}\n```", ephemeral=True, delete_after=60)
         await asyncio.sleep(0.05)
     elif command == "repeat":
       if is_author:

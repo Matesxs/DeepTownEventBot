@@ -164,7 +164,7 @@ async def process_loterries(bot: BaseAutoshardedBot):
   results = [(lottery, await dt_event_item_lottery_repo.get_results(lottery)) for lottery in not_closed_lotteries]
   for lottery, result in results:
     await process_lottery_result(bot, lottery, result)
-    await asyncio.sleep(0.05)
+    await asyncio.sleep(0.005)
 
   guesses_cleared = await dt_event_item_lottery_repo.clear_old_guesses()
 

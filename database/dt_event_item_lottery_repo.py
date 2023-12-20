@@ -1,6 +1,6 @@
 import datetime
 import disnake
-from sqlalchemy import select, delete, update, or_, and_
+from sqlalchemy import select, delete, update, or_, and_, text
 from typing import Optional, List, Dict, Union, Tuple
 
 from database import run_query, run_commit, add_item, add_items, session, dt_items_repo, discord_objects_repo, event_participation_repo
@@ -52,15 +52,6 @@ async def get_all_active_lotteries() -> List[DTEventItemLottery]:
   result = await run_query(select(DTEventItemLottery).join(event_participation_repo.EventSpecification).filter(and_(DTEventItemLottery.closed_at == None, or_(event_participation_repo.EventSpecification.event_year != nyear, event_participation_repo.EventSpecification.event_week != nweek))))
   return result.scalars().all()
 
-async def close_all_active_lotteries() -> int:
-  nyear, nweek = dt_helpers.get_event_index(datetime.datetime.utcnow() + datetime.timedelta(days=7))
-  next_event_specification = await event_participation_repo.get_event_specification(nyear, nweek)
-  if next_event_specification is None:
-    result = await run_query(update(DTEventItemLottery).filter(DTEventItemLottery.closed_at == None).values(closed_at=datetime.datetime.utcnow()), commit=True)
-  else:
-    result = await run_query(update(DTEventItemLottery).filter(and_(DTEventItemLottery.closed_at == None, DTEventItemLottery.event_id != next_event_specification.event_id)).values(closed_at=datetime.datetime.utcnow()), commit=True)
-  return result.rowcount
-
 async def remove_lottery(id_:int) -> bool:
   result = await run_query(delete(DTEventItemLottery).filter(DTEventItemLottery.id == id_), commit=True)
   return result.rowcount > 0
@@ -107,14 +98,13 @@ async def make_next_event_guess(author: disnake.Member, items: List[dt_items_rep
 
   return guess
 
-async def clear_old_guesses() -> int:
-  nyear, nweek = dt_helpers.get_event_index(datetime.datetime.utcnow() + datetime.timedelta(days=7))
-  next_event_specification = await event_participation_repo.get_event_specification(nyear, nweek)
-  if next_event_specification is None:
-    result = await run_query(delete(DTEventItemLotteryGuess), commit=True)
-  else:
-    result = await run_query(delete(DTEventItemLotteryGuess).filter(DTEventItemLotteryGuess.event_id != next_event_specification.event_id), commit=True)
-  return result.rowcount
+async def clear_old_guesses():
+  await run_query(text("""
+  DELETE
+  FROM dt_event_item_lottery_guesses eg
+  USING event_items ei
+  WHERE ei.event_id = eg.event_id;
+  """), commit=True)
 
 async def get_results(lottery: DTEventItemLottery) -> Tuple[int, Optional[Dict[int, List[discord_objects_repo.DiscordUser]]]]:
   """

@@ -88,6 +88,10 @@ class DTEventItemLottery(database.base):
     if guild is None: return None
     return await object_getters.get_or_fetch_member(guild, int(self.author_id))
 
+  async def close(self):
+    self.closed_at = datetime.datetime.utcnow()
+    await database.run_commit()
+
   async def repeat(self):
     next_year, next_week = dt_helpers.get_event_index(datetime.datetime.utcnow() + datetime.timedelta(days=7))
     event_specification = await event_participation_repo.get_or_create_event_specification(next_year, next_week)

@@ -144,11 +144,16 @@ async def process_lottery_result(bot: BaseAutoshardedBot, lottery: dt_event_item
       if isinstance(destination, disnake.Message) and original_destination_link is not None:
         await destination.edit(components=disnake.ui.Button(label="Jump to lottery", url=original_destination_link, style=disnake.ButtonStyle.primary))
 
+  # Close or repeat lottery
   if lottery.auto_repeat:
     next_event_lottery = await dt_event_item_lottery_repo.get_next_event_item_lottery_by_constrained(int(lottery.author_id), int(lottery.guild_id))
     if next_event_lottery is None:
       await lottery.repeat()
       await create_lottery(author or author_name, (await lottery.get_lotery_message(bot)) or destination, lottery, False)
+    else:
+      await lottery.close()
+  else:
+    await lottery.close()
 
 async def process_loterries(bot: BaseAutoshardedBot):
   not_closed_lotteries = await dt_event_item_lottery_repo.get_all_active_lotteries()
@@ -159,8 +164,8 @@ async def process_loterries(bot: BaseAutoshardedBot):
   results = [(lottery, await dt_event_item_lottery_repo.get_results(lottery)) for lottery in not_closed_lotteries]
   for lottery, result in results:
     await process_lottery_result(bot, lottery, result)
+    await asyncio.sleep(0.05)
 
-  await dt_event_item_lottery_repo.close_all_active_lotteries()
   guesses_cleared = await dt_event_item_lottery_repo.clear_old_guesses()
 
   return len(results), guesses_cleared

@@ -57,7 +57,7 @@ class DiscordGuild(database.base):
 
   admin_role_id = Column(String, nullable=True)
 
-  enable_better_message_links = Column(Boolean, default=True, nullable=False)
+  enable_better_message_links = Column(Boolean, default=False, nullable=False)
 
   tracking_settings = relationship("TrackingSettings", uselist=True, back_populates="guild")
   lotteries = relationship("DTEventItemLottery", uselist=True, back_populates="guild")

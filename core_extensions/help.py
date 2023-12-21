@@ -94,7 +94,7 @@ def generate_help_pages(command_descriptors: List[CommandGroup], author: disnake
 
   return pages
 
-def generate_slash_command_data(slash_commands: Set[commands.InvokableSlashCommand]) -> List[CommandGroup]:
+async def generate_slash_command_data(slash_commands: Set[commands.InvokableSlashCommand], ctx) -> List[CommandGroup]:
   free_commands = []
   command_groups = []
 
@@ -110,6 +110,13 @@ def generate_slash_command_data(slash_commands: Set[commands.InvokableSlashComma
     return " ".join(options_strings)
 
   for slash_command in slash_commands:
+    if slash_command.guild_ids is not None and slash_command.guild_ids:
+      if ctx.guild is None or ctx.guild.id not in slash_command.guild_ids:
+        continue
+
+    if not (await command_check(slash_command, ctx)):
+      continue
+
     option_types = [op.type for op in slash_command.options]
     if disnake.OptionType.sub_command not in option_types and disnake.OptionType.sub_command_group not in option_types:
       free_commands.append(CommandDescriptor(f"/{slash_command.name} {value_options_to_string(slash_command.options)}", slash_command.description))
@@ -135,7 +142,7 @@ class Help(Base_Cog):
   async def help(self, inter: disnake.CommandInteraction):
     await inter.response.defer(with_message=True)
 
-    command_descriptiors = [*generate_slash_command_data(self.bot.slash_commands), *(await generate_message_command_data(self.bot.cogs.values(), inter))]
+    command_descriptiors = [*(await generate_slash_command_data(self.bot.slash_commands, inter)), *(await generate_message_command_data(self.bot.cogs.values(), inter))]
     pages = generate_help_pages(command_descriptiors, inter.author)
 
     if pages:

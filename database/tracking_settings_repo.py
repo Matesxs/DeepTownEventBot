@@ -20,17 +20,18 @@ async def search_tracked_guilds(guild_id: int, search: Optional[str]=None, limit
     result = await run_query(select(dt_guild_repo.DTGuild).join(TrackingSettings).filter(TrackingSettings.guild_id == str(guild_id)).order_by(dt_guild_repo.DTGuild.name).limit(limit))
   return result.scalars().all()
 
-async def get_or_create_tracking_settings(guild: disnake.Guild, dt_guild_id: int, announce_channel_id:Optional[int]=None) -> Optional[TrackingSettings]:
+async def get_or_create_tracking_settings(guild: disnake.Guild, dt_guild_id: int, announce_channel_id:Optional[int]=None, csv_announce_channel_id:Optional[int]=None) -> Optional[TrackingSettings]:
   item = await get_tracking_settings(guild.id, dt_guild_id)
   if item is None:
     await get_or_create_discord_guild(guild)
     if (await dt_guild_repo.get_dt_guild(dt_guild_id)) is None:
       return None
 
-    item = TrackingSettings(guild_id=str(guild.id), dt_guild_id=dt_guild_id, announce_channel_id=str(announce_channel_id) if announce_channel_id is not None else None)
+    item = TrackingSettings(guild_id=str(guild.id), dt_guild_id=dt_guild_id, announce_channel_id=str(announce_channel_id) if announce_channel_id is not None else None, csv_announce_channel_id=str(csv_announce_channel_id) if csv_announce_channel_id is not None else None)
     await add_item(item)
   else:
     item.announce_channel_id=str(announce_channel_id) if announce_channel_id is not None else None
+    item.csv_announce_channel_id=str(csv_announce_channel_id) if csv_announce_channel_id is not None else None
 
   await run_commit()
   return item

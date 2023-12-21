@@ -5,6 +5,9 @@ import humanize
 from typing import List, Union, Optional
 from table2ascii import table2ascii, Alignment
 import statistics
+import pandas as pd
+import io
+import gzip
 
 from utils import string_manipulation, dt_helpers
 from database.tables.event_participation import EventParticipation, EventSpecification
@@ -127,6 +130,21 @@ async def send_text_guild_event_participation_report(output: Union[disnake.TextC
     else:
       for announce_string in announce_strings:
         await output.send(announce_string)
+
+async def send_csv_guild_event_participation_report(output: Union[disnake.TextChannel, disnake.Thread, disnake.VoiceChannel, disnake.PartialMessageable, disnake.ApplicationCommandInteraction, commands.Context, disnake.Message], guild: DTGuild, participations: List[EventParticipation]):
+  if not participations: return
+
+  data = [(participation.dt_user.username, participation.amount) for participation in participations]
+  dataframe = pd.DataFrame(data, columns=["Name", "Donate"])
+
+  ioBuffer = io.BytesIO()
+  with gzip.open(ioBuffer, "wb") as f:
+    f.write(dataframe.to_csv().encode())
+
+  ioBuffer.seek(0)
+
+  start_date, end_date = dt_helpers.event_index_to_date_range(participations[0].event_specification.event_year, participations[0].event_specification.event_week)
+  await output.send(file=disnake.File(ioBuffer, filename=f"Donate__{guild.name}__{start_date.day}.{start_date.month}.{start_date.year}_{end_date.day}.{end_date.month}.{end_date.year}.csv"))
 
 def generate_participations_page_strings(participations: List[EventParticipation]) -> List[str]:
   participation_table_lines = generate_participation_strings(participations, ["Year", "Week", "Guild", "Donate"], 1)

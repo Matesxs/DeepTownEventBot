@@ -52,6 +52,23 @@ class DTDataInterface(Base_Cog):
     if not ret:
       await send_report_function(output=reporter_settings.message, colms=reporter_settings.get_results())
 
+  @guild_commands.sub_command(name="csv_report", description=Strings.public_interface_csv_guild_report_description)
+  @cooldowns.default_cooldown
+  async def guild_csv_report(self, inter: disnake.CommandInteraction,
+                             identifier = commands.Param(description=Strings.dt_guild_identifier_param_description, autocomp=dt_autocomplete.autocomplete_identifier_guild, converter=dt_autocomplete.guild_user_identifier_converter),
+                             event_identifier = commands.Param(default=None, description=Strings.dt_event_identifier_param_description, autocomplete=dt_autocomplete.autocomplete_event_identifier, converter=dt_autocomplete.event_identifier_converter, convert_defaults=True)):
+    await inter.response.defer(with_message=True)
+
+    if identifier is None:
+      return await message_utils.generate_error_message(inter, Strings.dt_invalid_identifier)
+
+    guild_data = await event_participation_repo.get_event_participations(guild_id=identifier[1], year=event_identifier[0], week=event_identifier[1], order_by=[event_participation_repo.EventParticipation.amount.desc()])
+
+    if not guild_data:
+      return await message_utils.generate_error_message(inter, Strings.dt_event_data_not_found(year=event_identifier[0], week=event_identifier[1]))
+
+    await dt_report_generators.send_csv_guild_event_participation_report(inter, guild_data[0].dt_guild, guild_data)
+
   @guild_commands.sub_command(name="profile", description=Strings.public_interface_guild_profile_description)
   @cooldowns.long_cooldown
   async def guild_profile(self, inter: disnake.CommandInteraction,

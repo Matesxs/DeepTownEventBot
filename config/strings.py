@@ -169,6 +169,8 @@ class Strings(metaclass=Formatable):
   public_interface_guild_report_description = "Generate report for specific Deep Town guild"
   public_interface_guild_report_tight_format_param_description = "Tight format of table (default: False)"
 
+  public_interface_csv_guild_report_description = "Generate CSV report for specific Deep Town guild"
+
   public_interface_guild_participations_description = "Guild event participations"
 
   public_interface_guild_leaderboard_description = "Leaderboard of guilds by level (if multiple guild have same level then sorted by name)"

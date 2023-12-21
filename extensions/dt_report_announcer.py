@@ -33,7 +33,8 @@ class DTEventReportAnnouncer(Base_Cog):
   @cooldowns.default_cooldown
   async def add_or_modify_tracker(self, inter: disnake.CommandInteraction,
                                   identifier=commands.Param(description=Strings.dt_guild_identifier_param_description, autocomp=dt_autocomplete.autocomplete_identifier_guild, converter=dt_autocomplete.guild_user_identifier_converter),
-                                  announce_channel: disnake.TextChannel=commands.Param(description=Strings.discord_text_channel_param_description)):
+                                  text_announce_channel: disnake.TextChannel=commands.Param(description=Strings.discord_text_channel_param_description, default=None),
+                                  csv_announce_channel: disnake.TextChannel=commands.Param(description=Strings.discord_text_channel_param_description, default=None)):
     await inter.response.defer(with_message=True, ephemeral=True)
 
     if identifier is None:
@@ -46,14 +47,15 @@ class DTEventReportAnnouncer(Base_Cog):
         if len(all_trackers) >= config.event_tracker.tracker_limit_per_guild:
           return await message_utils.generate_error_message(inter, Strings.event_report_announcer_add_or_modify_tracker_tracker_limit_reached(limit=config.event_report_announcer.tracker_limit_per_guild))
 
-      existing_tracker = await tracking_settings_repo.get_or_create_tracking_settings(inter.guild, identifier[1], announce_channel.id)
+      existing_tracker = await tracking_settings_repo.get_or_create_tracking_settings(inter.guild, identifier[1], text_announce_channel.id if text_announce_channel is not None else None, csv_announce_channel.id if csv_announce_channel is not None else None)
       if existing_tracker is None:
         return await message_utils.generate_error_message(inter, Strings.dt_guild_not_found(identifier=identifier[1]))
     else:
-      existing_tracker.announce_channel_id = str(announce_channel.id)
+      existing_tracker.announce_channel_id = str(text_announce_channel.id) if text_announce_channel is not None else None
+      existing_tracker.csv_announce_channel_id = str(csv_announce_channel.id) if csv_announce_channel is not None else None
       await tracking_settings_repo.run_commit()
 
-    await message_utils.generate_success_message(inter, Strings.event_report_announcer_add_or_modify_tracker_success_with_channel(guild=existing_tracker.dt_guild.name, channel=announce_channel.name))
+    await message_utils.generate_success_message(inter, Strings.event_report_announcer_add_or_modify_tracker_success_with_channel(guild=existing_tracker.dt_guild.name, channel=text_announce_channel.name))
 
   @report_announcer.sub_command(name="remove", description=Strings.event_report_announcer_remove_tracker_description)
   @cooldowns.default_cooldown
@@ -101,7 +103,7 @@ class DTEventReportAnnouncer(Base_Cog):
       for setting in batch:
         guild_name = setting.dt_guild.name
         guild_level = setting.dt_guild.level
-        announce_channel = await setting.get_announce_channel(self.bot)
+        announce_channel = await setting.get_text_announce_channel(self.bot)
 
         page.add_field(name=f"{guild_name}({guild_level})", value="No reporting" if announce_channel is None else f"[#{announce_channel.name}]({announce_channel.jump_url})")
       pages.append(page)
@@ -119,8 +121,13 @@ class DTEventReportAnnouncer(Base_Cog):
       for guild_id in guild_ids:
         data = await dt_helpers.get_dt_guild_data(guild_id, True)
 
+        if data is None:
+          await asyncio.sleep(10)
+          data = await dt_helpers.get_dt_guild_data(guild_id, True)
+
         await asyncio.sleep(1)
-        if data is None: continue
+        if data is None:
+          continue
 
         await event_participation_repo.generate_or_update_event_participations(data)
     logger.info("Update before announcement finished")
@@ -130,17 +137,21 @@ class DTEventReportAnnouncer(Base_Cog):
     logger.info("Starting Announcement")
     trackers = tracking_settings_repo.get_all_trackers()
     async for tracker in trackers:
-      announce_channel = await tracker.get_announce_channel(self.bot)
-      if announce_channel is None:
-        # Announce channel not found so the tracker is not valid anymore
-        await tracking_settings_repo.remove_tracking_settings(int(tracker.guild_id), tracker.dt_guild_id)
-        continue
+      text_announce_channel = await tracker.get_text_announce_channel(self.bot)
+      csv_announce_channel = await tracker.get_csv_announce_channel(self.bot)
+      if text_announce_channel is None and csv_announce_channel is None: continue
 
       participations = await event_participation_repo.get_event_participations(guild_id=int(tracker.dt_guild_id), year=year, week=week, order_by=[event_participation_repo.EventParticipation.amount.desc()])
       if not participations: continue
 
-      await dt_report_generators.send_text_guild_event_participation_report(announce_channel, tracker.dt_guild, participations, colm_padding=0)
-      await asyncio.sleep(0.25)
+      if text_announce_channel is not None:
+        await dt_report_generators.send_text_guild_event_participation_report(text_announce_channel, tracker.dt_guild, participations, colm_padding=0)
+        await asyncio.sleep(0.2)
+
+      if csv_announce_channel is not None:
+        await dt_report_generators.send_csv_guild_event_participation_report(csv_announce_channel, tracker.dt_guild, participations)
+        await asyncio.sleep(0.2)
+
     logger.info(f"Announcements send, next announcement {datetime.datetime.utcnow() + datetime.timedelta(days=7)}")
 
   @result_announce_task.before_loop

@@ -26,10 +26,10 @@ class DTEventReportAnnouncer(Base_Cog):
 
   @commands.slash_command(dm_permission=False)
   @permissions.guild_administrator_role()
-  async def announcer(self, inter: disnake.CommandInteraction):
+  async def report_announcer(self, inter: disnake.CommandInteraction):
     pass
 
-  @announcer.sub_command(name="modify", description=Strings.event_report_announcer_add_or_modify_tracker_description)
+  @report_announcer.sub_command(name="modify", description=Strings.event_report_announcer_add_or_modify_tracker_description)
   @cooldowns.default_cooldown
   async def add_or_modify_tracker(self, inter: disnake.CommandInteraction,
                                   identifier=commands.Param(description=Strings.dt_guild_identifier_param_description, autocomp=dt_autocomplete.autocomplete_identifier_guild, converter=dt_autocomplete.guild_user_identifier_converter),
@@ -55,7 +55,7 @@ class DTEventReportAnnouncer(Base_Cog):
 
     await message_utils.generate_success_message(inter, Strings.event_report_announcer_add_or_modify_tracker_success_with_channel(guild=existing_tracker.dt_guild.name, channel=announce_channel.name))
 
-  @announcer.sub_command(name="remove", description=Strings.event_report_announcer_remove_tracker_description)
+  @report_announcer.sub_command(name="remove", description=Strings.event_report_announcer_remove_tracker_description)
   @cooldowns.default_cooldown
   async def remove_tracker(self, inter: disnake.CommandInteraction,
                            identifier=commands.Param(description=Strings.dt_guild_identifier_param_description, converter=dt_autocomplete.guild_user_identifier_converter)):
@@ -81,7 +81,7 @@ class DTEventReportAnnouncer(Base_Cog):
       return [f"GUILD {string_manipulation.truncate_string(guild.name, 40)} ({guild.id})" for guild in (await tracking_settings_repo.search_tracked_guilds(inter.guild_id, limit=20))]
     return [f"GUILD {string_manipulation.truncate_string(guild.name, 40)} ({guild.id})" for guild in (await tracking_settings_repo.search_tracked_guilds(inter.guild_id, search=string, limit=20))]
 
-  @announcer.sub_command(name="list", description=Strings.event_report_announcer_list_trackers_description)
+  @report_announcer.sub_command(name="list", description=Strings.event_report_announcer_list_trackers_description)
   @cooldowns.default_cooldown
   async def list_guild_trackers(self, inter: disnake.CommandInteraction):
     guild_trackers = await tracking_settings_repo.get_all_guild_trackers(inter.guild.id)

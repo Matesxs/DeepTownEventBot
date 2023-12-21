@@ -84,6 +84,10 @@ class DiscordManager(Base_Cog):
     await discord_objects_repo.remove_discord_guild(guild.id)
 
   @commands.Cog.listener()
+  async def on_guild_update(self, _, after: disnake.Guild):
+    await discord_objects_repo.get_or_create_discord_guild(after)
+
+  @commands.Cog.listener()
   async def on_member_join(self, member: disnake.Member):
     if member.bot or member.system: return
     await discord_objects_repo.get_or_create_discord_member(member)
@@ -92,6 +96,11 @@ class DiscordManager(Base_Cog):
   async def on_member_remove(self, member: disnake.Member):
     if member.bot or member.system: return
     await discord_objects_repo.remove_discord_member(member.guild.id, member.id)
+
+  @commands.Cog.listener()
+  async def on_member_update(self, _, after: disnake.Member):
+    if after.bot or after.system: return
+    await discord_objects_repo.get_or_create_discord_member(after)
 
 def setup(bot):
   bot.add_cog(DiscordManager(bot))

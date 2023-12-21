@@ -1,7 +1,7 @@
 import asyncio
 import datetime
 import dataclasses
-from typing import List, Optional
+from typing import List, Optional, Tuple
 import traceback
 from aiohttp import ClientSession, ClientTimeout
 
@@ -65,6 +65,11 @@ def get_event_index(date:datetime.datetime):
     week_number = datetime.date(event_year, 12, 28).isocalendar()[1]
 
   return event_year, week_number
+
+def event_index_to_date_range(year: int, week: int) -> Tuple[datetime.datetime, datetime.datetime]:
+  date_string = f"{year}-{week}-4"
+  start_date = datetime.datetime.strptime(date_string, "%Y-%W-%w")
+  return start_date, start_date + datetime.timedelta(days=4)
 
 async def get_dt_guild_data(guild_id:int, update: bool=False) -> Optional[DTGuildData]:
   async with ClientSession(timeout=ClientTimeout(total=60)) as session:

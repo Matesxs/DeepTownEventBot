@@ -3,7 +3,7 @@ import disnake
 from disnake.ext import commands
 from Levenshtein import ratio
 
-from utils import message_utils, string_manipulation
+from utils import message_utils, string_manipulation, command_utils
 from database import questions_and_answers_repo
 from config import config, cooldowns, permissions
 from utils.logger import setup_custom_logger
@@ -60,16 +60,16 @@ class AutoHelp(Base_Cog):
       await message.reply(reply_string)
       await asyncio.sleep(0.01)
 
-  @commands.slash_command(name="question_and_answer")
-  async def question_and_answer(self, inter: disnake.CommandInteraction):
+  @command_utils.master_only_slash_command(name="question_and_answer_database")
+  async def question_and_answer_database(self, inter: disnake.CommandInteraction):
     pass
 
-  @question_and_answer.sub_command(name="add", description=Strings.questions_and_answers_add_description)
+  @question_and_answer_database.sub_command(name="add", description=Strings.questions_and_answers_add_description)
   @permissions.bot_developer()
   async def add_question_and_answer(self, inter: disnake.CommandInteraction):
     await inter.response.send_modal(modal=CreateQuestionAndAnswer())
 
-  @question_and_answer.sub_command(name="modify", description=Strings.questions_and_answers_modify_description)
+  @question_and_answer_database.sub_command(name="modify", description=Strings.questions_and_answers_modify_description)
   @permissions.bot_developer()
   async def modify_question_and_answer(self, inter: disnake.CommandInteraction,
                                        question_id: int=commands.Param(description=Strings.questions_and_answers_id_param_description)):
@@ -78,7 +78,7 @@ class AutoHelp(Base_Cog):
       return await message_utils.generate_error_message(inter, Strings.questions_and_answers_not_found)
     await inter.response.send_modal(modal=CreateQuestionAndAnswer(question_and_answer.question, question_and_answer.answer))
 
-  @question_and_answer.sub_command(name="remove", description=Strings.questions_and_answers_remove_description)
+  @question_and_answer_database.sub_command(name="remove", description=Strings.questions_and_answers_remove_description)
   @permissions.bot_developer()
   async def remove_question_and_answer(self, inter: disnake.CommandInteraction,
                                        question_id: int=commands.Param(description=Strings.questions_and_answers_id_param_description)):
@@ -95,6 +95,10 @@ class AutoHelp(Base_Cog):
     if string is None or not string:
       return question_ids[:25]
     return [id_ for id_ in question_ids if string.lower() in str(id_)][:25]
+
+  @commands.slash_command(name="question_and_answer")
+  async def question_and_answer(self, inter: disnake.CommandInteraction):
+    pass
 
   @question_and_answer.sub_command(name="list", description=Strings.questions_and_answers_list_description)
   @cooldowns.default_cooldown

@@ -7,7 +7,7 @@ from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
 from config import cooldowns, Strings, permissions
 from database import dt_items_repo
-from utils import message_utils, dt_autocomplete, string_manipulation
+from utils import message_utils, dt_autocomplete, string_manipulation, command_utils
 from features.views.paginator import EmbedView
 
 logger = setup_custom_logger(__name__)
@@ -16,8 +16,7 @@ class DTStaticDataManager(Base_Cog):
   def __init__(self, bot):
     super(DTStaticDataManager, self).__init__(bot, __file__)
 
-  @commands.slash_command()
-  @permissions.bot_developer()
+  @command_utils.master_only_slash_command()
   async def static_data(self, inter: disnake.CommandInteraction):
     pass
 
@@ -61,6 +60,7 @@ class DTStaticDataManager(Base_Cog):
 
   @item_commands.sub_command(name="list", description=Strings.static_data_manager_list_dt_items_description)
   @cooldowns.default_cooldown
+  @permissions.bot_developer()
   async def list_dt_items(self, inter: disnake.CommandInteraction):
     await inter.response.defer(with_message=True)
 

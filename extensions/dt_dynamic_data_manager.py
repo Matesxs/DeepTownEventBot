@@ -10,7 +10,7 @@ import math
 import re
 
 from features.base_cog import Base_Cog
-from utils import dt_helpers, message_utils, dt_autocomplete, items_lottery
+from utils import dt_helpers, message_utils, dt_autocomplete, items_lottery, command_utils
 from utils.logger import setup_custom_logger
 from config import cooldowns, Strings, permissions
 from database import event_participation_repo, tracking_settings_repo, dt_guild_member_repo, dt_items_repo
@@ -23,7 +23,7 @@ class DTDynamicDataManager(Base_Cog):
   def __init__(self, bot):
     super(DTDynamicDataManager, self).__init__(bot, __file__)
 
-  @commands.slash_command()
+  @command_utils.master_only_slash_command()
   async def data_manager(self, inter: disnake.CommandInteraction):
     pass
 

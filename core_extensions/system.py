@@ -66,12 +66,12 @@ class System(Base_Cog):
 
     self.git = Git()
 
-  @commands.slash_command(name="extensions")
+  @command_utils.master_only_slash_command(name="extensions")
+  @commands.is_owner()
   async def extensions(self, inter: disnake.CommandInteraction):
     pass
 
   @extensions.sub_command(name="load", description=Strings.system_load_description)
-  @commands.is_owner()
   async def load(self, inter: disnake.CommandInteraction, extension_name: str=commands.Param(autocomplete=unloaded_cogs_autocomplete, description="Name of extension to load")):
     cogs_in_extensions_folder = command_utils.get_cogs_in_folder("extensions")
     cogs_in_core_extensions_folder = command_utils.get_cogs_in_folder("core_extensions")
@@ -121,7 +121,6 @@ class System(Base_Cog):
         await message_utils.generate_error_message(inter, Strings.system_unable_to_load_cog(cog=extension_name, e=e))
 
   @extensions.sub_command(name="unload", description=Strings.system_unload_description)
-  @commands.is_owner()
   async def unload(self, inter: disnake.CommandInteraction, extension_name: str=commands.Param(autocomplete=loaded_cogs_not_protected_autocomplete, description="Name of extension to unload")):
     if extension_name in command_utils.get_cogs_in_folder("core_extensions"):
       return await message_utils.generate_error_message(inter, Strings.system_unload_protected_cog(extension=extension_name))
@@ -159,7 +158,6 @@ class System(Base_Cog):
         await message_utils.generate_error_message(inter, Strings.system_unable_to_unload_cog(cog=extension_name, e=e))
 
   @extensions.sub_command(name="reload", description=Strings.system_reload_description)
-  @commands.is_owner()
   async def reload(self, inter: disnake.CommandInteraction, extension_name: str=commands.Param(autocomplete=loaded_cogs_autocomplete, description="Name of extension to reload")):
     loaded_cogs = [cog.file for cog in self.bot.cogs.values()]
     cogs_in_extensions_folder = command_utils.get_cogs_in_folder("extensions")
@@ -204,7 +202,6 @@ class System(Base_Cog):
         await message_utils.generate_error_message(inter, Strings.system_unable_to_reload_cog(cog=extension_name, e=e))
 
   @extensions.sub_command(name="list", description=Strings.system_cogs_description)
-  @commands.is_owner()
   async def cogs(self, inter: disnake.CommandInteraction):
     cogs_in_folder = command_utils.get_cogs_in_folder("extensions")
     protected_cogs_in_folder = command_utils.get_cogs_in_folder("core_extensions")

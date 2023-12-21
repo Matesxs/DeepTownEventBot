@@ -8,6 +8,7 @@ from config import permissions, cooldowns, config
 from config.strings import Strings
 from utils import message_utils, string_manipulation
 from utils.logger import setup_custom_logger
+from utils import command_utils
 
 logger = setup_custom_logger(__name__)
 
@@ -48,12 +49,13 @@ class DiscordManager(Base_Cog):
     await discord_objects_repo.discord_user_cleanup()
     logger.info("Discord data pull finished")
 
-  @commands.slash_command()
+  @command_utils.master_only_slash_command(name="discord")
   async def discord_data_manager(self, inter: disnake.CommandInteraction):
     pass
 
   @discord_data_manager.sub_command(description=Strings.discord_manager_get_guilds_description)
   @permissions.bot_developer()
+  @cooldowns.default_cooldown
   async def get_guilds(self, inter: disnake.CommandInteraction):
     guild_strings = [f"{g.name} ({g.id})" for g in self.bot.guilds]
     while guild_strings:

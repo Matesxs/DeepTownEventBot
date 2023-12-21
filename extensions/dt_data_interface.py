@@ -335,7 +335,8 @@ class DTDataInterface(Base_Cog):
     if item_table is None:
       return await message_utils.generate_error_message(inter, Strings.public_interface_event_help_no_items)
 
-    await inter.send(f"```\nYear: {event_identifier[0]} Week: {event_identifier[1]}\n{item_table}\n```")
+    start_date, end_date = dt_helpers.event_index_to_date_range(int(event_identifier[0]), int(event_identifier[1]))
+    await inter.send(f"```\nYear: {event_identifier[0]} Week: {event_identifier[1]}\n{start_date.day}.{start_date.month}.{start_date.year} - {end_date.day}.{end_date.month}.{end_date.year}\n{item_table}\n```")
 
     if materials_amounts:
       event_items_scaling_table = dt_report_generators.get_event_items_scaling_table(event_specification)

@@ -28,8 +28,8 @@ def master_only_slash_command(
     auto_sync: Optional[bool] = None,
     extras: Optional[Dict[str, Any]] = None,
     **kwargs,
-) -> Callable[[commands.base_core.CommandCallback], InvokableSlashCommand]:
-  def decorator(func: commands.base_core.CommandCallback) -> InvokableSlashCommand:
+) -> Callable:
+  def decorator(func) -> InvokableSlashCommand:
     if not asyncio.iscoroutinefunction(func):
       raise TypeError(f"<{func.__qualname__}> must be a coroutine function")
     if hasattr(func, "__command_flag__"):
@@ -39,7 +39,7 @@ def master_only_slash_command(
     return InvokableSlashCommand(
       func,
       name=name,
-      description=description,
+      description=(description + " (MG)") if description is not None else "(MG)",
       options=options,
       dm_permission=False,
       default_member_permissions=default_member_permissions,

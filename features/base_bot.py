@@ -19,8 +19,7 @@ class BaseAutoshardedBot(commands.AutoShardedBot):
       case_insensitive=True,
       allowed_mentions=disnake.AllowedMentions(roles=False, everyone=False, users=True),
       intents=intents,
-      sync_commands=True,
-      sync_commands_on_cog_unload=True
+      command_sync_flags=commands.CommandSyncFlags.default()
     )
     self.initialized = False
 

@@ -1,7 +1,7 @@
 import datetime
 import statistics
 from typing import Optional, List, Tuple, Any
-from sqlalchemy import func, and_, select, or_, delete
+from sqlalchemy import func, and_, select, or_, delete, text
 
 from database import run_query, run_commit, add_item
 from database.tables.event_participation import EventParticipation, EventSpecification
@@ -174,10 +174,21 @@ async def get_event_participation(user_id: int, guild_id: int, event_year: int, 
   return result.scalar_one_or_none()
 
 async def remove_event_participations(guild_id: int, event_year: int, event_week: int, user_id_filter: Optional[List[int]] = None):
-  if user_id_filter is not None:
-    await run_query(delete(EventParticipation).filter(EventSpecification.event_year == event_year, EventSpecification.event_week == event_week, EventParticipation.dt_guild_id == guild_id, EventParticipation.dt_user_id.not_in(user_id_filter)), commit=True)
+  if user_id_filter is None or not user_id_filter:
+    await run_query(text(f"""
+      DELETE
+      FROM event_participations ep
+      USING event_specifications es
+      WHERE es.event_year = {event_year} AND es.event_week = {event_week} AND ep.dt_guild_id = {guild_id}
+      """), commit=True)
   else:
-    await run_query(delete(EventParticipation).filter(EventSpecification.event_year == event_year, EventSpecification.event_week == event_week, EventParticipation.dt_guild_id == guild_id), commit=True)
+    filter_string = ",".join([str(i) for i in user_id_filter])
+    await run_query(text(f"""
+        DELETE
+        FROM event_participations ep
+        USING event_specifications es
+        WHERE es.event_year = {event_year} AND es.event_week = {event_week} AND ep.dt_guild_id = {guild_id} AND ep.dt_user_id NOT IN ({filter_string})
+        """), commit=True)
 
 async def get_and_update_event_participation(user_id: int, guild_id: int, event_year: int, event_week: int, participation_amount: int) -> Optional[EventParticipation]:
   item = await get_event_participation(user_id, guild_id, event_year, event_week)

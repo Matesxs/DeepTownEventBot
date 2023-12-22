@@ -126,7 +126,7 @@ class DTEventReportAnnouncer(Base_Cog):
         data = await dt_helpers.get_dt_guild_data(guild_id, True)
 
         if data is None:
-          await asyncio.sleep(10)
+          await asyncio.sleep(20)
           data = await dt_helpers.get_dt_guild_data(guild_id, True)
 
         await asyncio.sleep(1)

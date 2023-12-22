@@ -154,7 +154,7 @@ class Strings(metaclass=Formatable):
   # Event Tracker
   event_report_announcer_add_or_modify_tracker_description = "Add guild for tracking or modify existing announcement channel"
   event_report_announcer_add_or_modify_tracker_tracker_limit_reached = "Tracker limit ({limit} per guild) reached"
-  event_report_announcer_add_or_modify_tracker_success_with_channel = "Set tracking for guild `{guild}` and announcement to channel `{channel}`"
+  event_report_announcer_add_or_modify_tracker_success_with_channel = "Set tracking for guild `{guild}`, text announcement to channel `{channel1}` and csv announcement to channel `{channel2}`"
 
   event_report_announcer_remove_tracker_description = "Remove event tracker and its announcement settings"
   event_report_announcer_remove_tracker_success = "Removed tracking for guild `{guild}`"

@@ -42,12 +42,14 @@ class DTEventReportAnnouncer(Base_Cog):
 
     existing_tracker = await tracking_settings_repo.get_tracking_settings(inter.guild.id, identifier[1])
     if not existing_tracker:
-      if self.bot.owner is None or inter.author.id != self.bot.owner.id:
+      if not (await permissions.is_bot_developer(self.bot, inter.author)):
         all_trackers = await tracking_settings_repo.get_all_guild_trackers(inter.guild.id)
         if len(all_trackers) >= config.event_tracker.tracker_limit_per_guild:
           return await message_utils.generate_error_message(inter, Strings.event_report_announcer_add_or_modify_tracker_tracker_limit_reached(limit=config.event_report_announcer.tracker_limit_per_guild))
 
-      existing_tracker = await tracking_settings_repo.get_or_create_tracking_settings(inter.guild, identifier[1], text_announce_channel.id if text_announce_channel is not None else None, csv_announce_channel.id if csv_announce_channel is not None else None)
+      existing_tracker = await tracking_settings_repo.get_or_create_tracking_settings(inter.guild, identifier[1],
+                                                                                      text_announce_channel.id if text_announce_channel is not None else None,
+                                                                                      csv_announce_channel.id if csv_announce_channel is not None else None)
       if existing_tracker is None:
         return await message_utils.generate_error_message(inter, Strings.dt_guild_not_found(identifier=identifier[1]))
     else:
@@ -55,7 +57,9 @@ class DTEventReportAnnouncer(Base_Cog):
       existing_tracker.csv_announce_channel_id = str(csv_announce_channel.id) if csv_announce_channel is not None else None
       await tracking_settings_repo.run_commit()
 
-    await message_utils.generate_success_message(inter, Strings.event_report_announcer_add_or_modify_tracker_success_with_channel(guild=existing_tracker.dt_guild.name, channel=text_announce_channel.name))
+    await message_utils.generate_success_message(inter, Strings.event_report_announcer_add_or_modify_tracker_success_with_channel(guild=existing_tracker.dt_guild.name,
+                                                                                                                                  channel1=text_announce_channel.name if text_announce_channel is not None else None,
+                                                                                                                                  channel2=csv_announce_channel.name if csv_announce_channel is not None else None))
 
   @report_announcer.sub_command(name="remove", description=Strings.event_report_announcer_remove_tracker_description)
   @cooldowns.default_cooldown

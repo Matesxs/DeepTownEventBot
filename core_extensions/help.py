@@ -23,6 +23,7 @@ class CommandDescriptor:
 @dataclasses.dataclass
 class CommandGroup:
   name: Optional[str]
+  description: Optional[str]
   commands: List[CommandDescriptor]
 
 async def command_check(com, ctx):
@@ -66,7 +67,7 @@ async def generate_message_command_data(cogs: List[Base_Cog], ctx) -> List[Comma
     coms_data = [generate_com_help(com) for com in coms]
 
     command_descriptiors = [CommandDescriptor(signature, description) for signature, description in coms_data]
-    data.append(CommandGroup(str(cog.qualified_name), command_descriptiors))
+    data.append(CommandGroup(str(cog.qualified_name), None, command_descriptiors))
   return data
 
 def generate_help_pages(command_descriptors: List[CommandGroup], author: disnake.User) -> List[disnake.Embed]:
@@ -74,7 +75,7 @@ def generate_help_pages(command_descriptors: List[CommandGroup], author: disnake
 
   for descriptor in command_descriptors:
     title = f"{str(descriptor.name) if descriptor.name is not None else 'Free commands'} Help"
-    emb = disnake.Embed(title=title, colour=disnake.Color.green())
+    emb = disnake.Embed(title=title, colour=disnake.Color.green(), description=descriptor.description if descriptor.description is not None and descriptor.description != "-" else None)
     message_utils.add_author_footer(emb, author)
     commands_data = descriptor.commands
     if not commands_data: continue
@@ -129,9 +130,9 @@ async def generate_slash_command_data(slash_commands: Set[commands.InvokableSlas
               group_commands.append(CommandDescriptor(f"/{slash_command.name} {sc_option.name} {scg_option.name} {value_options_to_string(scg_option.options)}", scg_option.description))
         elif sc_option.type == disnake.OptionType.sub_command:
           group_commands.append(CommandDescriptor(f"/{slash_command.name} {sc_option.name} {value_options_to_string(sc_option.options)}", sc_option.description))
-      command_groups.append(CommandGroup(slash_command.name, group_commands))
+      command_groups.append(CommandGroup(slash_command.name, slash_command.description, group_commands))
 
-  return [CommandGroup(None, free_commands), *command_groups]
+  return [CommandGroup(None, None, free_commands), *command_groups]
 
 class Help(Base_Cog):
   def __init__(self, bot):

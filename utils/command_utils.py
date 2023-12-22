@@ -39,7 +39,7 @@ def master_only_slash_command(
     return InvokableSlashCommand(
       func,
       name=name,
-      description=(description + " (MG)") if description is not None else "(MG)",
+      description=(description + " (Master Server only)") if description is not None else "(Master Server only)",
       options=options,
       dm_permission=False,
       default_member_permissions=default_member_permissions,

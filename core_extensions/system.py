@@ -66,8 +66,12 @@ class System(Base_Cog):
 
     self.git = Git()
 
-  @command_utils.master_only_slash_command(name="extensions")
+  @command_utils.master_only_slash_command(name="system")
   @commands.is_owner()
+  async def system_commands(self, inter: disnake.CommandInteraction):
+    pass
+
+  @system_commands.sub_command_group(name="extensions")
   async def extensions(self, inter: disnake.CommandInteraction):
     pass
 
@@ -224,22 +228,19 @@ class System(Base_Cog):
 
     await EmbedView(inter.author, pages, perma_lock=True).run(inter)
 
-  @commands.command(brief=Strings.system_logout_brief, aliases=["gtfo"])
-  @commands.is_owner()
-  async def logout(self, ctx: commands.Context):
-    await message_utils.delete_message(self.bot, ctx)
-    await ctx.send("Cya :wave:")
+  @system_commands.sub_command(description=Strings.system_logout_brief)
+  async def logout(self, inter: disnake.CommandInteraction):
+    await inter.send("Cya :wave:")
     await self.bot.close()
 
-  @commands.command(brief=Strings.system_git_pull, aliases=["pull"])
-  @commands.is_owner()
-  async def git_pull(self, ctx: commands.Context):
-    await message_utils.delete_message(self.bot, ctx)
+  @system_commands.sub_command(name="pull", description=Strings.system_git_pull)
+  async def git_pull(self, inter: disnake.CommandInteraction):
+    await inter.response.defer(with_message=True)
 
     result_message_lines = str(await self.git.pull()).split("\n")
     while result_message_lines:
       result_message, result_message_lines = string_manipulation.add_string_until_length(result_message_lines, 1900, "\n")
-      await ctx.send(f"Git pull result\n```diff\n{result_message}\n```")
+      await inter.send(f"Git pull result\n```diff\n{result_message}\n```")
 
 
 def setup(bot):

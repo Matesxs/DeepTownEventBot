@@ -25,6 +25,11 @@ async def remove_from_whitelist(guild_id: int, channel_id: int) -> bool:
   await run_commit()
   return result.rowcount > 0
 
+async def get_whitelist_channel_ids(guild_id: int) -> List[int]:
+  result = await run_query(select(QuestionAndAnswerWhitelist.channel_id).filter(QuestionAndAnswerWhitelist.guild_id == str(guild_id)))
+  result = result.scalars().all()
+  return [int(r) for r in result]
+
 async def get_question_and_answer(qa_id: int) -> Optional[QuestionAndAnswer]:
   result = await run_query(select(QuestionAndAnswer).filter(QuestionAndAnswer.id == qa_id))
   return result.scalar_one_or_none()

@@ -146,5 +146,16 @@ class AutoHelp(Base_Cog):
       return await message_utils.generate_success_message(inter, Strings.questions_and_answers_whitelist_remove_success(channel=channel.name))
     await message_utils.generate_error_message(inter, Strings.questions_and_answers_whitelist_remove_failed(channel=channel.name))
 
+  @whitelist_remove.autocomplete("channel")
+  async def autocomplete_channel_whitelist_remove(self, inter: disnake.CommandInteraction, string: str):
+    if inter.guild is None: return []
+
+    whitelisted_channel_ids = await questions_and_answers_repo.get_whitelist_channel_ids(inter.guild.id)
+    whitelisted_channels = [ch for ch in inter.guild.channels if ch.id in whitelisted_channel_ids]
+
+    if string is None or not string:
+      return whitelisted_channels[:20]
+    return [ch for ch in whitelisted_channels if string.lower() in ch.name.lower() or string.lower() in str(ch.id)]
+
 def setup(bot):
   bot.add_cog(AutoHelp(bot))

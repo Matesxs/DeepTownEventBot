@@ -218,9 +218,7 @@ async def generate_or_update_event_participations(guild_data: dt_helpers.DTGuild
 
   new_event_started = True
   if prev_participation_amounts and participation_amounts and \
-      sum(participation_amounts) == sum(prev_participation_amounts) and \
-      statistics.mean(participation_amounts) == statistics.mean(prev_participation_amounts) and \
-      statistics.median(participation_amounts) == statistics.median(prev_participation_amounts):
+      sum(participation_amounts) == sum(prev_participation_amounts):
     new_event_started = False
 
   # Remove all participations from users that were currently not in guild

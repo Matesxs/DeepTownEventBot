@@ -7,7 +7,6 @@ from table2ascii import table2ascii, Alignment
 import statistics
 import pandas as pd
 import io
-import gzip
 
 from utils import string_manipulation, dt_helpers
 from database.tables.event_participation import EventParticipation, EventSpecification
@@ -138,9 +137,7 @@ async def send_csv_guild_event_participation_report(output: Union[disnake.TextCh
   dataframe = pd.DataFrame(data, columns=["Name", "Donate"])
 
   ioBuffer = io.BytesIO()
-  with gzip.open(ioBuffer, "wb") as f:
-    f.write(dataframe.to_csv().encode())
-
+  ioBuffer.write(bytes(dataframe.to_csv(index=False), encoding='utf-8'))
   ioBuffer.seek(0)
 
   start_date, end_date = dt_helpers.event_index_to_date_range(participations[0].event_specification.event_year, participations[0].event_specification.event_week)

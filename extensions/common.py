@@ -13,11 +13,11 @@ class Common(Base_Cog):
   def __init__(self, bot):
     super(Common, self).__init__(bot, __file__)
 
-  @commands.slash_command()
-  async def common(self, inter: disnake.CommandInteraction):
+  @commands.slash_command(name="common")
+  async def common_commands(self, inter: disnake.CommandInteraction):
     pass
 
-  @common.sub_command(description=Strings.common_uptime_brief)
+  @common_commands.sub_command(description=Strings.common_uptime_description)
   @cooldowns.default_cooldown
   async def uptime(self, inter: disnake.CommandInteraction):
     await inter.response.defer(with_message=True)
@@ -26,7 +26,7 @@ class Common(Base_Cog):
     message_utils.add_author_footer(embed, inter.author)
     await inter.send(embed=embed)
 
-  @common.sub_command(description=Strings.common_ping_brief)
+  @common_commands.sub_command(description=Strings.common_ping_description)
   @cooldowns.default_cooldown
   async def ping(self, inter: disnake.CommandInteraction):
     await inter.response.defer(with_message=True)
@@ -41,7 +41,7 @@ class Common(Base_Cog):
     em.description = f'Bot: {round(self.bot.latency * 1000)} ms\nAPI: {round((end_time - start_time) * 1000)}ms'
     await inter.edit_original_response(embed=em)
 
-  @common.sub_command(description=Strings.common_invite_brief)
+  @common_commands.sub_command(description=Strings.common_invite_description)
   @cooldowns.default_cooldown
   async def invite_link(self, inter: disnake.CommandInteraction):
     await inter.response.defer(with_message=True)

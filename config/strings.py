@@ -60,11 +60,11 @@ class Strings(metaclass=Formatable):
   discord_manager_pull_data_success = "Data pulled"
 
   # Common
-  common_ping_brief = "Ping a bot and get his reponse times"
+  common_ping_description = "Ping a bot and get his reponse times"
 
-  common_uptime_brief = "Show uptime of bot"
+  common_uptime_description = "Show uptime of bot"
 
-  common_invite_brief = "Send invite link of the bot"
+  common_invite_description = "Send invite link of the bot"
 
   common_pool_description = "Create poll"
   common_poll_duration_param_description = "Duration of poll in minutes"

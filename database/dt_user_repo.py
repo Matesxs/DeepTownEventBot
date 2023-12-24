@@ -5,6 +5,7 @@ from database import run_commit, run_query, add_item
 from database.tables.dt_user import DTUser
 from utils.dt_helpers import DTUserData
 from database import dt_blacklist_repo
+
 async def get_dt_user(user_id: int) -> Optional[DTUser]:
   result = await run_query(select(DTUser).filter(DTUser.id == user_id))
   return result.scalar_one_or_none()

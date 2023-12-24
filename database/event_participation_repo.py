@@ -1,7 +1,6 @@
 import datetime
-import statistics
 from typing import Optional, List, Tuple, Any
-from sqlalchemy import func, and_, select, or_, delete, text
+from sqlalchemy import func, and_, select, or_, text
 
 from database import run_query, run_commit, add_item
 from database.tables.event_participation import EventParticipation, EventSpecification
@@ -175,20 +174,38 @@ async def get_event_participation(user_id: int, guild_id: int, event_year: int, 
 
 async def remove_event_participations(guild_id: int, event_year: int, event_week: int, user_id_filter: Optional[List[int]] = None):
   if user_id_filter is None or not user_id_filter:
+    # await run_query(text(f"""
+    #   DELETE
+    #   FROM event_participations
+    #   USING event_specifications es
+    #   WHERE es.event_year = {event_year} AND es.event_week = {event_week} AND dt_guild_id = {guild_id}
+    #   """), commit=True)
     await run_query(text(f"""
       DELETE
-      FROM event_participations ep
-      USING event_specifications es
-      WHERE es.event_year = {event_year} AND es.event_week = {event_week} AND ep.dt_guild_id = {guild_id}
-      """), commit=True)
+      FROM event_participations
+      WHERE dt_guild_id = {guild_id} AND event_id IN (
+          SELECT event_id
+          FROM event_specifications
+          WHERE event_year = {event_year} AND event_week = {event_week}
+          );
+    """), commit=True)
   else:
     filter_string = ",".join([str(i) for i in user_id_filter])
+    # await run_query(text(f"""
+    #     DELETE
+    #     FROM event_participations
+    #     USING event_specifications es
+    #     WHERE es.event_year = {event_year} AND es.event_week = {event_week} AND dt_guild_id = {guild_id} AND dt_user_id NOT IN ({filter_string})
+    #     """), commit=True)
     await run_query(text(f"""
-        DELETE
-        FROM event_participations ep
-        USING event_specifications es
-        WHERE es.event_year = {event_year} AND es.event_week = {event_week} AND ep.dt_guild_id = {guild_id} AND ep.dt_user_id NOT IN ({filter_string})
-        """), commit=True)
+      DELETE
+      FROM event_participations
+      WHERE dt_guild_id = {guild_id} AND dt_user_id NOT IN ({filter_string}) AND event_id IN (
+          SELECT event_id
+          FROM event_specifications
+          WHERE event_year = {event_year} AND event_week = {event_week}
+          );
+    """), commit=True)
 
 async def get_and_update_event_participation(user_id: int, guild_id: int, event_year: int, event_week: int, participation_amount: int) -> Optional[EventParticipation]:
   item = await get_event_participation(user_id, guild_id, event_year, event_week)

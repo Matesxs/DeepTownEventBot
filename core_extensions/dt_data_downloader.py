@@ -15,8 +15,6 @@ class DTDataDownloader(Base_Cog):
   def __init__(self, bot):
     super(DTDataDownloader, self).__init__(bot, __file__)
 
-    self.data_loading = False
-
     if config.data_manager.clean_none_existing_guilds:
       if not self.cleanup_task.is_running():
         self.cleanup_task.start()

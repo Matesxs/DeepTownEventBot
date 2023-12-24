@@ -1,7 +1,7 @@
 import asyncio
 import disnake
 from disnake.ext import commands
-from typing import Optional, Tuple
+from typing import Optional
 
 from config import cooldowns, Strings, config, permissions
 from features.base_cog import Base_Cog

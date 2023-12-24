@@ -1,9 +1,9 @@
 import datetime
 import disnake
-from sqlalchemy import select, delete, update, or_, and_, text
+from sqlalchemy import select, delete, or_, and_, text
 from typing import Optional, List, Dict, Union, Tuple
 
-from database import run_query, run_commit, add_item, add_items, session, dt_items_repo, discord_objects_repo, event_participation_repo
+from database import run_query, add_item, add_items, dt_items_repo, discord_objects_repo, event_participation_repo
 from database.tables.dt_event_item_lottery import DTEventItemLottery, DTEventItemLotteryGuess, DTEventItemLotteryGuessedItem
 from utils import dt_helpers
 
@@ -100,10 +100,13 @@ async def make_next_event_guess(author: disnake.Member, items: List[dt_items_rep
 
 async def clear_old_guesses():
   await run_query(text("""
-  DELETE
-  FROM dt_event_item_lottery_guesses eg
-  USING event_items ei
-  WHERE ei.event_id = eg.event_id;
+    DELETE
+    FROM dt_event_item_lottery_guesses
+    WHERE event_id IN (
+        SELECT event_id
+        FROM event_items
+        GROUP BY event_id
+        );
   """), commit=True)
 
 async def get_results(lottery: DTEventItemLottery) -> Tuple[int, Optional[Dict[int, List[discord_objects_repo.DiscordUser]]]]:

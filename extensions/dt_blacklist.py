@@ -7,7 +7,7 @@ from config import cooldowns, Strings, config, permissions
 from features.base_cog import Base_Cog
 from features.views.paginator import EmbedView
 from database import dt_blacklist_repo, dt_user_repo, dt_guild_repo
-from utils import message_utils, string_manipulation, object_getters, dt_autocomplete
+from utils import message_utils, string_manipulation, object_getters, dt_autocomplete, command_utils
 from table2ascii import table2ascii, Alignment
 
 class DTBlacklist(Base_Cog):
@@ -65,7 +65,7 @@ class DTBlacklist(Base_Cog):
 
     await self.add_to_blacklist(inter, block_type, entity_id)
 
-  @commands.message_command(name="Add to Blacklist")
+  @command_utils.master_only_message_command(name="Add to Blacklist")
   @permissions.bot_developer()
   async def msg_com_add_to_blacklist(self, inter: disnake.MessageCommandInteraction):
     target_message = inter.target

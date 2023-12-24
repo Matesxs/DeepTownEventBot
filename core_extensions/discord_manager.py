@@ -16,15 +16,16 @@ class DiscordManager(Base_Cog):
   def __init__(self, bot):
     super(DiscordManager, self).__init__(bot, __file__)
 
-    if config.base.sync_discord:
-      if self.bot.is_ready():
-        loop = asyncio.get_event_loop()
-        loop.create_task(self.pull_data_seq())
-
   @commands.Cog.listener()
   async def on_ready(self):
     if config.base.sync_discord:
       await self.pull_data_seq()
+
+  def cog_load(self) -> None:
+    if config.base.sync_discord:
+      if self.bot.is_ready():
+        loop = asyncio.get_event_loop()
+        loop.create_task(self.pull_data_seq())
 
   async def pull_data_seq(self):
     logger.info("Starting discord data pull")

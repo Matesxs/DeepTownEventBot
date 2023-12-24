@@ -15,6 +15,7 @@ class DTDataDownloader(Base_Cog):
   def __init__(self, bot):
     super(DTDataDownloader, self).__init__(bot, __file__)
 
+  def cog_load(self):
     if config.data_manager.clean_none_existing_guilds:
       if not self.cleanup_task.is_running():
         self.cleanup_task.start()
@@ -48,7 +49,7 @@ class DTDataDownloader(Base_Cog):
   async def inactive_guild_data_update_task(self):
     inactive_guild_ids = await dt_guild_repo.get_inactive_guild_ids()
 
-    logger.info("Inactive Guild data pull starting")
+    logger.info("Inactive DT Guild data pull starting")
 
     if inactive_guild_ids:
       pulled_data = 0
@@ -56,22 +57,21 @@ class DTDataDownloader(Base_Cog):
       for idx, guild_id in enumerate(inactive_guild_ids):
         data = await dt_helpers.get_dt_guild_data(guild_id)
 
-        await asyncio.sleep(5)
+        await asyncio.sleep(2)
         if data is None:
           continue
 
         await event_participation_repo.generate_or_update_event_participations(data)
-        await asyncio.sleep(0.2)
         pulled_data += 1
 
-      logger.info(f"Pulled data of {pulled_data} inactive guilds")
-    logger.info("Inactive Guild data pull finished")
+      logger.info(f"Pulled data of {pulled_data} inactive DT guilds")
+    logger.info("Inactive DT Guild data pull finished")
 
   @tasks.loop(hours=max(config.data_manager.data_pull_rate_hours, 1))
   async def data_update_task(self):
     await asyncio.sleep(config.data_manager.pull_data_startup_delay_seconds)
 
-    logger.info("Guild data pull starting")
+    logger.info("DT Guild data pull starting")
     guild_ids = await dt_helpers.get_ids_of_all_guilds()
     await asyncio.sleep(0.1)
 
@@ -94,13 +94,12 @@ class DTDataDownloader(Base_Cog):
 
         data = await dt_helpers.get_dt_guild_data(guild_id)
 
-        await asyncio.sleep(2)
+        await asyncio.sleep(1)
         if data is None:
           not_updated.append(guild_id)
           continue
 
         await event_participation_repo.generate_or_update_event_participations(data)
-        await asyncio.sleep(0.1)
         pulled_data += 1
 
       number_of_not_updated_guilds = len(not_updated)
@@ -123,17 +122,16 @@ class DTDataDownloader(Base_Cog):
 
           data = await dt_helpers.get_dt_guild_data(guild_id)
 
-          await asyncio.sleep(2)
+          await asyncio.sleep(1)
           if data is None:
             continue
 
           not_updated.remove(guild_id)
           await event_participation_repo.generate_or_update_event_participations(data)
-          await asyncio.sleep(0.1)
           pulled_data += 1
 
-      logger.info(f"Pulled data of {pulled_data} guilds\nGuilds {not_updated} not updated")
-    logger.info("Guild data pull finished")
+      logger.info(f"Pulled data of {pulled_data} DT guilds\n{not_updated} guilds not updated")
+    logger.info("DT Guild data pull finished")
 
     await asyncio.sleep(30)
     await self.bot.change_presence(activity=disnake.Game(name=config.base.status_message), status=disnake.Status.online)

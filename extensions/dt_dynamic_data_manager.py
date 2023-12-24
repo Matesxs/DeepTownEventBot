@@ -195,7 +195,7 @@ class DTDynamicDataManager(Base_Cog):
     else:
       await message_utils.generate_error_message(inter, Strings.data_manager_remove_event_items_failed(event_year=event_identifier[0], event_week=event_identifier[1]))
 
-  @commands.message_command(name="Load Event Data")
+  @command_utils.master_only_message_command(name="Load Event Data")
   @cooldowns.long_cooldown
   @commands.max_concurrency(1, commands.BucketType.default)
   @commands.is_owner()

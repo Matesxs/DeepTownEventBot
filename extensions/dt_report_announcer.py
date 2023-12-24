@@ -17,6 +17,8 @@ logger = setup_custom_logger(__name__)
 class DTEventReportAnnouncer(Base_Cog):
   def __init__(self, bot):
     super(DTEventReportAnnouncer, self).__init__(bot, __file__)
+
+  def cog_load(self):
     if not self.result_announce_task.is_running():
       self.result_announce_task.start()
 

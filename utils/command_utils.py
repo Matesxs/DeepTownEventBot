@@ -1,6 +1,6 @@
 from disnake.permissions import Permissions
 from disnake.app_commands import Option, Localized
-from disnake.ext.commands import InvokableSlashCommand
+from disnake.ext.commands import InvokableSlashCommand, InvokableMessageCommand
 from disnake.ext import commands
 import asyncio
 from typing import Union, Optional, List, Dict, Any, Callable
@@ -46,6 +46,37 @@ def master_only_slash_command(
       nsfw=nsfw,
       guild_ids=config.base.master_discord_guild_ids,
       connectors=connectors,
+      auto_sync=auto_sync,
+      extras=extras,
+      **kwargs,
+    )
+
+  return decorator
+
+def master_only_message_command(
+*,
+    name: Union[Optional[str], Localized[Optional[str]]] = None,
+    dm_permission: Optional[bool] = None,
+    default_member_permissions: Optional[Union[Permissions, int]] = None,
+    nsfw: Optional[bool] = None,
+    auto_sync: Optional[bool] = None,
+    extras: Optional[Dict[str, Any]] = None,
+    **kwargs,
+) -> Callable:
+  def decorator(func) -> InvokableMessageCommand:
+    if not asyncio.iscoroutinefunction(func):
+      raise TypeError(f"<{func.__qualname__}> must be a coroutine function")
+    if hasattr(func, "__command_flag__"):
+      raise TypeError("Callback is already a command.")
+    if config.base.master_discord_guild_ids and not all(isinstance(guild_id, int) for guild_id in config.base.master_discord_guild_ids):
+      raise ValueError("guild_ids must be a sequence of int.")
+    return InvokableMessageCommand(
+      func,
+      name=name,
+      dm_permission=dm_permission,
+      default_member_permissions=default_member_permissions,
+      nsfw=nsfw,
+      guild_ids=config.base.master_discord_guild_ids,
       auto_sync=auto_sync,
       extras=extras,
       **kwargs,

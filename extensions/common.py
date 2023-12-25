@@ -56,7 +56,6 @@ class Common(Base_Cog):
   @commands.slash_command(name="poll", description=Strings.common_pool_description, dm_permission=False)
   @cooldowns.long_cooldown
   async def create_poll(self, inter: disnake.CommandInteraction, duration: int=commands.Param(description=Strings.common_poll_duration_param_description)):
-    await inter.response.defer(with_message=True)
     await inter.response.send_modal(PollModal(author=inter.author, pool_duration_seconds=duration * 60))
 
 def setup(bot):

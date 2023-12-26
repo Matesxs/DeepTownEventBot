@@ -10,6 +10,16 @@ class Strings(metaclass=Formatable):
   help_description = "Show all commands and help for them"
 
   # System
+  system_status_messages_set_description = "Set list of status messages"
+
+  system_status_messages_set_with_default_description = "Extend default list of status messages"
+
+  system_status_messages_set_success = "Status messages set"
+  system_status_messages_status_messages_param_description = "Status messages separated by `;`"
+
+  system_status_messages_reset_description = "Reset status messages to default messages from config"
+  system_status_messages_reset_success = "Status messages reset to default"
+
   system_load_description = "Load unloaded extension"
   system_unable_to_load_cog = "Unable to load `{cog}` extension\n`{e}`"
   system_cog_loaded = "Extension `{extension}` loaded"

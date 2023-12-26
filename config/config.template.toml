@@ -24,8 +24,8 @@ log_channel_id = -1
 default_loaded_extensions = ["common", "dt_dynamic_data_manager", "dt_report_announcer", "dt_blacklist", "dt_event_item_lottery", "dt_data_interface", "better_message_links", "auto_help"]
 
 [presence]
-status_messages = ["Monitoring Deep Town Events"]
-cycle_interval_s = 60
+status_messages = ["Monitoring Deep Town Events", "Find every feature of this bot by typing /help"]
+cycle_interval_s = 120
 
 [data_manager]
 ignore_empty_guilds = true

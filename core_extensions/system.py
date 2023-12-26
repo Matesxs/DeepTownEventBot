@@ -6,7 +6,7 @@ import asyncio
 import math
 from typing import Optional
 
-from config import Strings
+from config import Strings, config
 from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
 from features.views.paginator import EmbedView
@@ -70,6 +70,29 @@ class System(Base_Cog):
   @commands.is_owner()
   async def system_commands(self, inter: disnake.CommandInteraction):
     pass
+
+  @system_commands.sub_command_group(name="status_messages")
+  async def status_messages(self, inter: disnake.CommandInteraction):
+    pass
+
+  @status_messages.sub_command(name="set", description=Strings.system_status_messages_set_description)
+  async def status_messages_set(self, inter: disnake.CommandInteraction,
+                                status_messages: str = commands.Param(min_length=1, max_length=5000, description=Strings.system_status_messages_status_messages_param_description)):
+    status_messages_list = status_messages.split(";")
+    self.bot.presence_handler.set_messages(status_messages_list)
+    await message_utils.generate_success_message(inter, Strings.system_status_messages_set_success)
+
+  @status_messages.sub_command(name="set_with_default", description=Strings.system_status_messages_set_with_default_description)
+  async def status_messages_set_with_default(self, inter: disnake.CommandInteraction,
+                                status_messages: str = commands.Param(min_length=1, max_length=5000, description=Strings.system_status_messages_status_messages_param_description)):
+    status_messages_list = status_messages.split(";")
+    self.bot.presence_handler.set_messages(config.presence.status_messages + status_messages_list)
+    await message_utils.generate_success_message(inter, Strings.system_status_messages_set_success)
+
+  @status_messages.sub_command(name="reset", description=Strings.system_status_messages_reset_description)
+  async def status_messages_reset(self, inter: disnake.CommandInteraction):
+    self.bot.presence_handler.set_messages(config.presence.status_messages)
+    await message_utils.generate_success_message(inter, Strings.system_status_messages_reset_success)
 
   @system_commands.sub_command_group(name="extensions")
   async def extensions(self, inter: disnake.CommandInteraction):

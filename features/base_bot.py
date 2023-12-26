@@ -8,6 +8,7 @@ import traceback
 from utils import message_utils, object_getters, command_utils
 from config import config
 from utils.logger import setup_custom_logger
+from features.presence_handler import PresenceHandler
 
 logger = setup_custom_logger(__name__)
 
@@ -28,6 +29,8 @@ class BaseAutoshardedBot(commands.AutoShardedBot):
 
     self.core_extensions_folder = core_extensions_folder
     self.extensions_folder = extensions_folder
+
+    self.presence_handler = PresenceHandler(self, config.presence.status_messages, config.presence.cycle_interval_s)
 
     self.event(self.on_ready)
 
@@ -55,10 +58,10 @@ class BaseAutoshardedBot(commands.AutoShardedBot):
     logger.info("Defaul modules loaded")
 
   async def on_ready(self):
-    await self.change_presence(activity=disnake.Game(name=config.base.status_message, type=0), status=disnake.Status.online)
-
     if self.initialized: return
     self.initialized = True
+
+    self.presence_handler.start()
 
     logger.info(f"Logged in as: {self.user} (ID: {self.user.id}) on {self.shard_count} shards in {len(self.guilds)} guilds")
     logger.info(f"Invite link: https://discord.com/oauth2/authorize?client_id={self.user.id}&scope=bot&permissions={config.base.required_permissions}")

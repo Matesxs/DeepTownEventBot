@@ -79,6 +79,8 @@ class DTDataDownloader(Base_Cog):
       pulled_data = 0
       not_updated = []
 
+      self.bot.presence_handler.stop()
+
       last_update = datetime.datetime.utcnow()
       await self.bot.change_presence(activity=disnake.Game(name="Updating data..."), status=disnake.Status.dnd)
 
@@ -134,7 +136,7 @@ class DTDataDownloader(Base_Cog):
     logger.info("DT Guild data pull finished")
 
     await asyncio.sleep(30)
-    await self.bot.change_presence(activity=disnake.Game(name=config.base.status_message), status=disnake.Status.online)
+    self.bot.presence_handler.start()
 
     if not self.inactive_guild_data_update_task.is_running() and config.data_manager.inactive_guild_data_pull_rate_hours > 0:
       self.inactive_guild_data_update_task.start()

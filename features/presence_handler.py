@@ -1,0 +1,59 @@
+import disnake
+import asyncio
+from typing import Optional, List
+
+class InfiniteLooper:
+  def __init__(self, data: List):
+    self.data = data
+    self.length = len(data)
+    self.cntr = 0
+
+  def get(self):
+    if self.length == 0:
+      return None
+
+    ret = self.data[self.cntr]
+    self.cntr = (self.cntr + 1) % self.length
+    return ret
+
+class PresenceHandler:
+  def __init__(self, bot, messages: List[str], cycle_interval_s: float, loop: Optional[asyncio.AbstractEventLoop] = None):
+    self.bot = bot
+    self.task: Optional[asyncio.Task] = None
+    self.loop = loop if loop is not None else asyncio.get_event_loop()
+
+    self.messages = InfiniteLooper(messages)
+    self.cycle_interval = cycle_interval_s
+    self.last_message = None
+
+  def start(self):
+    if self.task is None:
+      self.task = self.loop.create_task(self.runner())
+
+  def stop(self):
+    if self.task is not None:
+      self.task.cancel()
+
+    self.task = None
+    self.last_message = None
+
+  def set_messages(self, messages: List[str]):
+    self.messages = InfiniteLooper(messages)
+
+  async def runner(self):
+    while True:
+      if self.bot.is_ready():
+        message = self.messages.get()
+
+        if message is not None and (self.last_message is None or message != self.last_message):
+          try:
+            await self.bot.change_presence(activity=disnake.Game(name=message, type=0), status=disnake.Status.online)
+            self.last_message = message
+          except asyncio.CancelledError:
+            break
+          except:
+            pass
+
+        await asyncio.sleep(self.cycle_interval)
+      else:
+        await asyncio.sleep(1)

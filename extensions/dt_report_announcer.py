@@ -117,8 +117,22 @@ class DTEventReportAnnouncer(Base_Cog):
     embed_view = EmbedView(inter.author, pages, invisible=True)
     await embed_view.run(inter)
 
-  @tasks.loop(hours=24*7)
+  @tasks.loop(seconds=1)
   async def result_announce_task(self):
+    await self.bot.wait_until_ready()
+    logger.info(f"Current date: {datetime.datetime.utcnow()}")
+
+    today = datetime.datetime.utcnow()
+    today_announce_time = datetime.datetime.utcnow().replace(hour=config.event_tracker.announce_time_hours, minute=config.event_tracker.announce_time_minutes, second=0, microsecond=0)
+    next_monday = today_announce_time + datetime.timedelta(days=(7 - config.event_tracker.announce_day_index) - (today.weekday() % 7))
+    if today.weekday() == 0 and (today.hour < config.event_tracker.announce_time_hours or (today.hour == config.event_tracker.announce_time_hours and today.minute < config.event_tracker.announce_time_minutes)):
+      next_monday -= datetime.timedelta(days=7)
+    delta_to_next_monday = next_monday - datetime.datetime.utcnow()
+
+    logger.info(f"Next announce date: {next_monday}")
+    logger.info(f"Next announcement in {humanize.naturaldelta(delta_to_next_monday)}")
+    await asyncio.sleep(delta_to_next_monday.total_seconds())
+
     logger.info("Update before announcement starting")
 
     guild_ids = await tracking_settings_repo.get_tracked_guild_ids()
@@ -158,7 +172,7 @@ class DTEventReportAnnouncer(Base_Cog):
         await dt_report_generators.send_csv_guild_event_participation_report(csv_announce_channel, tracker.dt_guild, participations)
         await asyncio.sleep(0.2)
 
-    logger.info(f"Announcements send, next announcement {datetime.datetime.utcnow() + datetime.timedelta(days=7)}")
+    logger.info("Announcements send")
 
   @result_announce_task.before_loop
   async def result_announce_wait_pretask(self):

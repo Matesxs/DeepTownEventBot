@@ -25,7 +25,6 @@ async def event_lotery_exist(guild_id: int, author_id: int, event_id: int) -> bo
   return result.scalar_one_or_none() is not None
 
 async def create_event_item_lottery(author: disnake.Member, channel: Union[disnake.TextChannel, disnake.Thread, disnake.VoiceChannel, disnake.PartialMessageable],
-                                    split_rewards: bool,
                                     reward_item_g4: Optional[dt_items_repo.DTItem]=None, item_g4_amount: int=0,
                                     reward_item_g3: Optional[dt_items_repo.DTItem]=None, item_g3_amount: int=0,
                                     reward_item_g2: Optional[dt_items_repo.DTItem]=None, item_g2_amount: int=0,
@@ -38,7 +37,7 @@ async def create_event_item_lottery(author: disnake.Member, channel: Union[disna
 
   await discord_objects_repo.get_or_create_discord_member(author, True)
 
-  item = DTEventItemLottery(author_id=str(author.id), guild_id=str(author.guild.id), lottery_channel_id=str(channel.id), event_id=event_specification.event_id, split_rewards=split_rewards,
+  item = DTEventItemLottery(author_id=str(author.id), guild_id=str(author.guild.id), lottery_channel_id=str(channel.id), event_id=event_specification.event_id,
                             guessed_4_reward_item_name=reward_item_g4.name if reward_item_g4 is not None else None, guessed_4_item_reward_amount=item_g4_amount if reward_item_g4 is not None else 0,
                             guessed_3_reward_item_name=reward_item_g3.name if reward_item_g3 is not None else None, guessed_3_item_reward_amount=item_g3_amount if reward_item_g3 is not None else 0,
                             guessed_2_reward_item_name=reward_item_g2.name if reward_item_g2 is not None else None, guessed_2_item_reward_amount=item_g2_amount if reward_item_g2 is not None else 0,
@@ -98,16 +97,21 @@ async def make_next_event_guess(author: disnake.Member, items: List[dt_items_rep
 
   return guess
 
-async def clear_old_guesses():
-  await run_query(text("""
+async def clear_old_guesses() -> int:
+  # This one should be enough for clearing all already processed quesses
+  # Deletes all guesses that are not connected to any opened lotteries in that guild for that specific event
+  result = await run_query(text("""
     DELETE
     FROM dt_event_item_lottery_guesses
-    WHERE event_id IN (
-        SELECT event_id
-        FROM event_items
-        GROUP BY event_id
+    WHERE (guild_id, event_id) NOT IN (
+        SELECT guild_id, event_id
+        FROM dt_event_item_lotteries
+        WHERE closed_at IS NULL
+        GROUP BY guild_id, event_id
         );
   """), commit=True)
+
+  return result.rowcount
 
 async def get_results(lottery: DTEventItemLottery) -> Tuple[int, Optional[Dict[int, List[discord_objects_repo.DiscordUser]]]]:
   """

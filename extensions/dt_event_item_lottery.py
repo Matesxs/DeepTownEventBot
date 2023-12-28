@@ -8,7 +8,7 @@ from config.strings import Strings
 from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
 from utils import message_utils, dt_autocomplete, items_lottery
-from database import dt_items_repo, dt_event_item_lottery_repo
+from database import dt_items_repo, dt_event_item_lottery_repo, run_commit
 
 logger = setup_custom_logger(__name__)
 
@@ -62,7 +62,6 @@ class DTEventItemLottery(Base_Cog):
   @commands.guild_only()
   @cooldowns.long_cooldown
   async def create_lottery(self, inter: disnake.CommandInteraction,
-                           split_rewards: bool = commands.Param(description=Strings.lottery_create_split_rewards_param_description),
                            guessed_4_reward_item: Optional[str] = commands.Param(default=None, description=Strings.lottery_create_reward_item_param_description(item_number=4), autocomplete=dt_autocomplete.autocomplete_item),
                            guessed_4_reward_item_amount: int=commands.Param(default=0, min_value=0, description=Strings.lottery_create_reward_item_amount_param_description(item_number=4)),
                            guessed_3_reward_item: Optional[str] = commands.Param(default=None, description=Strings.lottery_create_reward_item_param_description(item_number=3), autocomplete=dt_autocomplete.autocomplete_item),
@@ -101,7 +100,7 @@ class DTEventItemLottery(Base_Cog):
       guessed_1_reward_item = guessed_1_reward_item_
 
     orig_message = await inter.original_message()
-    lottery = await dt_event_item_lottery_repo.create_event_item_lottery(inter.author, orig_message.channel, split_rewards,
+    lottery = await dt_event_item_lottery_repo.create_event_item_lottery(inter.author, orig_message.channel,
                                                                          guessed_4_reward_item, guessed_4_reward_item_amount,
                                                                          guessed_3_reward_item, guessed_3_reward_item_amount,
                                                                          guessed_2_reward_item, guessed_2_reward_item_amount,
@@ -194,7 +193,7 @@ class DTEventItemLottery(Base_Cog):
     elif command == "split_rewards":
       if is_author:
         lottery.split_rewards = not lottery.split_rewards
-        await dt_event_item_lottery_repo.run_commit()
+        await run_commit()
 
         await inter.edit_original_response(components=items_lottery.get_lottery_buttons(lottery))
       else:
@@ -202,7 +201,15 @@ class DTEventItemLottery(Base_Cog):
     elif command == "auto_repeat":
       if is_author:
         lottery.auto_repeat = not lottery.auto_repeat
-        await dt_event_item_lottery_repo.run_commit()
+        await run_commit()
+
+        await inter.edit_original_response(components=items_lottery.get_lottery_buttons(lottery))
+      else:
+        await message_utils.generate_error_message(inter, Strings.lottery_button_listener_not_author)
+    elif command == "auto_ping":
+      if is_author:
+        lottery.autoping_winners = not lottery.autoping_winners
+        await run_commit()
 
         await inter.edit_original_response(components=items_lottery.get_lottery_buttons(lottery))
       else:

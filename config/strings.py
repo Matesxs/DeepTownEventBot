@@ -76,9 +76,6 @@ class Strings(metaclass=Formatable):
 
   common_invite_description = "Send invite link of the bot"
 
-  common_pool_description = "Create poll"
-  common_poll_duration_param_description = "Duration of poll in minutes"
-
   # Global Deep Town stuff
   dt_guild_identifier_param_description = "Deep Town Guild identifier"
   dt_user_identifier_param_description = "Deep Town User identifier"

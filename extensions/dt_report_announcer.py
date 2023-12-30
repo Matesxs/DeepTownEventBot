@@ -171,11 +171,11 @@ class DTEventReportAnnouncer(Base_Cog):
       participations = await event_participation_repo.get_event_participations(guild_id=int(tracker.dt_guild_id), year=year, week=week, order_by=[event_participation_repo.EventParticipation.amount.desc()])
       if not participations: continue
 
-      if text_announce_channel is not None:
+      if text_announce_channel is not None and text_announce_channel.permissions_for(text_announce_channel.guild.me).send_messages:
         await dt_report_generators.send_text_guild_event_participation_report(text_announce_channel, tracker.dt_guild, participations, colm_padding=0)
         await asyncio.sleep(0.2)
 
-      if csv_announce_channel is not None:
+      if csv_announce_channel is not None and csv_announce_channel.permissions_for(csv_announce_channel.guild.me).send_messages:
         await dt_report_generators.send_csv_guild_event_participation_report(csv_announce_channel, tracker.dt_guild, participations)
         await asyncio.sleep(0.2)
 

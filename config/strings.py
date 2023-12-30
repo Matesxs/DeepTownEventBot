@@ -256,6 +256,9 @@ class Strings(metaclass=Formatable):
   questions_and_answers_whitelist_add_success = "Channel `{channel}` added to whitelist for automatic help"
   questions_and_answers_whitelist_add_failed = "Channel `{channel}` is already on whitelist"
 
+  questions_and_answers_whitelist_list_description = "List whitelisted channels for automatic help"
+  questions_and_answers_whitelist_list_no_channels = "No whitelisted channels"
+
   questions_and_answers_whitelist_remove_description = "Remove guild channel from whitelist for automatic help"
   questions_and_answers_whitelist_remove_success = "Channel `{channel}` removed from whitelist for automatic help"
   questions_and_answers_whitelist_remove_failed = "Channel `{channel}` is not on whitelist"

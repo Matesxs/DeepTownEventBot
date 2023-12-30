@@ -2,6 +2,7 @@ import asyncio
 import disnake
 from disnake.ext import commands
 from Levenshtein import ratio
+import math
 
 from utils import message_utils, string_manipulation, command_utils
 from database import questions_and_answers_repo
@@ -137,6 +138,29 @@ class AutoHelp(Base_Cog):
       return await message_utils.generate_success_message(inter, Strings.questions_and_answers_whitelist_add_success(channel=channel.name))
     await message_utils.generate_error_message(inter, Strings.questions_and_answers_whitelist_add_failed(channel=channel.name))
 
+  @question_and_answer_whitelist.sub_command(name="list", description=Strings.questions_and_answers_whitelist_list_description)
+  async def whitelist_list(self, inter: disnake.CommandInteraction):
+    await inter.response.defer(with_message=True, ephemeral=True)
+
+    whitelisted_channel_ids = await questions_and_answers_repo.get_whitelist_channel_ids(inter.guild.id)
+    whitelisted_channels = [ch for ch in inter.guild.channels if ch.id in whitelisted_channel_ids]
+
+    if not whitelisted_channels:
+      return await message_utils.generate_error_message(inter, Strings.questions_and_answers_whitelist_list_no_channels)
+
+    num_of_batches = math.ceil(len(whitelisted_channels) / 12)
+    batches = [whitelisted_channels[i * 12:i * 12 + 12] for i in range(num_of_batches)]
+
+    pages = []
+    for batch in batches:
+      whitelisted_channels_string = "\n".join([f"[#{channel.name}]({channel.jump_url})" for channel in batch])
+      page = disnake.Embed(title="Q&A Whitelisted channels", color=disnake.Color.dark_blue(), description=whitelisted_channels_string)
+      message_utils.add_author_footer(page, inter.author)
+      pages.append(page)
+
+    embed_view = EmbedView(inter.author, pages, invisible=True)
+    await embed_view.run(inter)
+
   @question_and_answer_whitelist.sub_command(name="remove", description=Strings.questions_and_answers_whitelist_remove_description)
   async def whitelist_remove(self, inter: disnake.CommandInteraction,
                              channel: disnake.TextChannel=commands.Param(description=Strings.discord_text_channel_param_description)):
@@ -145,17 +169,6 @@ class AutoHelp(Base_Cog):
     if await questions_and_answers_repo.remove_from_whitelist(inter.guild_id, channel.id):
       return await message_utils.generate_success_message(inter, Strings.questions_and_answers_whitelist_remove_success(channel=channel.name))
     await message_utils.generate_error_message(inter, Strings.questions_and_answers_whitelist_remove_failed(channel=channel.name))
-
-  @whitelist_remove.autocomplete("channel")
-  async def autocomplete_channel_whitelist_remove(self, inter: disnake.CommandInteraction, string: str):
-    if inter.guild is None: return []
-
-    whitelisted_channel_ids = await questions_and_answers_repo.get_whitelist_channel_ids(inter.guild.id)
-    whitelisted_channels = [ch for ch in inter.guild.channels if ch.id in whitelisted_channel_ids]
-
-    if string is None or not string:
-      return whitelisted_channels[:20]
-    return [ch for ch in whitelisted_channels if string.lower() in ch.name.lower() or string.lower() in str(ch.id)]
 
 def setup(bot):
   bot.add_cog(AutoHelp(bot))

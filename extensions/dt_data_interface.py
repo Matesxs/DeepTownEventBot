@@ -354,7 +354,7 @@ class DTDataInterface(Base_Cog):
   @cooldowns.long_cooldown
   async def event_help(self, inter: disnake.CommandInteraction,
                        event_identifier = commands.Param(default=None, description=Strings.dt_event_identifier_param_description, autocomplete=dt_autocomplete.autocomplete_event_identifier, converter=dt_autocomplete.event_identifier_converter, convert_defaults=True),
-                       item_scaling_levels:int = commands.Param(min_value=0, default=30, description=Strings.public_interface_event_help_item_scaling_levels_param_description)):
+                       item_scaling_levels:int = commands.Param(min_value=0, max_value=100, default=30, description=Strings.public_interface_event_help_item_scaling_levels_param_description)):
     await inter.response.defer(with_message=True)
 
     event_specification = await event_participation_repo.get_event_specification(event_identifier[0], event_identifier[1])

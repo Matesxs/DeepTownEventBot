@@ -109,9 +109,13 @@ class DTEventReportAnnouncer(Base_Cog):
       for setting in batch:
         guild_name = setting.dt_guild.name
         guild_level = setting.dt_guild.level
-        announce_channel = await setting.get_text_announce_channel(self.bot)
 
-        page.add_field(name=f"{guild_name}({guild_level})", value="No reporting" if announce_channel is None else f"[#{announce_channel.name}]({announce_channel.jump_url})")
+        announce_channel = await setting.get_text_announce_channel(self.bot)
+        csv_announce_channel = await setting.get_csv_announce_channel(self.bot)
+        value_string = "\n".join(["No text reporting" if announce_channel is None else f"Text: [#{announce_channel.name}]({announce_channel.jump_url})",
+                                  "No csv reporting" if csv_announce_channel is None else f"CSV: [#{csv_announce_channel.name}]({csv_announce_channel.jump_url})"])
+
+        page.add_field(name=f"{guild_name}({guild_level})", value=value_string)
       pages.append(page)
 
     embed_view = EmbedView(inter.author, pages, invisible=True)
@@ -173,21 +177,6 @@ class DTEventReportAnnouncer(Base_Cog):
         await asyncio.sleep(0.2)
 
     logger.info("Announcements send")
-
-  @result_announce_task.before_loop
-  async def result_announce_wait_pretask(self):
-    logger.info(f"Current date: {datetime.datetime.utcnow()}")
-
-    today = datetime.datetime.utcnow()
-    today_announce_time = datetime.datetime.utcnow().replace(hour=config.event_tracker.announce_time_hours, minute=config.event_tracker.announce_time_minutes, second=0, microsecond=0)
-    next_monday = today_announce_time + datetime.timedelta(days=(7 - config.event_tracker.announce_day_index) - (today.weekday() % 7))
-    if today.weekday() == 0 and (today.hour < config.event_tracker.announce_time_hours or (today.hour == config.event_tracker.announce_time_hours and today.minute < config.event_tracker.announce_time_minutes)):
-      next_monday -= datetime.timedelta(days=7)
-    delta_to_next_monday = next_monday - datetime.datetime.utcnow()
-
-    logger.info(f"Next announce date: {next_monday}")
-    logger.info(f"Next announcement in {humanize.naturaldelta(delta_to_next_monday)}")
-    await asyncio.sleep(delta_to_next_monday.total_seconds())
 
 def setup(bot):
   bot.add_cog(DTEventReportAnnouncer(bot))

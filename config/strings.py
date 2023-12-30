@@ -5,6 +5,8 @@ from features.callable_string import Formatable
 class Strings(metaclass=Formatable):
   # Global
   discord_text_channel_param_description = "Guild text channel"
+  discord_cant_send_message_to_channel = "Cant send messages to channel `{channel_name}`"
+  discord_cant_send_files_to_channel = "Cant send files to channel `{channel_name}`"
 
   # Help
   help_description = "Show all commands and help for them"

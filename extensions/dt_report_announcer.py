@@ -45,6 +45,16 @@ class DTEventReportAnnouncer(Base_Cog):
     if text_announce_channel is None and csv_announce_channel is None and not (await permissions.is_bot_developer(self.bot, inter.author)):
       return await message_utils.generate_error_message(inter, Strings.event_report_announcer_add_or_modify_tracker_no_channels_set)
 
+    if text_announce_channel is not None and not text_announce_channel.permissions_for(inter.guild.me).send_messages:
+      return await message_utils.generate_error_message(inter, Strings.discord_cant_send_message_to_channel(channel_name=text_announce_channel.name))
+
+    if csv_announce_channel is not None:
+      if not csv_announce_channel.permissions_for(inter.guild.me).send_messages:
+        return await message_utils.generate_error_message(inter, Strings.discord_cant_send_message_to_channel(channel_name=csv_announce_channel.name))
+
+      if not csv_announce_channel.permissions_for(inter.guild.me).attach_files:
+        return await message_utils.generate_error_message(inter, Strings.discord_cant_send_files_to_channel(channel_name=csv_announce_channel.name))
+
     existing_tracker = await tracking_settings_repo.get_tracking_settings(inter.guild.id, identifier[1])
     if not existing_tracker:
       if not (await permissions.is_bot_developer(self.bot, inter.author)):
@@ -173,11 +183,11 @@ class DTEventReportAnnouncer(Base_Cog):
 
       if text_announce_channel is not None and text_announce_channel.permissions_for(text_announce_channel.guild.me).send_messages:
         await dt_report_generators.send_text_guild_event_participation_report(text_announce_channel, tracker.dt_guild, participations, colm_padding=0)
-        await asyncio.sleep(0.2)
+        await asyncio.sleep(0.1)
 
-      if csv_announce_channel is not None and csv_announce_channel.permissions_for(csv_announce_channel.guild.me).send_messages:
+      if csv_announce_channel is not None and csv_announce_channel.permissions_for(csv_announce_channel.guild.me).send_messages and not csv_announce_channel.permissions_for(csv_announce_channel.guild.me).attach_files:
         await dt_report_generators.send_csv_guild_event_participation_report(csv_announce_channel, tracker.dt_guild, participations)
-        await asyncio.sleep(0.2)
+        await asyncio.sleep(0.1)
 
     logger.info("Announcements send")
 

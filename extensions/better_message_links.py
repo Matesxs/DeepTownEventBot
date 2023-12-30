@@ -28,7 +28,7 @@ class BetterMessageLinks(Base_Cog):
       return
 
     destination_channel_permissions = message.channel.permissions_for(message.guild.me)
-    if not destination_channel_permissions.send_messages:
+    if not destination_channel_permissions.send_messages or not destination_channel_permissions.attach_files:
       return
 
     matches = message_link_regex.findall(message.content)

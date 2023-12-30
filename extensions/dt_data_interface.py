@@ -351,10 +351,10 @@ class DTDataInterface(Base_Cog):
     await inter.send(embed=embed)
 
   @event_commands.sub_command(name="help", description=Strings.public_interface_event_help_description)
-  @cooldowns.default_cooldown
+  @cooldowns.long_cooldown
   async def event_help(self, inter: disnake.CommandInteraction,
                        event_identifier = commands.Param(default=None, description=Strings.dt_event_identifier_param_description, autocomplete=dt_autocomplete.autocomplete_event_identifier, converter=dt_autocomplete.event_identifier_converter, convert_defaults=True),
-                       materials_amounts: bool = commands.Param(default=False, description=Strings.public_interface_event_help_materials_amounts_param_description)):
+                       item_scaling_levels:int = commands.Param(min_value=0, default=30, description=Strings.public_interface_event_help_item_scaling_levels_param_description)):
     await inter.response.defer(with_message=True)
 
     event_specification = await event_participation_repo.get_event_specification(event_identifier[0], event_identifier[1])
@@ -366,17 +366,19 @@ class DTDataInterface(Base_Cog):
       return await message_utils.generate_error_message(inter, Strings.public_interface_event_help_no_items)
 
     start_date, end_date = dt_helpers.event_index_to_date_range(int(event_identifier[0]), int(event_identifier[1]))
-    await inter.send(f"```\nYear: {event_identifier[0]} Week: {event_identifier[1]}\n{start_date.day}.{start_date.month}.{start_date.year} - {end_date.day}.{end_date.month}.{end_date.year}\n{item_table}\n```")
+    help_string = f"Year: {event_identifier[0]} Week: {event_identifier[1]}\n{start_date.day}.{start_date.month}.{start_date.year} - {end_date.day}.{end_date.month}.{end_date.year}\n{item_table}"
 
-    if materials_amounts:
-      event_items_scaling_table = dt_report_generators.get_event_items_scaling_table(event_specification)
+    if item_scaling_levels != 0:
+      event_items_scaling_table = dt_report_generators.get_event_items_scaling_table(event_specification, levels=item_scaling_levels)
       if event_items_scaling_table is not None:
-        event_items_scaling_table_lines = event_items_scaling_table.split("\n")
-        while event_items_scaling_table_lines:
-          final_string, event_items_scaling_table_lines = string_manipulation.add_string_until_length(event_items_scaling_table_lines, 1800, "\n")
-          await inter.send(f"```\n{final_string}\n```")
+        help_string += f"\n{event_items_scaling_table}"
       else:
         await message_utils.generate_error_message(inter, Strings.public_interface_event_help_no_item_amount_scaling)
+
+    help_string_lines = help_string.split("\n")
+    while help_string_lines:
+      final_string, help_string_lines = string_manipulation.add_string_until_length(help_string_lines, 1900, "\n")
+      await inter.send(f"```\n{final_string}\n```")
 
   @event_commands.sub_command(name="history", description=Strings.public_interface_event_history_description)
   @cooldowns.long_cooldown

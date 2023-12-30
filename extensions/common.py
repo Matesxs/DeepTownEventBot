@@ -6,7 +6,6 @@ import humanize
 
 from config import cooldowns, Strings, config
 from features.base_cog import Base_Cog
-from features.modals.poll_modal import PollModal
 from utils import message_utils
 
 class Common(Base_Cog):
@@ -52,11 +51,6 @@ class Common(Base_Cog):
     message_utils.add_author_footer(embed, inter.author)
 
     await inter.send(embed=embed)
-
-  @commands.slash_command(name="poll", description=Strings.common_pool_description, dm_permission=False)
-  @cooldowns.long_cooldown
-  async def create_poll(self, inter: disnake.CommandInteraction, duration: int=commands.Param(description=Strings.common_poll_duration_param_description)):
-    await inter.response.send_modal(PollModal(author=inter.author, pool_duration_seconds=duration * 60))
 
 def setup(bot):
   bot.add_cog(Common(bot))

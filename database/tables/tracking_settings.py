@@ -13,17 +13,17 @@ class TrackingSettings(database.base):
   guild_id = Column(String, ForeignKey("discord_guilds.id", ondelete="CASCADE", onupdate="CASCADE"), primary_key=True)
   dt_guild_id = Column(database.BigIntegerType, ForeignKey("dt_guilds.id", ondelete="CASCADE", onupdate="CASCADE"), primary_key=True)
 
-  announce_channel_id = Column(String, nullable=True)
+  text_announce_channel_id = Column(String, nullable=True)
   csv_announce_channel_id = Column(String, nullable=True)
 
   guild = relationship("DiscordGuild", uselist=False, back_populates="tracking_settings")
   dt_guild = relationship("DTGuild", uselist=False)
 
   async def get_text_announce_channel(self, bot: BaseAutoshardedBot) -> Optional[Union[disnake.TextChannel, disnake.Thread, disnake.VoiceChannel, disnake.PartialMessageable]]:
-    if self.announce_channel_id is None: return None
+    if self.text_announce_channel_id is None: return None
     guild = await self.guild.to_object(bot)
     if guild is None: return None
-    channel = await object_getters.get_or_fetch_channel(guild, int(self.announce_channel_id))
+    channel = await object_getters.get_or_fetch_channel(guild, int(self.text_announce_channel_id))
     if not isinstance(channel, (disnake.TextChannel, disnake.Thread, disnake.VoiceChannel, disnake.PartialMessageable)): return None
     return channel
 

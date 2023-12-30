@@ -6,6 +6,7 @@ command_prefix = "!"
 required_permissions = 274878426176
 developer_ids = []
 sync_discord = true
+command_sync_debug = false
 master_discord_guild_ids = [] # Used for registering owner only commands to master only guilds
 
 # If true warning and error logs will also be logged in file discord.log

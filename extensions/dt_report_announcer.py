@@ -42,6 +42,9 @@ class DTEventReportAnnouncer(Base_Cog):
     if identifier is None:
       return await message_utils.generate_error_message(inter, Strings.dt_invalid_identifier)
 
+    if text_announce_channel is None and csv_announce_channel is None and not (await permissions.is_bot_developer(self.bot, inter.author)):
+      return await message_utils.generate_error_message(inter, Strings.event_report_announcer_add_or_modify_tracker_no_channels_set)
+
     existing_tracker = await tracking_settings_repo.get_tracking_settings(inter.guild.id, identifier[1])
     if not existing_tracker:
       if not (await permissions.is_bot_developer(self.bot, inter.author)):

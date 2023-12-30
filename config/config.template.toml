@@ -53,4 +53,4 @@ announce_time_minutes = 30
 report_channel_id = -1
 
 [questions_and_answers]
-score_limit = 55 # From 0 to 100 - larger number the less sensitive it is
+score_limit = 60 # From 0 to 100 - larger number the less sensitive it is

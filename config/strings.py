@@ -195,6 +195,8 @@ class Strings(metaclass=Formatable):
   public_interface_event_help_no_items = "Items not set for this event"
   public_interface_event_help_no_item_amount_scaling = "Material scaling not available"
 
+  public_interface_event_current_description = "Show current event identifier and duration"
+
   public_interface_event_history_description = "Show history of event items"
   public_interface_event_history_no_events = "No events in database"
 

@@ -337,6 +337,19 @@ class DTDataInterface(Base_Cog):
   async def event_commands(self, inter: disnake.CommandInteraction):
     pass
 
+  @event_commands.sub_command(name="current", description=Strings.public_interface_event_current_description)
+  @cooldowns.default_cooldown
+  async def current_event(self, inter: disnake.CommandInteraction):
+    await inter.response.defer(with_message=True)
+
+    year, week = dt_helpers.get_event_index(datetime.datetime.utcnow())
+    start_date, end_date = dt_helpers.event_index_to_date_range(year, week)
+
+    embed = disnake.Embed(title="Current event", color=disnake.Color.dark_blue(), description=f"`{year} {week}`\n{start_date.day}.{start_date.month}.{start_date.year} - {end_date.day}.{end_date.month}.{end_date.year}")
+    message_utils.add_author_footer(embed, inter.author)
+
+    await inter.send(embed=embed)
+
   @event_commands.sub_command(name="help", description=Strings.public_interface_event_help_description)
   @cooldowns.default_cooldown
   async def event_help(self, inter: disnake.CommandInteraction,

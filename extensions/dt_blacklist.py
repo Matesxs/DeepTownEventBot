@@ -160,7 +160,6 @@ class DTBlacklist(Base_Cog):
       message_utils.add_author_footer(embed, inter.author)
       embed.add_field(name="Username", value=user.username)
       embed.add_field(name="ID", value=str(user.id))
-      embed.add_field(name="Guild", value=f"{user.active_member.guild.name}" if user.active_member is not None else "None")
     elif report_type == "GUILD":
       guild = await dt_guild_repo.get_dt_guild(entity_id)
       if guild is None:

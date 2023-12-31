@@ -8,7 +8,6 @@ class DTGuildMember(database.base):
 
   dt_user_id = Column(database.BigIntegerType, ForeignKey("dt_users.id", ondelete="CASCADE", onupdate="CASCADE"), primary_key=True)
   dt_guild_id = Column(database.BigIntegerType, ForeignKey("dt_guilds.id", ondelete="CASCADE", onupdate="CASCADE"), primary_key=True)
-  current_member = Column(Boolean, index=True, default=True)
 
   user = relationship("DTUser", uselist=False, back_populates="members")
   guild = relationship("DTGuild", uselist=False, back_populates="members")

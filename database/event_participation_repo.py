@@ -61,11 +61,16 @@ async def get_event_participants_data(guild_id: Optional[int] = None, year: Opti
 
   data_query = select(dt_user_repo.DTUser.id, dt_user_repo.DTUser.username, dt_guild_repo.DTGuild.id, dt_guild_repo.DTGuild.name, func.sum(EventParticipation.amount), func.avg(EventParticipation.amount), func.percentile_cont(0.5).within_group(EventParticipation.amount))\
     .join(EventSpecification) \
-    .join(dt_guild_repo.DTGuild)\
-    .join(dt_guild_member_repo.DTGuildMember, and_(dt_guild_member_repo.DTGuildMember.dt_user_id == EventParticipation.dt_user_id, dt_guild_member_repo.DTGuildMember.dt_guild_id == dt_guild_repo.DTGuild.id)) \
-    .join(dt_user_repo.DTUser)\
-    .filter(*filters, *([dt_guild_member_repo.DTGuildMember.current_member == True] if only_current_members else []))\
-    .group_by(dt_user_repo.DTUser.id, dt_user_repo.DTUser.username, dt_guild_repo.DTGuild.id, dt_guild_repo.DTGuild.name)\
+    .join(dt_guild_repo.DTGuild) \
+    .join(dt_user_repo.DTUser)
+
+  if only_current_members:
+    data_query = data_query.join(dt_guild_member_repo.DTGuildMember, and_(dt_guild_member_repo.DTGuildMember.dt_user_id == EventParticipation.dt_user_id, dt_guild_member_repo.DTGuildMember.dt_guild_id == dt_guild_repo.DTGuild.id))
+
+  if filters:
+    data_query = data_query.filter(*filters)
+
+  data_query = data_query.group_by(dt_user_repo.DTUser.id, dt_user_repo.DTUser.username, dt_guild_repo.DTGuild.id, dt_guild_repo.DTGuild.name)\
     .order_by(*order_by)\
     .limit(limit)
 

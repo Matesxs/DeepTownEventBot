@@ -1,6 +1,8 @@
 from typing import Optional, List
-from sqlalchemy import or_, select, delete
+from sqlalchemy import or_, select, delete, func
+import datetime
 
+from config import config
 from database import run_commit, run_query, add_item
 from database.tables.dt_user import DTUser
 from utils.dt_helpers import DTUserData
@@ -30,8 +32,8 @@ async def create_dummy_dt_user(id: int) -> Optional[DTUser]:
     await add_item(item)
   return item
 
-async def remove_user(id: int) -> bool:
-  result = await run_query(delete(DTUser).filter(DTUser.id == id), commit=True)
+async def remove_user(user_id: int) -> bool:
+  result = await run_query(delete(DTUser).filter(DTUser.id == user_id), commit=True)
   return result.rowcount > 0
 
 async def get_and_update_dt_user(user_data: DTUserData) -> Optional[DTUser]:
@@ -47,3 +49,7 @@ async def get_and_update_dt_user(user_data: DTUserData) -> Optional[DTUser]:
     await run_commit()
 
   return item
+
+async def get_number_of_active_users() -> int:
+  result = await run_query(select(func.count(DTUser.id)).filter((DTUser.last_online + datetime.timedelta(days=config.data_manager.activity_days_threshold)) > datetime.datetime.utcnow()))
+  return result.scalar_one()

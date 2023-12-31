@@ -1,5 +1,5 @@
 from typing import Optional, List
-from sqlalchemy import func, select, update
+from sqlalchemy import func, select, delete
 
 from database import run_query, add_item
 from database.tables.dt_guild_member import DTGuildMember
@@ -39,24 +39,18 @@ async def get_and_update_dt_guild_members(guild_data: DTGuildData) -> Optional[L
     if item is None:
       item = DTGuildMember(dt_user_id=player_data.id, dt_guild_id=guild_data.id)
       await add_item(item)
-    else:
-      item.current_member = True
 
     # If this user is marked as current member somewhere else remove it
-    await run_query(update(DTGuildMember).filter(DTGuildMember.dt_user_id == player_data.id, DTGuildMember.dt_guild_id != guild_data.id).values(current_member=False), commit=True)
+    # await run_query(delete(DTGuildMember).filter(DTGuildMember.dt_user_id == player_data.id, DTGuildMember.dt_guild_id != guild_data.id), commit=True)
 
     dt_members.append(item)
     current_user_ids.append(player_data.id)
 
   # Remove all users that are not in current guild data and are marked currently as current member
-  await run_query(update(DTGuildMember).filter(DTGuildMember.dt_guild_id == guild_data.id, DTGuildMember.current_member == True, DTGuildMember.dt_user_id.notin_(current_user_ids)).values(current_member=False), commit=True)
+  await run_query(delete(DTGuildMember).filter(DTGuildMember.dt_guild_id == guild_data.id, DTGuildMember.dt_user_id.notin_(current_user_ids)), commit=True)
 
   return dt_members
 
 async def get_number_of_members(guild_id: int) -> int:
-  result = await run_query(select(func.count(DTGuildMember.dt_user_id)).filter(DTGuildMember.dt_guild_id == guild_id, DTGuildMember.current_member == True))
+  result = await run_query(select(func.count(DTGuildMember.dt_user_id)).filter(DTGuildMember.dt_guild_id == guild_id))
   return result.scalar_one_or_none()
-
-async def get_number_of_active_members() -> int:
-  result = await run_query(select(func.count()).select_from(DTGuildMember).join(DTGuild).filter(DTGuildMember.current_member == True, DTGuild.is_active == True))
-  return result.scalar_one()

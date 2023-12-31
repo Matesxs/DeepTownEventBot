@@ -24,7 +24,7 @@ database_connect_string = "postgresql://postgres:postgres@db:5432/postgres" # Ex
 default_loaded_extensions = ["common", "dt_dynamic_data_manager", "dt_report_announcer", "dt_blacklist", "dt_event_item_lottery", "dt_data_interface", "better_message_links", "auto_help"]
 
 [presence]
-status_messages = ["Serving {guilds} discord servers with {users} users", "Monitoring Deep Town Events", "Monitoring {dt_guilds} Deep Town active guilds with {dt_users} members", "Find every feature of this bot by typing /help"]
+status_messages = ["Serving {guilds} discord servers with {users} users", "Monitoring Deep Town Events", "Monitoring {dt_guilds} Deep Town active guilds and {dt_users} active members", "Find every feature of this bot by typing /help"]
 cycle_interval_s = 120
 
 [data_manager]
@@ -38,8 +38,7 @@ data_pull_rate_hours = 6
 pull_data_startup_delay_seconds = 60
 
 inactive_guild_data_pull_rate_hours = 168 # Disable by setting it to value 0 or less
-guild_activity_check_events = 5
-guild_activity_check_participation_threshold = 5000.0
+activity_days_threshold = 30
 
 [event_tracker]
 tracker_limit_per_guild = 5

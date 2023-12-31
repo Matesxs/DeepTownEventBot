@@ -65,6 +65,7 @@ class DTDataDownloader(Base_Cog):
         pulled_data += 1
 
       logger.info(f"Pulled data of {pulled_data} inactive DT guilds")
+      logger.info(f"New count of active guilds: {await dt_guild_repo.get_number_of_active_guilds()}")
     logger.info("Inactive DT Guild data pull finished")
 
   @tasks.loop(hours=max(config.data_manager.data_pull_rate_hours, 1))

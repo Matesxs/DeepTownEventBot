@@ -3,7 +3,7 @@ import asyncio
 from typing import Optional, List
 
 from utils.logger import setup_custom_logger
-from database import dt_guild_repo, dt_guild_member_repo
+from database import dt_guild_repo, dt_user_repo
 
 logger = setup_custom_logger(__name__)
 
@@ -60,7 +60,7 @@ class PresenceHandler:
       string = string.format_map(MissingHandler(dt_guilds=(await dt_guild_repo.get_number_of_active_guilds())))
 
     if "{dt_users}" in string:
-      string = string.format_map(MissingHandler(dt_users=(await dt_guild_member_repo.get_number_of_active_members())))
+      string = string.format_map(MissingHandler(dt_users=(await dt_user_repo.get_number_of_active_users())))
 
     return string
 

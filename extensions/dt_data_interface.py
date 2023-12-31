@@ -7,7 +7,6 @@ import humanize
 from table2ascii import table2ascii, Alignment
 import sqlalchemy
 from typing import Optional
-import pandas as pd
 
 from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
@@ -92,14 +91,14 @@ class DTDataInterface(Base_Cog):
     message_utils.add_author_footer(guild_front_page, inter.author)
     guild_front_page.add_field(name="ID", value=str(guild.id))
     guild_front_page.add_field(name="Level", value=str(guild.level))
-    guild_front_page.add_field(name="Members", value=str(len(guild.active_members)))
+    guild_front_page.add_field(name="Members", value=str(len(guild.members)))
     guild_front_page.add_field(name="Active", value=str(guild.is_active))
     guild_front_page.add_field(name="Position", value=str(await dt_guild_repo.get_guild_position(guild.id)))
     guild_profile_lists.append(guild_front_page)
 
     # Members list
     member_data = []
-    for member in guild.active_members:
+    for member in guild.members:
       member_data.append((member.user.id, string_manipulation.truncate_string(member.user.username, 20), member.user.level, humanize.naturaltime(current_time - member.user.last_online) if member.user.last_online is not None else "Never"))
 
     member_data.sort(key=lambda x: x[0])
@@ -159,7 +158,6 @@ class DTDataInterface(Base_Cog):
 
     # Event participations
     raw_event_participation_data = await event_participation_repo.get_guild_event_participations_data(guild.id, ignore_zero_participation_median=True)
-    event_participation_dataframe = pd.DataFrame.from_records(raw_event_participation_data, columns=["Year", "Week", "Total", "Average", "Median"])
 
     event_participations_data = []
     for year, week, total, average, median in raw_event_participation_data:
@@ -292,7 +290,8 @@ class DTDataInterface(Base_Cog):
     user_front_page.add_field(name="Level", value=str(user.level))
     user_front_page.add_field(name="Depth", value=str(user.depth))
     user_front_page.add_field(name="Online", value=humanize.naturaltime(current_time - user.last_online) if user.last_online is not None else "Never")
-    user_front_page.add_field(name="Current guild", value=f"{user.active_member.guild.name}({user.active_member.guild.level})" if user.active_member is not None else "None", inline=False)
+    user_front_page.add_field(name="Active", value=str(user.is_active))
+    user_front_page.add_field(name="Current guild", value=f"{user.members[0].guild.name}({user.members[0].guild.level})" if user.members else "None", inline=False)
     user_profile_lists.append(user_front_page)
 
     # Buildings page
@@ -321,6 +320,8 @@ class DTDataInterface(Base_Cog):
     user_event_participations_stats_page.add_field(name="Average donate current year", value=string_manipulation.format_number(all_time_average_last_year, 4), inline=False)
     user_event_participations_stats_page.add_field(name="Median donate current year", value=string_manipulation.format_number(all_time_median_last_year, 4), inline=False)
     user_profile_lists.append(user_event_participations_stats_page)
+
+    await asyncio.sleep(0.1)
 
     # Event participations
     participation_pages_data = dt_report_generators.generate_participations_page_strings(await event_participation_repo.get_event_participations(user_id=user.id))

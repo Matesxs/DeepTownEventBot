@@ -1,7 +1,10 @@
+import datetime
+
 from sqlalchemy import Column, String, Integer, DateTime
 from sqlalchemy.orm import relationship
 
 import database
+from config import config
 from utils.dt_helpers import DTUserData
 
 class DTUser(database.base):
@@ -22,9 +25,12 @@ class DTUser(database.base):
   chem_stations = Column(Integer, default=0)
   green_houses = Column(Integer, default=0)
 
-  active_member = relationship("DTGuildMember", primaryjoin="and_(DTUser.id==DTGuildMember.dt_user_id, DTGuildMember.current_member==True)", uselist=False, viewonly=True)
   members = relationship("DTGuildMember", back_populates="user", uselist=True)
   event_participations = relationship("EventParticipation", back_populates="dt_user", uselist=True)
+
+  @property
+  def is_active(self) -> bool:
+    return self.last_online + datetime.timedelta(days=config.data_manager.activity_days_threshold) > datetime.datetime.utcnow()
 
   @classmethod
   def from_DTUserData(cls, data: DTUserData):

@@ -24,7 +24,7 @@ database_connect_string = "postgresql://postgres:postgres@db:5432/postgres" # Ex
 default_loaded_extensions = ["common", "dt_dynamic_data_manager", "dt_report_announcer", "dt_blacklist", "dt_event_item_lottery", "dt_data_interface", "better_message_links", "auto_help"]
 
 [presence]
-status_messages = ["Monitoring Deep Town Events", "Find every feature of this bot by typing /help"]
+status_messages = ["Serving {guilds} discord servers with {users} users", "Monitoring Deep Town Events", "Monitoring {dt_guilds} Deep Town active guilds with {dt_users} members", "Find every feature of this bot by typing /help"]
 cycle_interval_s = 120
 
 [data_manager]

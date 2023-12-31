@@ -1,5 +1,5 @@
 from typing import Optional, List, Tuple
-from sqlalchemy import or_, select, delete, text
+from sqlalchemy import or_, select, delete, text, func
 
 from database import run_commit, run_query, add_item
 from database.tables.dt_guild import DTGuild
@@ -21,13 +21,13 @@ async def search_guilds(search: Optional[str]=None, limit: int=25) -> List[DTGui
     result = await run_query(select(DTGuild).order_by(DTGuild.name).limit(limit))
   return result.scalars().all()
 
-async def create_dummy_dt_guild(id: int) -> Optional[DTGuild]:
-  item = await get_dt_guild(id)
+async def create_dummy_dt_guild(gid: int) -> Optional[DTGuild]:
+  item = await get_dt_guild(gid)
   if item is None:
-    if await dt_blacklist_repo.is_on_blacklist(dt_blacklist_repo.BlacklistType.GUILD, id):
+    if await dt_blacklist_repo.is_on_blacklist(dt_blacklist_repo.BlacklistType.GUILD, gid):
       return None
 
-    item = DTGuild(id=id, name="Unknown", level=-1)
+    item = DTGuild(id=gid, name="Unknown", level=-1)
     await add_item(item)
 
   return item
@@ -50,8 +50,8 @@ async def get_and_update_dt_guild(guild_data: DTGuildData) -> Optional[DTGuild]:
 
   return item
 
-async def remove_guild(id: int) -> bool:
-  result = await run_query(delete(DTGuild).filter(DTGuild.id == id), commit=True)
+async def remove_guild(gid: int) -> bool:
+  result = await run_query(delete(DTGuild).filter(DTGuild.id == gid), commit=True)
   return result.rowcount > 0
 
 async def remove_deleted_guilds(guild_id_list: List[int]) -> int:
@@ -67,6 +67,10 @@ async def is_guild_active(guild_id: int) -> bool:
 async def get_inactive_guild_ids() -> List[int]:
   result = await run_query(select(DTGuild.id).filter(DTGuild.is_active == False))
   return result.scalars().all()
+
+async def get_number_of_active_guilds() -> int:
+  result = await run_query(select(func.count()).select_from(DTGuild).filter(DTGuild.is_active == True))
+  return result.scalar_one()
 
 async def get_guild_level_leaderboard() -> List[Tuple[int, int, str, int]]:
   """

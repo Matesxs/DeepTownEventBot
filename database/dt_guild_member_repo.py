@@ -3,7 +3,7 @@ from sqlalchemy import func, select, update
 
 from database import run_query, add_item
 from database.tables.dt_guild_member import DTGuildMember
-from database.dt_guild_repo import get_and_update_dt_guild, create_dummy_dt_guild
+from database.dt_guild_repo import get_and_update_dt_guild, create_dummy_dt_guild, DTGuild
 from database.dt_user_repo import get_and_update_dt_user, create_dummy_dt_user
 from utils.dt_helpers import DTGuildData
 
@@ -56,3 +56,7 @@ async def get_and_update_dt_guild_members(guild_data: DTGuildData) -> Optional[L
 async def get_number_of_members(guild_id: int) -> int:
   result = await run_query(select(func.count(DTGuildMember.dt_user_id)).filter(DTGuildMember.dt_guild_id == guild_id, DTGuildMember.current_member == True))
   return result.scalar_one_or_none()
+
+async def get_number_of_active_members() -> int:
+  result = await run_query(select(func.count()).select_from(DTGuildMember).join(DTGuild).filter(DTGuildMember.current_member == True, DTGuild.is_active == True))
+  return result.scalar_one()

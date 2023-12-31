@@ -63,7 +63,7 @@ class BaseAutoshardedBot(commands.AutoShardedBot):
 
     self.presence_handler.start()
 
-    logger.info(f"Logged in as: {self.user} (ID: {self.user.id}) on {self.shard_count} shards in {len(self.guilds)} guilds")
+    logger.info(f"Logged in as: {self.user} (ID: {self.user.id}) on {self.shard_count} shards in {len(self.guilds)} guilds serving {len(self.users)} users")
     logger.info(f"Invite link: https://discord.com/oauth2/authorize?client_id={self.user.id}&scope=bot&permissions={config.base.required_permissions}")
     log_channel = await object_getters.get_or_fetch_channel(self, config.base.log_channel_id)
     if log_channel is not None:

@@ -10,7 +10,7 @@ class DTGuild(database.base):
   name = Column(String, index=True)
   level = Column(Integer)
 
-  is_active = Column(Boolean, default=True)
+  is_active = Column(Boolean, index=True, default=True)
 
   members = relationship("DTGuildMember", uselist=True, back_populates="guild")
   active_members = relationship("DTGuildMember", primaryjoin="and_(DTGuild.id==DTGuildMember.dt_guild_id, DTGuildMember.current_member==True)", uselist=True, viewonly=True)

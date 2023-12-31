@@ -160,14 +160,13 @@ class DTDataInterface(Base_Cog):
     # Event participations
     raw_event_participation_data = await event_participation_repo.get_guild_event_participations_data(guild.id, ignore_zero_participation_median=True)
     event_participation_dataframe = pd.DataFrame.from_records(raw_event_participation_data, columns=["Year", "Week", "Total", "Average", "Median"])
-    print(event_participation_dataframe.head(20))
 
     event_participations_data = []
     for year, week, total, average, median in raw_event_participation_data:
       best_participants = await event_participation_repo.get_event_participants_data(guild.id, year, week, limit=1) if total != 0 else None
-      event_participations_data.append((year, week, (string_manipulation.truncate_string(best_participants[0][1], 10) if best_participants is not None else "N/A"), string_manipulation.format_number(best_participants[0][4]) if best_participants else "0", string_manipulation.format_number(average), string_manipulation.format_number(median)))
+      event_participations_data.append((year, week, string_manipulation.format_number(best_participants[0][4]) if best_participants else "0", string_manipulation.format_number(average), string_manipulation.format_number(median)))
 
-    event_participations_strings = table2ascii(body=event_participations_data, header=["Year", "Week", "Top Member", "Top Donate", "Average", "Median"], alignments=[Alignment.RIGHT, Alignment.RIGHT, Alignment.LEFT, Alignment.RIGHT, Alignment.RIGHT, Alignment.RIGHT]).split("\n")
+    event_participations_strings = table2ascii(body=event_participations_data, header=["Year", "Week", "Top Donate", "Average", "Median"], alignments=[Alignment.RIGHT, Alignment.RIGHT, Alignment.RIGHT, Alignment.RIGHT, Alignment.RIGHT]).split("\n")
     while event_participations_strings:
       data_string, event_participations_strings = string_manipulation.add_string_until_length(event_participations_strings, 3000, "\n")
       event_participation_page = disnake.Embed(title=f"{string_manipulation.truncate_string(guild.name, 20)} event participations", color=disnake.Color.dark_blue(), description=f"```\n{data_string}\n```")

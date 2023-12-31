@@ -53,3 +53,7 @@ async def get_and_update_dt_user(user_data: DTUserData) -> Optional[DTUser]:
 async def get_number_of_active_users() -> int:
   result = await run_query(select(func.count(DTUser.id)).filter((DTUser.last_online + datetime.timedelta(days=config.data_manager.activity_days_threshold)) > datetime.datetime.utcnow()))
   return result.scalar_one()
+
+async def get_number_of_all_users() -> int:
+  result = await run_query(select(func.count(DTUser.id)))
+  return result.scalar_one()

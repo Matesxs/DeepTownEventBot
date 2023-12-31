@@ -80,6 +80,10 @@ async def get_number_of_active_guilds() -> int:
   result = await run_query(select(func.count()).select_from(DTGuild).filter(DTGuild.is_active == True))
   return result.scalar_one()
 
+async def get_number_of_all_guilds() -> int:
+  result = await run_query(select(func.count(DTGuild.id)))
+  return result.scalar_one()
+
 async def get_guild_level_leaderboard() -> List[Tuple[int, int, str, int]]:
   """
   :return: standing, guild id, guild name, guild level

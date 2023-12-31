@@ -62,6 +62,12 @@ class PresenceHandler:
     if "{dt_users}" in string:
       string = string.format_map(MissingHandler(dt_users=(await dt_user_repo.get_number_of_active_users())))
 
+    if "{total_dt_guilds}" in string:
+      string = string.format_map(MissingHandler(total_dt_guilds=(await dt_guild_repo.get_number_of_all_guilds())))
+
+    if "{total_dt_users}" in string:
+      string = string.format_map(MissingHandler(total_dt_users=(await dt_user_repo.get_number_of_all_users())))
+
     return string
 
   async def runner(self):

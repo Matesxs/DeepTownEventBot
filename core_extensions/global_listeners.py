@@ -27,7 +27,11 @@ class Listeners(Base_Cog):
         except:
           return
 
-      after = await channel.fetch_message(payload.message_id)
+      try:
+        after = await channel.fetch_message(payload.message_id)
+      except:
+        return
+
       if after is None:
         return
 

@@ -137,6 +137,7 @@ class Errors(Base_Cog):
     arg = args[0]
     error = sys.exc_info()[1]
     author = getattr(arg, "author", self.bot.user)
+    guild = getattr(arg, "guild", None)
     mock_ctx = ContextMock(self.bot, arg)
 
     if isinstance(error, commands.CommandInvokeError):
@@ -151,8 +152,7 @@ class Errors(Base_Cog):
     log_channel = self.bot.get_channel(config.base.log_channel_id)
     if log_channel is None: return
 
-    embed = create_embed(cmd_type=command_utils.CommandTypes.UNKNOWN_COMMAND, command=event, args=args, author=author, guild=arg.guild, jump_url=None)
-
+    embed = create_embed(cmd_type=command_utils.CommandTypes.UNKNOWN_COMMAND, command=event, args=args, author=author, guild=guild, jump_url=None)
     await log_channel.send(embed=embed)
 
     output = string_manipulation.split_to_parts(output, 1900)

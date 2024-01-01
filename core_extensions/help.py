@@ -52,7 +52,7 @@ def generate_com_help(com):
   string_array = [it for it in [aliases, brief, help_string] if it != ""]
   output = "\n".join(string_array) if string_array else "*No description*"
 
-  return f"{config.base.command_prefix}{command_utils.get_command_signature(com)}", string_manipulation.truncate_string(output, 4000)
+  return f"{config.base.command_prefix}{command_utils.get_text_command_signature(com)}", string_manipulation.truncate_string(output, 4000)
 
 
 async def generate_message_command_data(cogs: List[Base_Cog], ctx) -> List[CommandGroup]:

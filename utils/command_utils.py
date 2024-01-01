@@ -1,3 +1,4 @@
+import disnake
 from disnake.permissions import Permissions
 from disnake.app_commands import Option, Localized
 from disnake.ext.commands import InvokableSlashCommand, InvokableMessageCommand
@@ -5,11 +6,12 @@ from disnake.ext import commands
 import asyncio
 from typing import Union, Optional, List, Dict, Any, Callable
 import os
+import enum
 
 from config import config
 
 # https://github.com/Toaster192/rubbergod/blob/master/utils.py
-def get_command_signature(cmd_src: Union[commands.Context, commands.Command]):
+def get_text_command_signature(cmd_src: Union[commands.Context, commands.Command]):
   cmd = cmd_src.command if isinstance(cmd_src, commands.Context) else cmd_src
   cmd_string = f"{cmd} {cmd.signature}".rstrip(" ")
   return f"{cmd_string}"
@@ -83,3 +85,43 @@ def master_only_message_command(
     )
 
   return decorator
+
+class CommandTypes(enum.Enum):
+  SLASH_COMMAND = enum.auto()
+  USER_COMMAND = enum.auto()
+  MESSAGE_COMMAND = enum.auto()
+  TEXT_COMMAND = enum.auto()
+
+def get_command_type(command: commands.InvokableApplicationCommand):
+  if isinstance(command, commands.InvokableUserCommand):
+    return CommandTypes.USER_COMMAND
+  elif isinstance(command, commands.InvokableMessageCommand):
+    return CommandTypes.MESSAGE_COMMAND
+  elif isinstance(command, commands.InvokableSlashCommand) or isinstance(command, commands.slash_core.SubCommand):
+    return CommandTypes.SLASH_COMMAND
+  else:
+    raise NotImplementedError
+
+
+async def parse_context(ctx: Union[disnake.ApplicationCommandInteraction, commands.Context]):
+  if isinstance(ctx, disnake.ApplicationCommandInteraction):
+    args = " ".join(f"{key}={item}" for key, item in ctx.filled_options.items())
+    commad_type = get_command_type(ctx.application_command)
+
+    return {
+      "args": args,
+      "cog": ctx.application_command.cog_name,
+      "command_type": commad_type,
+      "command": f"{ctx.application_command.qualified_name}",
+      "url": getattr(ctx.channel, "jump_url", "DM"),
+    }
+  elif isinstance(ctx, commands.Context):
+    return {
+      "args": ctx.message.content,
+      "cog": ctx.cog.qualified_name,
+      "command_type": CommandTypes.TEXT_COMMAND,
+      "command": f"{ctx.command.qualified_name}",
+      "url": getattr(ctx.message, "jump_url", "DM"),
+    }
+  else:
+    raise NotImplementedError

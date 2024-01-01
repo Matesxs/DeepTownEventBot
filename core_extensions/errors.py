@@ -5,8 +5,7 @@ import disnake
 from disnake.ext import commands
 import traceback
 import sqlalchemy.exc
-from typing import Union, Dict, Optional
-import enum
+from typing import Dict, Optional
 
 from database import session
 from utils import message_utils, command_utils, string_manipulation
@@ -18,48 +17,7 @@ from features import exceptions
 
 logger = setup_custom_logger(__name__)
 
-class CommandTypes(enum.Enum):
-  SLASH_COMMAND = enum.auto()
-  USER_COMMAND = enum.auto()
-  MESSAGE_COMMAND = enum.auto()
-  TEXT_COMMAND = enum.auto()
-
-def get_command_type(command: commands.InvokableApplicationCommand):
-  if isinstance(command, commands.InvokableUserCommand):
-    return CommandTypes.USER_COMMAND
-  elif isinstance(command, commands.InvokableMessageCommand):
-    return CommandTypes.MESSAGE_COMMAND
-  elif isinstance(command, commands.InvokableSlashCommand) or isinstance(command, commands.slash_core.SubCommand):
-    return CommandTypes.SLASH_COMMAND
-  else:
-    raise NotImplementedError
-
-
-async def parse_context(ctx: Union[disnake.ApplicationCommandInteraction, commands.Context]):
-  if isinstance(ctx, disnake.ApplicationCommandInteraction):
-    args = " ".join(f"{key}={item}" for key, item in ctx.filled_options.items())
-    commad_type = get_command_type(ctx.application_command)
-
-    return {
-      "args": args,
-      "cog": ctx.application_command.cog_name,
-      "command_type": commad_type,
-      "command": f"{ctx.application_command.qualified_name}",
-      "url": getattr(ctx.channel, "jump_url", "DM"),
-    }
-  elif isinstance(ctx, commands.Context):
-    return {
-      "args": ctx.message.content,
-      "cog": ctx.cog.qualified_name,
-      "command_type": CommandTypes.TEXT_COMMAND,
-      "command": f"{ctx.command.qualified_name}",
-      "url": getattr(ctx.message, "jump_url", "DM"),
-    }
-  else:
-    raise NotImplementedError
-
-
-def create_embed(command: str, cmd_type: CommandTypes, args: str, author: disnake.User, guild: Optional[disnake.Guild], jump_url: str, extra_fields: Dict[str, str] = None):
+def create_embed(command: str, cmd_type: command_utils.CommandTypes, args: str, author: disnake.User, guild: Optional[disnake.Guild], jump_url: str, extra_fields: Dict[str, str] = None):
   embed = disnake.Embed(title=f"Ignoring exception in {command}", color=0xFF0000)
 
   embed.add_field(name="Command type", value=cmd_type.name)
@@ -139,7 +97,7 @@ class Errors(Base_Cog):
     elif isinstance(error, commands.MissingRole):
       await message_utils.generate_error_message(ctx, Strings.error_missing_role(role=error.missing_role))
     elif isinstance(error, commands.MissingRequiredArgument):
-      await message_utils.generate_error_message(ctx, Strings.error_missing_argument(argument=error.param, signature=command_utils.get_command_signature(ctx)))
+      await message_utils.generate_error_message(ctx, Strings.error_missing_argument(argument=error.param, signature=command_utils.get_text_command_signature(ctx)))
     elif isinstance(error, commands.BadArgument):
       await message_utils.generate_error_message(ctx, Strings.error_bad_argument)
     elif isinstance(error, commands.MaxConcurrencyReached):
@@ -161,7 +119,7 @@ class Errors(Base_Cog):
       log_channel = self.bot.get_channel(config.base.log_channel_id)
       if log_channel is None: return
 
-      parsed_context = await parse_context(ctx)
+      parsed_context = await command_utils.parse_context(ctx)
       embed = create_embed(parsed_context["command"], parsed_context["command_type"], parsed_context["args"][:1000], ctx.author, ctx.guild, parsed_context["url"])
 
       await log_channel.send(embed=embed)

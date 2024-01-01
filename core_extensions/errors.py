@@ -5,7 +5,7 @@ import disnake
 from disnake.ext import commands
 import traceback
 import sqlalchemy.exc
-from typing import Union, Dict
+from typing import Union, Dict, Optional
 
 from database import session
 from utils import message_utils, command_utils, string_manipulation
@@ -51,7 +51,7 @@ async def parse_context(ctx: Union[disnake.ApplicationCommandInteraction, comman
     raise NotImplementedError
 
 
-def create_embed(command: str, args: str, author: disnake.User, guild: disnake.Guild, jump_url: str, extra_fields: Dict[str, str] = None):
+def create_embed(command: str, args: str, author: disnake.User, guild: Optional[disnake.Guild], jump_url: str, extra_fields: Dict[str, str] = None):
   embed = disnake.Embed(title=f"Ignoring exception in {command}", color=0xFF0000)
 
   if args:

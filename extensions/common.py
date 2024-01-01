@@ -40,7 +40,7 @@ class Common(Base_Cog):
     em.description = f'Bot: {round(self.bot.latency * 1000)} ms\nAPI: {round((end_time - start_time) * 1000)}ms'
     await inter.edit_original_response(embed=em)
 
-  @common_commands.sub_command(description=Strings.common_invite_description)
+  @common_commands.sub_command(name="invite", description=Strings.common_invite_description)
   @cooldowns.default_cooldown
   async def invite_link(self, inter: disnake.CommandInteraction):
     await inter.response.defer(with_message=True)

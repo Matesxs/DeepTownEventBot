@@ -120,15 +120,12 @@ class DTEventReportAnnouncer(Base_Cog):
       message_utils.add_author_footer(page, inter.author)
 
       for setting in batch:
-        guild_name = setting.dt_guild.name
-        guild_level = setting.dt_guild.level
-
         announce_channel = await setting.get_text_announce_channel(self.bot)
         csv_announce_channel = await setting.get_csv_announce_channel(self.bot)
         value_string = "\n".join(["No text reporting" if announce_channel is None else f"Text: [#{announce_channel.name}]({announce_channel.jump_url})",
                                   "No csv reporting" if csv_announce_channel is None else f"CSV: [#{csv_announce_channel.name}]({csv_announce_channel.jump_url})"])
 
-        page.add_field(name=f"{guild_name}({guild_level})", value=value_string)
+        page.add_field(name=f"{setting.dt_guild.name}({setting.dt_guild_id})", value=value_string)
       pages.append(page)
 
     embed_view = EmbedView(inter.author, pages, invisible=True)
@@ -185,7 +182,7 @@ class DTEventReportAnnouncer(Base_Cog):
         await dt_report_generators.send_text_guild_event_participation_report(text_announce_channel, tracker.dt_guild, participations, colm_padding=0)
         await asyncio.sleep(0.1)
 
-      if csv_announce_channel is not None and csv_announce_channel.permissions_for(csv_announce_channel.guild.me).send_messages and not csv_announce_channel.permissions_for(csv_announce_channel.guild.me).attach_files:
+      if csv_announce_channel is not None and csv_announce_channel.permissions_for(csv_announce_channel.guild.me).send_messages and csv_announce_channel.permissions_for(csv_announce_channel.guild.me).attach_files:
         await dt_report_generators.send_csv_guild_event_participation_report(csv_announce_channel, tracker.dt_guild, participations)
         await asyncio.sleep(0.1)
 

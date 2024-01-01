@@ -9,7 +9,7 @@ async def generate_error_message(ctx: Union[commands.Context, disnake.abc.Messag
   if hasattr(ctx, "channel") and hasattr(ctx, "guild"):
     if isinstance(ctx.channel, disnake.abc.GuildChannel):
       if not ctx.channel.permissions_for(ctx.guild.me).send_messages:
-        return
+        return None
 
   response_embed = disnake.Embed(color=disnake.Color.dark_red(), title=":x: | Error", description=text)
   if isinstance(ctx, (disnake.ModalInteraction, disnake.ApplicationCommandInteraction, disnake.MessageInteraction)):
@@ -23,7 +23,7 @@ async def generate_success_message(ctx: Union[commands.Context, disnake.abc.Mess
   if hasattr(ctx, "channel") and hasattr(ctx, "guild"):
     if isinstance(ctx.channel, disnake.abc.GuildChannel):
       if not ctx.channel.permissions_for(ctx.guild.me).send_messages:
-        return
+        return None
 
   response_embed = disnake.Embed(color=disnake.Color.green(), title=":white_check_mark: | Success", description=text)
   if isinstance(ctx, (disnake.ModalInteraction, disnake.ApplicationCommandInteraction, disnake.MessageInteraction)):

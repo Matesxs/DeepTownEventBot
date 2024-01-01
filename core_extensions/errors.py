@@ -37,6 +37,9 @@ class Errors(Base_Cog):
     await self.command_error_handling(inter, error)
 
   async def command_error_handling(self, ctx, error):
+    if isinstance(error, commands.CommandInvokeError):
+      error = error.original
+
     if isinstance(error, disnake.errors.DiscordServerError):
       pass
     elif isinstance(error, sqlalchemy.exc.InternalError) or isinstance(error, sqlalchemy.exc.IntegrityError):
@@ -46,7 +49,12 @@ class Errors(Base_Cog):
 
       session.rollback()
     elif isinstance(error, disnake.Forbidden):
-      await message_utils.generate_error_message(ctx, Strings.error_forbiden)
+      if error.code == 403:
+        res = await message_utils.generate_error_message(ctx, Strings.error_bot_missing_permission)
+        if res is None:
+          await message_utils.generate_error_message(ctx.author, Strings.error_bot_missing_permission)
+      else:
+        await message_utils.generate_error_message(ctx, Strings.error_forbiden)
     elif isinstance(error, disnake.HTTPException) and error.code == 50007:
       await message_utils.generate_error_message(ctx, Strings.error_blocked_dms)
     elif isinstance(error, disnake.NotFound):

@@ -2,6 +2,7 @@ from sqlalchemy import Column, String, Integer, Boolean
 from sqlalchemy.orm import relationship
 
 import database
+from utils.dt_helpers import DTGuildData
 
 class DTGuild(database.base):
   __tablename__ = "dt_guilds"
@@ -14,3 +15,8 @@ class DTGuild(database.base):
 
   members = relationship("DTGuildMember", uselist=True, back_populates="guild")
   event_participations = relationship("EventParticipation", uselist=True, back_populates="dt_guild")
+
+  def update(self, data: DTGuildData):
+    self.name = data.name
+    self.level = data.level
+    self.is_active = data.is_active

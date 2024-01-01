@@ -1,19 +1,10 @@
 from typing import Optional, List, Tuple
 from sqlalchemy import or_, select, delete, text, func
-import datetime
 
 from database import run_commit, run_query, add_item
 from database.tables.dt_guild import DTGuild
-from database.tables.dt_user import DTUser
-from database.tables.dt_guild_member import DTGuildMember
 from database import dt_blacklist_repo
 from utils.dt_helpers import DTGuildData
-from config import config
-
-async def get_guild_activity(guild_id: int) -> bool:
-  query = select(func.count(DTUser.id.distinct())).join(DTGuildMember).filter(DTGuildMember.dt_guild_id == guild_id, (DTUser.last_online + datetime.timedelta(days=config.data_manager.activity_days_threshold)) > datetime.datetime.utcnow())
-  result = await run_query(query)
-  return result.scalar_one() > 0
 
 async def get_dt_guild(guild_id:int) -> Optional[DTGuild]:
   result = await run_query(select(DTGuild).filter(DTGuild.id == guild_id))
@@ -46,13 +37,10 @@ async def get_and_update_dt_guild(guild_data: DTGuildData) -> Optional[DTGuild]:
     if await dt_blacklist_repo.is_on_blacklist(dt_blacklist_repo.BlacklistType.GUILD, guild_data.id):
       return None
 
-    item = DTGuild(id=guild_data.id, name=guild_data.name, level=guild_data.level)
+    item = DTGuild(id=guild_data.id, name=guild_data.name, level=guild_data.level, is_active=guild_data.is_active)
     await add_item(item)
   else:
-    item.is_active = await get_guild_activity(item.id)
-
-    item.name = guild_data.name
-    item.level = guild_data.level
+    item.update(guild_data)
 
   await run_commit()
 

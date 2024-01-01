@@ -37,6 +37,10 @@ class DTUserData:
       guild_data[5], guild_data[6], guild_data[7], guild_data[8], guild_data[9], guild_data[10], guild_data[11], guild_data[12]
     )
 
+  @property
+  def is_active(self):
+    return self.last_online + datetime.timedelta(days=config.data_manager.activity_days_threshold) > datetime.datetime.utcnow()
+
   def __repr__(self):
     return f"<{self.name}({self.id}),{self.level},{self.depth},'{self.last_online if self.last_online is not None else '*Never*'}',{self.last_event_contribution}, ({self.mines},{self.chem_mines},{self.oil_mines},{self.crafters},{self.smelters},{self.jewel_stations},{self.chem_stations},{self.green_houses})>"
 
@@ -46,6 +50,13 @@ class DTGuildData:
   id: int
   level: int
   players: List[DTUserData]
+
+  @property
+  def is_active(self):
+    for player in self.players:
+      if player.is_active:
+        return True
+    return False
 
   def __repr__(self):
     return f"<{self.name}({self.id}),{self.level}(\n\t" + "\n\t".join([str(p) for p in self.players]) + "\n)>"

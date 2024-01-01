@@ -91,6 +91,7 @@ class CommandTypes(enum.Enum):
   USER_COMMAND = enum.auto()
   MESSAGE_COMMAND = enum.auto()
   TEXT_COMMAND = enum.auto()
+  UNKNOWN_COMMAND = enum.auto()
 
 def get_command_type(command: commands.InvokableApplicationCommand):
   if isinstance(command, commands.InvokableUserCommand):

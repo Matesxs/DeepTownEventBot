@@ -4,8 +4,13 @@ from typing import List, Tuple, Union
 def add_string_until_length(strings:List[str], max_length:int, sep:str) -> Tuple[str, List[str]]:
   output = ""
   while strings:
-    string = strings[0]
-    tmp_output = (output + string) if output == "" else (output + sep + string)
+    if len(strings[0]) > max_length:
+      parts = split_to_parts(strings[0], max_length)
+      strings.pop()
+      strings = [*parts, *strings]
+      continue
+
+    tmp_output = (output + strings[0]) if output == "" else (output + sep + strings[0])
     if len(tmp_output) > max_length:
       break
 
@@ -23,11 +28,11 @@ def truncate_string(string: str, limit: int, ellipsis :str="…", from_beginning
   else:
     return string[:limit - len(ellipsis)] + ellipsis
 
-def split_to_parts(items: str, length: int) -> List[str]:
+def split_to_parts(item: str, length: int) -> List[str]:
   result = []
 
-  for x in range(math.ceil(len(items) / length)):
-    result.append(items[x * length:(x * length) + length])
+  for x in range(math.ceil(len(item) / length)):
+    result.append(item[x * length:(x * length) + length])
 
   return result
 

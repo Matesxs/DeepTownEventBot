@@ -39,8 +39,12 @@ class Strings(metaclass=Formatable):
 
   system_cogs_description = "Show all extensions and their states"
 
-  system_logout_brief = "Turn off bot"
-  system_git_pull = "Pull latest version of bot from git repository"
+  system_logout_description = "Turn off bot"
+
+  system_update_description = "Pull latest version of bot from git repository and logout bot"
+  system_update_already_up_to_date = "Bot is already up to date"
+
+  system_git_pull_description = "Pull latest version of bot from git repository"
 
   # Errors
   error_command_syntax_error = "Unknown syntax of command"

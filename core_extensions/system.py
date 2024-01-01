@@ -251,12 +251,28 @@ class System(Base_Cog):
 
     await EmbedView(inter.author, pages, perma_lock=True).run(inter)
 
-  @system_commands.sub_command(description=Strings.system_logout_brief)
+  @system_commands.sub_command(description=Strings.system_logout_description)
   async def logout(self, inter: disnake.CommandInteraction):
     await inter.send("Cya :wave:")
     await self.bot.close()
 
-  @system_commands.sub_command(name="pull", description=Strings.system_git_pull)
+  @system_commands.sub_command(description=Strings.system_update_description)
+  async def update(self, inter: disnake.CommandInteraction):
+    await inter.response.defer(with_message=True)
+
+    result = str(await self.git.pull())
+    if "Already up to date." in result:
+      return await message_utils.generate_success_message(inter, Strings.system_update_already_up_to_date)
+
+    result_message_lines = result.split("\n")
+    while result_message_lines:
+      result_message, result_message_lines = string_manipulation.add_string_until_length(result_message_lines, 1900, "\n")
+      await inter.send(f"Git pull result\n```diff\n{result_message}\n```")
+
+    await inter.send("Cya :wave:")
+    await self.bot.close()
+
+  @system_commands.sub_command(name="pull", description=Strings.system_git_pull_description)
   async def git_pull(self, inter: disnake.CommandInteraction):
     await inter.response.defer(with_message=True)
 

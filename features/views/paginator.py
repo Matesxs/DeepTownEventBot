@@ -45,13 +45,15 @@ class EmbedView(disnake.ui.View):
     super().__init__(timeout=timeout)
 
     if self.max_page > 1:
-      self.add_item(
-        disnake.ui.Button(
-          emoji="⏪",
-          custom_id="embed:start_page",
-          style=disnake.ButtonStyle.primary
+      if self.max_page > 2:
+        self.add_item(
+          disnake.ui.Button(
+            emoji="⏪",
+            custom_id="embed:start_page",
+            style=disnake.ButtonStyle.primary
+          )
         )
-      )
+
       self.add_item(
         disnake.ui.Button(
           emoji="◀",
@@ -59,6 +61,7 @@ class EmbedView(disnake.ui.View):
           style=disnake.ButtonStyle.primary
         )
       )
+
       self.add_item(
         disnake.ui.Button(
           emoji="▶",
@@ -66,14 +69,17 @@ class EmbedView(disnake.ui.View):
           style=disnake.ButtonStyle.primary
         )
       )
-      if end_arrow:
-        self.add_item(
-          disnake.ui.Button(
-            emoji="⏩",
-            custom_id="embed:end_page",
-            style=disnake.ButtonStyle.primary
+
+      if self.max_page > 2:
+        if end_arrow:
+          self.add_item(
+            disnake.ui.Button(
+              emoji="⏩",
+              custom_id="embed:end_page",
+              style=disnake.ButtonStyle.primary
+            )
           )
-        )
+
       if not perma_lock and not invisible:
         # if permanent lock is applied, dynamic lock is removed from buttons
         self.lock_button = disnake.ui.Button(

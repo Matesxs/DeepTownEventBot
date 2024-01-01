@@ -94,6 +94,27 @@ async def get_event_participants_data(guild_id: Optional[int] = None, year: Opti
     return output_data
   return [(d[0], d[1], d[2], d[3], d[4], d[5], d[6] if d[6] is not None else 0) for d in data]
 
+async def get_users_leaderboard(year: int, week: int, limit: int = 10) -> List[Tuple[str, str, int]]:
+  return (await run_query(select(dt_user_repo.DTUser.username, dt_guild_repo.DTGuild.name, func.sum(EventParticipation.amount))
+                          .select_from(EventParticipation)
+                          .join(EventSpecification)
+                          .join(dt_guild_repo.DTGuild)
+                          .join(dt_user_repo.DTUser)
+                          .filter(EventSpecification.event_year == year, EventSpecification.event_week == week)
+                          .group_by(dt_user_repo.DTUser.username, dt_guild_repo.DTGuild.name)
+                          .order_by(func.sum(EventParticipation.amount).desc())
+                          .limit(limit))).all()
+
+async def get_guild_leaderbord(year: int, week: int, limit: int = 10) -> List[Tuple[str, int, int]]:
+  return (await run_query(select(dt_guild_repo.DTGuild.name, func.sum(EventParticipation.amount), func.max(EventParticipation.amount))
+                          .select_from(EventParticipation)
+                          .join(EventSpecification)
+                          .join(dt_guild_repo.DTGuild)
+                          .filter(EventSpecification.event_year == year, EventSpecification.event_week == week)
+                          .group_by(dt_guild_repo.DTGuild.name)
+                          .order_by(func.sum(EventParticipation.amount).desc())
+                          .limit(limit))).all()
+
 async def get_event_participation_stats(guild_id: Optional[int]=None, user_id: Optional[int]=None, year: Optional[int]=None, ignore_zero_participation_median: bool=False, ignore_zero_participation_average: bool=False) -> Tuple[int, float, float]:
   """
   :param guild_id: Deep Town Guild ID

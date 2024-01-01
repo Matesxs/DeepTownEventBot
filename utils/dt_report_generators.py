@@ -81,7 +81,7 @@ def generate_participation_strings(participations: List[EventParticipation], col
     if "Donate" in colms:
       data.append(string_manipulation.format_number(participation.amount))
     if "Standing" in colms:
-      if participation.amount < low_average_participation:
+      if participation.amount < low_average_participation or participation.amount == 0:
         data.append("Low")
       elif participation.amount > high_average_participation:
         data.append("High")

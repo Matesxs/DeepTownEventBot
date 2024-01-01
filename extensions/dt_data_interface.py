@@ -10,6 +10,7 @@ from typing import Optional
 
 from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
+from utils.humanize_wrapper import hum_naturaltime
 from config import cooldowns, Strings
 from utils import dt_helpers, dt_report_generators, message_utils, string_manipulation, dt_autocomplete
 from features.views.paginator import EmbedView
@@ -32,6 +33,13 @@ class DTDataInterface(Base_Cog):
                          identifier = commands.Param(description=Strings.dt_guild_identifier_param_description, autocomp=dt_autocomplete.autocomplete_identifier_guild, converter=dt_autocomplete.guild_user_identifier_converter),
                          event_identifier = commands.Param(default=None, description=Strings.dt_event_identifier_param_description, autocomplete=dt_autocomplete.autocomplete_event_identifier, converter=dt_autocomplete.event_identifier_converter, convert_defaults=True),
                          tight_format: bool = commands.Param(default=False, description=Strings.public_interface_guild_report_tight_format_param_description)):
+    if isinstance(inter.channel, (disnake.abc.GuildChannel, disnake.Thread)):
+      if not inter.channel.permissions_for(inter.channel.guild.me).send_messages:
+        res = await message_utils.generate_error_message(inter, Strings.error_bot_missing_permission)
+        if res is None:
+          await message_utils.generate_error_message(inter.author, Strings.error_bot_missing_permission)
+        return
+
     await inter.response.defer(with_message=True)
 
     if identifier is None:
@@ -99,7 +107,7 @@ class DTDataInterface(Base_Cog):
     # Members list
     member_data = []
     for member in guild.members:
-      member_data.append((member.user.id, string_manipulation.truncate_string(member.user.username, 20), member.user.level, humanize.naturaltime(current_time - member.user.last_online) if member.user.last_online is not None else "Never"))
+      member_data.append((member.user.id, string_manipulation.truncate_string(member.user.username, 18), member.user.level, hum_naturaltime(current_time - member.user.last_online, only_first=True) if member.user.last_online is not None else "Never"))
 
     member_data.sort(key=lambda x: x[0])
 
@@ -291,7 +299,7 @@ class DTDataInterface(Base_Cog):
     user_front_page.add_field(name="Depth", value=str(user.depth))
     user_front_page.add_field(name="Online", value=humanize.naturaltime(current_time - user.last_online) if user.last_online is not None else "Never")
     user_front_page.add_field(name="Active", value=str(user.is_active))
-    user_front_page.add_field(name="Current guild", value=f"{user.members[0].guild.name}({user.members[0].guild.level})" if user.members else "None", inline=False)
+    user_front_page.add_field(name="Current guild", value=f"{user.members[0].guild.name}({user.members[0].dt_guild_id})" if user.members else "None", inline=False)
     user_profile_lists.append(user_front_page)
 
     # Buildings page
@@ -355,6 +363,13 @@ class DTDataInterface(Base_Cog):
   async def event_help(self, inter: disnake.CommandInteraction,
                        event_identifier = commands.Param(default=None, description=Strings.dt_event_identifier_param_description, autocomplete=dt_autocomplete.autocomplete_event_identifier, converter=dt_autocomplete.event_identifier_converter, convert_defaults=True),
                        item_scaling_levels:int = commands.Param(min_value=0, max_value=100, default=30, description=Strings.public_interface_event_help_item_scaling_levels_param_description)):
+    if isinstance(inter.channel, (disnake.abc.GuildChannel, disnake.Thread)):
+      if not inter.channel.permissions_for(inter.channel.guild.me).send_messages:
+        res = await message_utils.generate_error_message(inter, Strings.error_bot_missing_permission)
+        if res is None:
+          await message_utils.generate_error_message(inter.author, Strings.error_bot_missing_permission)
+        return
+
     await inter.response.defer(with_message=True)
 
     event_specification = await event_participation_repo.get_event_specification(event_identifier[0], event_identifier[1])
@@ -426,20 +441,61 @@ class DTDataInterface(Base_Cog):
     embed_view = EmbedView(inter.author, pages)
     await embed_view.run(inter)
 
-  @event_commands.sub_command(name="leaderboard", description=Strings.public_interface_event_leaderboard_specific_description)
+  @event_commands.sub_command_group(name="leaderboard")
+  async def leaderboard_commands(self, inter: disnake.CommandInteraction):
+    pass
+
+  @leaderboard_commands.sub_command(name="users", description=Strings.public_interface_event_leaderboard_users_description)
   @cooldowns.huge_cooldown
-  async def global_event_leaderboard(self, inter: disnake.CommandInteraction,
-                                             event_identifier = commands.Param(default=None, description=Strings.dt_event_identifier_param_description, autocomplete=dt_autocomplete.autocomplete_event_identifier, converter=dt_autocomplete.event_identifier_converter, convert_defaults=True),
-                                             user_count: int = commands.Param(default=20, min_value=1, max_value=200, description=Strings.public_interface_event_leaderboard_specific_user_count_param_description)):
+  async def user_event_leaderboard(self, inter: disnake.CommandInteraction,
+                                   event_identifier = commands.Param(default=None, description=Strings.dt_event_identifier_param_description, autocomplete=dt_autocomplete.autocomplete_event_identifier, converter=dt_autocomplete.event_identifier_converter, convert_defaults=True),
+                                   limit: int = commands.Param(default=20, min_value=1, max_value=200, description=Strings.public_interface_event_leaderboard_limit_param_description)):
+    if isinstance(inter.channel, (disnake.abc.GuildChannel, disnake.Thread)):
+      if not inter.channel.permissions_for(inter.channel.guild.me).send_messages:
+        res = await message_utils.generate_error_message(inter, Strings.error_bot_missing_permission)
+        if res is None:
+          await message_utils.generate_error_message(inter.author, Strings.error_bot_missing_permission)
+        return
+
     await inter.response.defer(with_message=True)
 
-    global_best_participants = await event_participation_repo.get_event_participants_data(year=event_identifier[0], week=event_identifier[1], limit=user_count)
+    global_best_participants = await event_participation_repo.get_users_leaderboard(year=event_identifier[0], week=event_identifier[1], limit=limit)
     if not global_best_participants:
       return await message_utils.generate_error_message(inter, Strings.dt_event_data_not_found(year=event_identifier[0], week=event_identifier[1]))
 
-    participant_data = [(idx + 1, string_manipulation.truncate_string(username, 20), string_manipulation.truncate_string(guild_name, 20), string_manipulation.format_number(total_contribution)) for idx, (_, username, _, guild_name, total_contribution, _, _) in enumerate(global_best_participants)]
+    participant_data = [(idx + 1, string_manipulation.truncate_string(username, 20), string_manipulation.truncate_string(guild_name, 20), string_manipulation.format_number(total_contribution)) for idx, (username, guild_name, total_contribution) in enumerate(global_best_participants)]
     start_date, end_date = dt_helpers.event_index_to_date_range(int(event_identifier[0]), int(event_identifier[1]))
-    participant_data_table_strings = (f"Year: {event_identifier[0]} Week: {event_identifier[1]}\n{start_date.day}.{start_date.month}.{start_date.year} - {end_date.day}.{end_date.month}.{end_date.year}\n" + table2ascii(header=["No°", "Username", "Guild", "Donate"], body=participant_data, first_col_heading=True, alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.LEFT, Alignment.RIGHT])).split("\n")
+    participant_data_table_strings = (f"Year: {event_identifier[0]} Week: {event_identifier[1]}\n{start_date.day}.{start_date.month}.{start_date.year} - {end_date.day}.{end_date.month}.{end_date.year}\n" +
+                                      table2ascii(header=["No°", "Username", "Guild", "Donate"], body=participant_data, first_col_heading=True, alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.LEFT, Alignment.RIGHT])
+                                      ).split("\n")
+
+    while participant_data_table_strings:
+      data_string, participant_data_table_strings = string_manipulation.add_string_until_length(participant_data_table_strings, 1900, "\n")
+      await inter.send(f"```\n{data_string}\n```")
+
+  @leaderboard_commands.sub_command(name="guilds", description=Strings.public_interface_event_leaderboard_guilds_description)
+  @cooldowns.huge_cooldown
+  async def guild_event_leaderboard(self, inter: disnake.CommandInteraction,
+                                    event_identifier=commands.Param(default=None, description=Strings.dt_event_identifier_param_description, autocomplete=dt_autocomplete.autocomplete_event_identifier, converter=dt_autocomplete.event_identifier_converter, convert_defaults=True),
+                                    limit: int = commands.Param(default=20, min_value=1, max_value=200, description=Strings.public_interface_event_leaderboard_limit_param_description)):
+    if isinstance(inter.channel, (disnake.abc.GuildChannel, disnake.Thread)):
+      if not inter.channel.permissions_for(inter.channel.guild.me).send_messages:
+        res = await message_utils.generate_error_message(inter, Strings.error_bot_missing_permission)
+        if res is None:
+          await message_utils.generate_error_message(inter.author, Strings.error_bot_missing_permission)
+        return
+
+    await inter.response.defer(with_message=True)
+
+    best_guilds = await event_participation_repo.get_guild_leaderbord(year=event_identifier[0], week=event_identifier[1], limit=limit)
+    if not best_guilds:
+      return await message_utils.generate_error_message(inter, Strings.dt_event_data_not_found(year=event_identifier[0], week=event_identifier[1]))
+
+    participant_data = [(idx + 1, string_manipulation.truncate_string(guild_name, 20), string_manipulation.format_number(total_contribution), string_manipulation.format_number(max_contribution)) for idx, (guild_name, total_contribution, max_contribution) in enumerate(best_guilds)]
+    start_date, end_date = dt_helpers.event_index_to_date_range(int(event_identifier[0]), int(event_identifier[1]))
+    participant_data_table_strings = (f"Year: {event_identifier[0]} Week: {event_identifier[1]}\n{start_date.day}.{start_date.month}.{start_date.year} - {end_date.day}.{end_date.month}.{end_date.year}\n" +
+                                      table2ascii(header=["No°", "Guild", "Donate", "Top Donate"], body=participant_data, first_col_heading=True, alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.RIGHT, Alignment.RIGHT])
+                                      ).split("\n")
 
     while participant_data_table_strings:
       data_string, participant_data_table_strings = string_manipulation.add_string_until_length(participant_data_table_strings, 1900, "\n")

@@ -208,8 +208,11 @@ class Strings(metaclass=Formatable):
   public_interface_event_stats_year_param_description = "Specific year, without it show statistics for whole lifespan"
   public_interface_event_stats_no_stats = "No statistics available"
 
-  public_interface_event_leaderboard_specific_description = "Show leaderboard of participants in specific event"
-  public_interface_event_leaderboard_specific_user_count_param_description = "Number of top users to display"
+  public_interface_event_leaderboard_users_description = "Show leaderboard of participants in specific event"
+
+  public_interface_event_leaderboard_guilds_description = "Show leaderboard of guilds in specific event"
+
+  public_interface_event_leaderboard_limit_param_description = "Number results to display"
 
   public_interface_delete_bot_message_invalid_message = "This is not message of this bot!"
 

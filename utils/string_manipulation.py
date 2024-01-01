@@ -36,7 +36,10 @@ def format_number(number: Union[int, float], precision: int=2) -> str:
     number = float(number)
 
   units = ""
-  if number / 1_000_000_000_000 >= 1:
+  if number / 1_000_000_000_000_000 >= 1:
+    number /= 1_000_000_000_000_000
+    units = "P"
+  elif number / 1_000_000_000_000 >= 1:
     number /= 1_000_000_000_000
     units = "T"
   elif number / 1_000_000_000 >= 1:

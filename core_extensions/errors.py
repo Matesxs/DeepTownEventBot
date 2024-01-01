@@ -5,6 +5,7 @@ import disnake
 from disnake.ext import commands
 import traceback
 import sqlalchemy.exc
+from typing import Union, Dict
 
 from database import session
 from utils import message_utils, command_utils, string_manipulation
@@ -15,6 +16,58 @@ from features.base_bot import BaseAutoshardedBot
 from features import exceptions
 
 logger = setup_custom_logger(__name__)
+
+
+def get_app_cmd_prefix(command: commands.InvokableApplicationCommand):
+  if isinstance(command, commands.InvokableUserCommand):
+    return "User command - "
+  elif isinstance(command, commands.InvokableMessageCommand):
+    return "Message command - "
+  elif isinstance(command, commands.InvokableSlashCommand) or isinstance(command, commands.slash_core.SubCommand):
+    return "/"
+  else:
+    raise NotImplementedError
+
+
+async def parse_context(ctx: Union[disnake.ApplicationCommandInteraction, commands.Context]):
+  if isinstance(ctx, disnake.ApplicationCommandInteraction):
+    args = ' '.join(f"{key}={item}" for key, item in ctx.filled_options.items())
+    prefix = get_app_cmd_prefix(ctx.application_command)
+
+    return {
+      'args': args,
+      'cog': ctx.application_command.cog_name,
+      'command': f"{prefix}{ctx.application_command.qualified_name}",
+      'url': getattr(ctx.channel, "jump_url", "DM"),
+    }
+  elif isinstance(ctx, commands.Context):
+    return {
+      'args': ctx.message.content,
+      'cog': ctx.cog.qualified_name,
+      'command': f"{ctx.command.qualified_name}",
+      'url': getattr(ctx.message, "jump_url", "DM"),
+    }
+  else:
+    raise NotImplementedError
+
+
+def create_embed(command: str, args: str, author: disnake.User, guild: disnake.Guild, jump_url: str, extra_fields: Dict[str, str] = None):
+  embed = disnake.Embed(title=f"Ignoring exception in {command}", color=0xFF0000)
+
+  if args:
+    embed.add_field(name="Args", value=args)
+
+  embed.add_field(name="Autor", value=str(author))
+
+  if guild is not None:
+    embed.add_field(name="Guild", value=getattr(guild, "name", guild))
+
+  embed.add_field(name="Link", value=jump_url, inline=False)
+
+  if extra_fields:
+    for name, value in extra_fields.items():
+      embed.add_field(name=name, value=value)
+  return embed
 
 class Errors(Base_Cog):
   def __init__(self, bot: BaseAutoshardedBot):
@@ -42,12 +95,6 @@ class Errors(Base_Cog):
 
     if isinstance(error, disnake.errors.DiscordServerError):
       pass
-    elif isinstance(error, sqlalchemy.exc.InternalError) or isinstance(error, sqlalchemy.exc.IntegrityError):
-      logger.warning(f"Database rollback")
-      output = "".join(traceback.format_exception(type(error), error, error.__traceback__))
-      logger.error(output)
-
-      session.rollback()
     elif isinstance(error, disnake.Forbidden):
       if error.code == 50013:
         res = await message_utils.generate_error_message(ctx, Strings.error_bot_missing_permission)
@@ -97,27 +144,15 @@ class Errors(Base_Cog):
       output = "".join(traceback.format_exception(type(error), error, error.__traceback__))
       logger.error(output)
 
+      if isinstance(error, sqlalchemy.exc.InternalError) or isinstance(error, sqlalchemy.exc.IntegrityError):
+        logger.warning(f"Database rollback")
+        session.rollback()
+
       log_channel = self.bot.get_channel(config.base.log_channel_id)
       if log_channel is None: return
 
-      if hasattr(ctx, "application_command") and ctx.application_command is not None:
-        embed = disnake.Embed(title=f"Ignoring exception in application interaction {ctx.application_command}", color=0xFF0000)
-      elif hasattr(ctx, "command") and ctx.command is not None:
-        embed = disnake.Embed(title=f"Ignoring exception in command {ctx.command}", color=0xFF0000)
-      else:
-        embed = disnake.Embed(title=f"Ignoring exception", color=0xFF0000)
-
-      if hasattr(ctx, "message") and ctx.message is not None:
-        embed.add_field(name="Message", value=ctx.message.content[:1000])
-        embed.add_field(name="Link", value=ctx.message.jump_url, inline=False)
-
-      if hasattr(ctx, "author") and ctx.author is not None:
-        embed.add_field(name="Autor", value=str(ctx.author))
-
-      embed.add_field(name="Type", value=str(type(error)))
-
-      if hasattr(ctx, "guild") and ctx.guild is not None:
-        embed.add_field(name="Guild", value=ctx.guild.name)
+      parsed_context = await parse_context(ctx)
+      embed = create_embed(parsed_context['command'], parsed_context["args"][:1000], ctx.author, ctx.guild, parsed_context['url'])
 
       await log_channel.send(embed=embed)
 

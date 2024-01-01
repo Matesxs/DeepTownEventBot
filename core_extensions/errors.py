@@ -49,7 +49,7 @@ class Errors(Base_Cog):
 
       session.rollback()
     elif isinstance(error, disnake.Forbidden):
-      if error.code == 403:
+      if error.code == 50013:
         res = await message_utils.generate_error_message(ctx, Strings.error_bot_missing_permission)
         if res is None:
           await message_utils.generate_error_message(ctx.author, Strings.error_bot_missing_permission)

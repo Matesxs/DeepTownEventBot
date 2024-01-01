@@ -179,12 +179,6 @@ async def get_event_participation(user_id: int, guild_id: int, event_year: int, 
 
 async def remove_event_participations(guild_id: int, event_year: int, event_week: int, user_id_filter: Optional[List[int]] = None):
   if user_id_filter is None or not user_id_filter:
-    # await run_query(text(f"""
-    #   DELETE
-    #   FROM event_participations
-    #   USING event_specifications es
-    #   WHERE es.event_year = {event_year} AND es.event_week = {event_week} AND dt_guild_id = {guild_id}
-    #   """), commit=True)
     await run_query(text(f"""
       DELETE
       FROM event_participations
@@ -196,12 +190,6 @@ async def remove_event_participations(guild_id: int, event_year: int, event_week
     """), commit=True)
   else:
     filter_string = ",".join([str(i) for i in user_id_filter])
-    # await run_query(text(f"""
-    #     DELETE
-    #     FROM event_participations
-    #     USING event_specifications es
-    #     WHERE es.event_year = {event_year} AND es.event_week = {event_week} AND dt_guild_id = {guild_id} AND dt_user_id NOT IN ({filter_string})
-    #     """), commit=True)
     await run_query(text(f"""
       DELETE
       FROM event_participations

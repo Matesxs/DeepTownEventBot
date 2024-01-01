@@ -8,6 +8,7 @@ from utils.logger import setup_custom_logger
 from config import config
 from utils import dt_helpers
 from database import dt_guild_repo, event_participation_repo, dt_blacklist_repo
+from database.tables import dt_statistics
 
 logger = setup_custom_logger(__name__)
 
@@ -66,6 +67,9 @@ class DTDataDownloader(Base_Cog):
 
       logger.info(f"Pulled data of {pulled_data} inactive DT guilds")
       logger.info(f"New count of active guilds: {await dt_guild_repo.get_number_of_active_guilds()}")
+
+      # Generate new activity statistics
+      await dt_statistics.DTActiveEntitiesData.generate()
     logger.info("Inactive DT Guild data pull finished")
 
   @tasks.loop(hours=max(config.data_manager.data_pull_rate_hours, 1))
@@ -134,6 +138,10 @@ class DTDataDownloader(Base_Cog):
           pulled_data += 1
 
       logger.info(f"Pulled data of {pulled_data} DT guilds\n{not_updated} guilds not updated")
+
+      # Generate new activity statistics
+      await dt_statistics.DTActiveEntitiesData.generate()
+
     logger.info("DT Guild data pull finished")
 
     await asyncio.sleep(30)

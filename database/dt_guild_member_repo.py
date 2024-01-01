@@ -3,7 +3,7 @@ from sqlalchemy import func, select, delete
 
 from database import run_query, add_item
 from database.tables.dt_guild_member import DTGuildMember
-from database.dt_guild_repo import get_and_update_dt_guild, create_dummy_dt_guild, DTGuild
+from database.dt_guild_repo import get_and_update_dt_guild, create_dummy_dt_guild
 from database.dt_user_repo import get_and_update_dt_user, create_dummy_dt_user
 from utils.dt_helpers import DTGuildData
 

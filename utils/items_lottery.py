@@ -140,8 +140,8 @@ async def process_lottery_result(bot: BaseAutoshardedBot, lottery: dt_event_item
   else:
     await lottery.close()
 
-async def process_loterries(bot: BaseAutoshardedBot):
-  not_closed_lotteries = await dt_event_item_lottery_repo.get_all_active_lotteries()
+async def process_loterries(bot: BaseAutoshardedBot, year: Optional[int] = None, week: Optional[int] = None):
+  not_closed_lotteries = await dt_event_item_lottery_repo.get_active_lotteries(year, week)
   if not not_closed_lotteries:
     await dt_event_item_lottery_repo.clear_old_guesses()
     return None

@@ -46,9 +46,12 @@ async def create_event_item_lottery(author: disnake.Member, channel: Union[disna
 
   return item
 
-async def get_all_active_lotteries() -> List[DTEventItemLottery]:
-  nyear, nweek = dt_helpers.get_event_index(datetime.datetime.utcnow() + datetime.timedelta(days=7))
-  result = await run_query(select(DTEventItemLottery).join(event_participation_repo.EventSpecification).filter(and_(DTEventItemLottery.closed_at == None, or_(event_participation_repo.EventSpecification.event_year != nyear, event_participation_repo.EventSpecification.event_week != nweek))))
+async def get_active_lotteries(year: Optional[int] = None, week: Optional[int] = None) -> List[DTEventItemLottery]:
+  if year is None or week is None:
+    nyear, nweek = dt_helpers.get_event_index(datetime.datetime.utcnow() + datetime.timedelta(days=7))
+    result = await run_query(select(DTEventItemLottery).join(event_participation_repo.EventSpecification).filter(and_(DTEventItemLottery.closed_at == None, or_(event_participation_repo.EventSpecification.event_year != nyear, event_participation_repo.EventSpecification.event_week != nweek))))
+  else:
+    result = await run_query(select(DTEventItemLottery).join(event_participation_repo.EventSpecification).filter(and_(DTEventItemLottery.closed_at == None, or_(event_participation_repo.EventSpecification.event_year == year, event_participation_repo.EventSpecification.event_week == week))))
   return result.scalars().all()
 
 async def remove_lottery(id_:int) -> bool:
@@ -99,15 +102,13 @@ async def make_next_event_guess(author: disnake.Member, items: List[dt_items_rep
 
 async def clear_old_guesses() -> int:
   # This one should be enough for clearing all already processed quesses
-  # Deletes all guesses that are not connected to any opened lotteries in that guild for that specific event
+  # Deletes all guesses that are connected to event that already have set items
   result = await run_query(text("""
     DELETE
     FROM dt_event_item_lottery_guesses
-    WHERE (guild_id, event_id) NOT IN (
-        SELECT guild_id, event_id
-        FROM dt_event_item_lotteries
-        WHERE closed_at IS NULL
-        GROUP BY guild_id, event_id
+    WHERE event_id IN (
+        SELECT DISTINCT event_id
+        FROM event_items
         );
   """), commit=True)
 

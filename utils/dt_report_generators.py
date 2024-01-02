@@ -55,8 +55,9 @@ def generate_participation_strings(participations: List[EventParticipation], col
   participation_amounts = [p.amount for p in participations]
   average_participation = statistics.mean(participation_amounts) if participation_amounts else 0
   participation_spread = max(participation_amounts) - min(participation_amounts)
-  high_average_participation = average_participation + participation_spread * 0.1
-  low_average_participation = average_participation - participation_spread * 0.1
+  half_participation_spread = participation_spread / 2
+  high_average_participation = average_participation + half_participation_spread * 0.16
+  low_average_participation = average_participation - half_participation_spread * 0.16
 
   for idx, participation in enumerate(participations):
     data = []
@@ -81,7 +82,7 @@ def generate_participation_strings(participations: List[EventParticipation], col
     if "Donate" in colms:
       data.append(string_manipulation.format_number(participation.amount))
     if "Standing" in colms:
-      if participation.amount < low_average_participation or participation.amount == 0:
+      if participation.amount < low_average_participation or participation.amount <= 0:
         data.append("Low")
       elif participation.amount > high_average_participation:
         data.append("High")

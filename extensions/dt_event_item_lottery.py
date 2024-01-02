@@ -176,9 +176,12 @@ class DTEventItemLottery(Base_Cog):
       else:
         await message_utils.generate_error_message(inter, Strings.lottery_button_listener_not_author)
     elif command == "show":
-      for table in (await items_lottery.generate_guesses_tables(self.bot, lottery)):
-        await inter.send(f"```\n{table}\n```", ephemeral=True, delete_after=60)
-        await asyncio.sleep(0.05)
+      if inter.guild is None or str(inter.guild.id) != lottery.guild_id:
+        await message_utils.generate_error_message(inter, Strings.unexpected_action)
+      else:
+        for table in (await items_lottery.generate_guesses_tables(self.bot, lottery)):
+          await inter.send(f"```\n{table}\n```", ephemeral=True, delete_after=60)
+          await asyncio.sleep(0.05)
     elif command == "repeat":
       if is_author:
         next_event_lottery = await dt_event_item_lottery_repo.get_next_event_item_lottery_by_constrained(int(lottery.author_id), int(lottery.guild_id))

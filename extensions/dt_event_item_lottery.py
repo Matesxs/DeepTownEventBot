@@ -57,9 +57,15 @@ class DTEventItemLottery(Base_Cog):
   def __init__(self, bot):
     super(DTEventItemLottery, self).__init__(bot, __file__)
 
-  def cog_load(self) -> None:
+  @commands.Cog.listener()
+  async def on_ready(self):
     if not self.delete_long_closed_lotteries_task.is_running():
       self.delete_long_closed_lotteries_task.start()
+
+  def cog_load(self) -> None:
+    if self.bot.is_ready():
+      if not self.delete_long_closed_lotteries_task.is_running():
+        self.delete_long_closed_lotteries_task.start()
 
   def cog_unload(self) -> None:
     if self.delete_long_closed_lotteries_task.is_running():

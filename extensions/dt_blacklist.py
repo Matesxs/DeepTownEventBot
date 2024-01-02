@@ -14,10 +14,6 @@ class DTBlacklist(Base_Cog):
   def __init__(self, bot):
     super(DTBlacklist, self).__init__(bot, __file__)
 
-  @commands.slash_command(name="blacklist")
-  async def blacklist_commands(self, inter: disnake.CommandInteraction):
-    pass
-
   @staticmethod
   async def add_to_blacklist(inter, block_type: dt_blacklist_repo.BlacklistType, entity_id: int) -> bool:
     if await dt_blacklist_repo.is_on_blacklist(block_type, entity_id):
@@ -46,8 +42,12 @@ class DTBlacklist(Base_Cog):
     await message_utils.generate_success_message(inter, Strings.blacklist_add_success(subject_name=subject_name, type=block_type))
     return True
 
-  @blacklist_commands.sub_command(name="add", description=Strings.blacklist_add_description)
+  @command_utils.master_only_slash_command(name="master_blacklist")
   @permissions.bot_developer()
+  async def master_blacklist_commands(self, inter: disnake.CommandInteraction):
+    pass
+
+  @master_blacklist_commands.sub_command(name="add", description=Strings.blacklist_add_description)
   async def blacklist_add(self, inter: disnake.CommandInteraction,
                           identifier=commands.Param(description=Strings.blacklist_identifier_param_description, autocomp=dt_autocomplete.autocomplete_identifier_guild_and_user, converter=dt_autocomplete.guild_user_identifier_converter)):
     await inter.response.defer(with_message=True, ephemeral=True)
@@ -64,6 +64,18 @@ class DTBlacklist(Base_Cog):
       return await message_utils.generate_error_message(inter, Strings.blacklist_add_invalid_type)
 
     await self.add_to_blacklist(inter, block_type, entity_id)
+
+  @master_blacklist_commands.sub_command(name="remove", description=Strings.blacklist_remove_description)
+  async def blacklist_remove(self, inter: disnake.CommandInteraction,
+                             type_: dt_blacklist_repo.BlacklistType = commands.Param(description=Strings.blacklist_type_param_description, name="type"),
+                             identifier: int = commands.Param(description=Strings.blacklist_identifier_param_description)):
+    await inter.response.defer(with_message=True, ephemeral=True)
+    type_ = dt_blacklist_repo.BlacklistType(type_)
+
+    if await dt_blacklist_repo.remove_blacklist_item(type_, identifier):
+      await message_utils.generate_success_message(inter, Strings.blacklist_remove_success(identifier=identifier, type=type_))
+    else:
+      await message_utils.generate_error_message(inter, Strings.blacklist_remove_failed(identifier=identifier, type=type_))
 
   @command_utils.master_only_message_command(name="Add to Blacklist")
   @permissions.bot_developer()
@@ -98,18 +110,9 @@ class DTBlacklist(Base_Cog):
 
     return await message_utils.generate_error_message(inter, Strings.blacklist_msg_com_add_invalid_target)
 
-  @blacklist_commands.sub_command(name="remove", description=Strings.blacklist_remove_description)
-  @permissions.bot_developer()
-  async def blacklist_remove(self, inter: disnake.CommandInteraction,
-                             type_: dt_blacklist_repo.BlacklistType = commands.Param(description=Strings.blacklist_type_param_description, name="type"),
-                             identifier: int = commands.Param(description=Strings.blacklist_identifier_param_description)):
-    await inter.response.defer(with_message=True, ephemeral=True)
-    type_ = dt_blacklist_repo.BlacklistType(type_)
-
-    if await dt_blacklist_repo.remove_blacklist_item(type_, identifier):
-      await message_utils.generate_success_message(inter, Strings.blacklist_remove_success(identifier=identifier, type=type_))
-    else:
-      await message_utils.generate_error_message(inter, Strings.blacklist_remove_failed(identifier=identifier, type=type_))
+  @commands.slash_command(name="blacklist")
+  async def blacklist_commands(self, inter: disnake.CommandInteraction):
+    pass
 
   @blacklist_commands.sub_command(name="list", description=Strings.blacklist_list_description)
   @cooldowns.default_cooldown
@@ -135,7 +138,7 @@ class DTBlacklist(Base_Cog):
     embed_view = EmbedView(inter.author, blacklist_pages)
     await embed_view.run(inter)
 
-  @blacklist_commands.sub_command(description=Strings.blacklist_report_cheater_description)
+  @blacklist_commands.sub_command(name="report", description=Strings.blacklist_report_cheater_description)
   @cooldowns.long_cooldown
   async def report_cheater(self, inter: disnake.CommandInteraction,
                            identifier=commands.Param(description=Strings.blacklist_report_identifier_param_description, autocomp=dt_autocomplete.autocomplete_identifier_guild_and_user, converter=dt_autocomplete.guild_user_identifier_converter),

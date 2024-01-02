@@ -1,3 +1,4 @@
+import datetime
 import disnake
 from disnake.permissions import Permissions
 from disnake.app_commands import Option, Localized
@@ -101,7 +102,7 @@ def get_command_type(command: commands.InvokableApplicationCommand):
   elif isinstance(command, commands.InvokableSlashCommand) or isinstance(command, commands.slash_core.SubCommand):
     return CommandTypes.SLASH_COMMAND
   else:
-    raise NotImplementedError
+    return CommandTypes.UNKNOWN_COMMAND
 
 
 async def parse_context(ctx: Union[disnake.ApplicationCommandInteraction, commands.Context]):
@@ -114,15 +115,21 @@ async def parse_context(ctx: Union[disnake.ApplicationCommandInteraction, comman
       "cog": ctx.application_command.cog_name,
       "command_type": commad_type,
       "command": f"{ctx.application_command.qualified_name}",
-      "url": getattr(ctx.channel, "jump_url", "DM"),
+      "url": getattr(ctx.channel, "jump_url", None),
+      "author": ctx.author,
+      "guild": ctx.guild,
+      "created_at": ctx.created_at.replace(tzinfo=None)
     }
   elif isinstance(ctx, commands.Context):
     return {
       "args": ctx.message.content,
-      "cog": ctx.cog.qualified_name,
+      "cog": ctx.cog.qualified_name if ctx.cog is not None else None,
       "command_type": CommandTypes.TEXT_COMMAND,
       "command": f"{ctx.command.qualified_name}",
-      "url": getattr(ctx.message, "jump_url", "DM"),
+      "url": getattr(ctx.message, "jump_url", None),
+      "author": ctx.author,
+      "guild": ctx.guild,
+      "created_at": datetime.datetime.utcnow()
     }
   else:
     raise NotImplementedError

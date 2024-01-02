@@ -13,6 +13,8 @@ class DiscordUser(database.base):
   id = Column(String, primary_key=True)
   name = Column(String, nullable=False, index=True)
 
+  command_calls = relationship("CommandCallAuditlog", uselist=True, back_populates="author")
+
   @classmethod
   def from_user(cls, user: Union[disnake.Member, disnake.User]):
     return cls(id=str(user.id), name=user.name)
@@ -62,6 +64,7 @@ class DiscordGuild(database.base):
   tracking_settings = relationship("TrackingSettings", uselist=True, back_populates="guild")
   lotteries = relationship("DTEventItemLottery", uselist=True, back_populates="guild")
   members = relationship("DiscordMember", uselist=True, back_populates="guild")
+  command_calls = relationship("CommandCallAuditlog", uselist=True, back_populates="guild")
 
   @classmethod
   def from_guild(cls, guild: disnake.Guild):

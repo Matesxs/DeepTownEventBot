@@ -28,8 +28,8 @@ class CommandCallAuditlog(database.base):
   @classmethod
   async def create_from_context(cls, data: dict, failed: bool, commit: bool = False):
     item = cls(created_at=data["created_at"],
-               author_id=data["author"].id,
-               guild_id=data["guild"].id if data["guild"] is not None else None,
+               author_id=str(data["author"].id),
+               guild_id=str(data["guild"].id) if data["guild"] is not None else None,
                command=data["command"],
                command_type=data["command_type"],
                cog=data["cog"],

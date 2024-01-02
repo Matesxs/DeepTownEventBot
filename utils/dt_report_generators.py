@@ -53,11 +53,10 @@ def generate_participation_strings(participations: List[EventParticipation], col
     sorted_colms.append("Standing")
 
   participation_amounts = [p.amount for p in participations]
-  average_participation = statistics.mean(participation_amounts) if participation_amounts else 0
   participation_spread = max(participation_amounts) - min(participation_amounts)
   half_participation_spread = participation_spread / 2
-  high_average_participation = average_participation + half_participation_spread * 0.16
-  low_average_participation = average_participation - half_participation_spread * 0.16
+  high_average_participation = half_participation_spread + half_participation_spread * 0.16
+  low_average_participation = half_participation_spread - half_participation_spread * 0.16
 
   for idx, participation in enumerate(participations):
     data = []

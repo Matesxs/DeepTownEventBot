@@ -54,6 +54,10 @@ async def get_active_lotteries(year: Optional[int] = None, week: Optional[int] =
     result = await run_query(select(DTEventItemLottery).join(event_participation_repo.EventSpecification).filter(and_(DTEventItemLottery.closed_at == None, or_(event_participation_repo.EventSpecification.event_year == year, event_participation_repo.EventSpecification.event_week == week))))
   return result.scalars().all()
 
+async def get_lotteries_closed_before_date(date: datetime.datetime) -> List[DTEventItemLottery]:
+  result = await run_query(select(DTEventItemLottery).filter(DTEventItemLottery.closed_at <= date))
+  return result.scalars().all()
+
 async def remove_lottery(id_:int) -> bool:
   result = await run_query(delete(DTEventItemLottery).filter(DTEventItemLottery.id == id_), commit=True)
   return result.rowcount > 0
@@ -62,20 +66,9 @@ async def get_guess(guild_id: int, author_id: int, event_id: int) -> Optional[DT
   result = await run_query(select(DTEventItemLotteryGuess).filter(DTEventItemLotteryGuess.guild_id == str(guild_id), DTEventItemLotteryGuess.author_id == str(author_id), DTEventItemLotteryGuess.event_id == event_id))
   return result.scalar_one_or_none()
 
-async def get_next_event_guess(guild_id: int, author_id: int) -> Optional[DTEventItemLotteryGuess]:
-  year, week = dt_helpers.get_event_index(datetime.datetime.utcnow() + datetime.timedelta(days=7))
-  event_specification = await event_participation_repo.get_event_specification(year, week)
-  if event_specification is None: return None
-  return await get_guess(guild_id, author_id, event_specification.event_id)
-
 async def get_guesses(guild_id: int, event_id: int) -> List[DTEventItemLotteryGuess]:
   result = await run_query(select(DTEventItemLotteryGuess).filter(DTEventItemLotteryGuess.event_id == event_id, DTEventItemLotteryGuess.guild_id == str(guild_id)))
   return result.scalars().all()
-
-async def get_lottery_guesses(lottery_id: int) -> Optional[List[DTEventItemLotteryGuess]]:
-  lottery = await get_event_item_lottery(lottery_id)
-  if lottery is None: return None
-  return await get_guesses(int(lottery.guild_id), lottery.event_id)
 
 async def make_next_event_guess(author: disnake.Member, items: List[dt_items_repo.DTItem]) -> Optional[DTEventItemLotteryGuess]:
   unique_item_names = list(set([item.name for item in items]))

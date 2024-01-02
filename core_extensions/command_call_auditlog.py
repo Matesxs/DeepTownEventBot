@@ -78,7 +78,7 @@ class CommandCallAuditlog(Base_Cog):
       else:
         await discord_objects_repo.get_or_create_discord_user(context["author"])
 
-      await command_call_auditlog.CommandCallAuditlog.create_from_context(context, item[1], commit=False)
+      await command_call_auditlog.CommandCallAuditlog.create_from_context(context, item[1])
 
     await database.run_commit()
 

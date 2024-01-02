@@ -32,8 +32,7 @@ async def get_or_create_tracking_settings(guild: disnake.Guild, dt_guild_id: int
   else:
     item.text_announce_channel_id=str(text_announce_channel_id) if text_announce_channel_id is not None else None
     item.csv_announce_channel_id=str(csv_announce_channel_id) if csv_announce_channel_id is not None else None
-
-  await run_commit()
+    await run_commit()
   return item
 
 async def remove_tracking_settings(guild_id: int, dt_guild_id: int) -> bool:

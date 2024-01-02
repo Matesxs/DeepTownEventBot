@@ -22,5 +22,4 @@ class DTActiveEntitiesData(database.base):
                all_guilds=(await dt_guild_repo.get_number_of_all_guilds()),
                all_users=(await dt_user_repo.get_number_of_all_users()))
     await database.add_item(item)
-    await database.run_commit()
     return item

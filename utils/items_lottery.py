@@ -4,6 +4,7 @@ import datetime
 from typing import Optional, List, Dict, Union, Tuple
 from table2ascii import table2ascii, Alignment
 
+import database
 from features.base_bot import BaseAutoshardedBot
 from database import dt_event_item_lottery_repo, discord_objects_repo, run_commit
 from utils.logger import setup_custom_logger
@@ -11,40 +12,48 @@ from utils import string_manipulation, dt_helpers, message_utils, dt_report_gene
 
 logger = setup_custom_logger(__name__)
 
+async def delete_lottery(bot: BaseAutoshardedBot, lottery: dt_event_item_lottery_repo.DTEventItemLottery):
+  lottery_message = await lottery.get_lotery_message(bot)
+  if lottery_message is not None and lottery_message.author.id == bot.user.id:
+    await lottery_message.edit(components=None)
+
+  await database.remove_item(lottery)
+
+async def handle_closing_lottery_message(message: disnake.Message, lottery_id: int, repeat: bool):
+  if not repeat:
+    embed = message.embeds[0]
+    embed.description = f"**Ended**\n" + embed.description
+
+    buttons = [disnake.ui.Button(label="Delete", emoji="♻️", custom_id=f"event_item_lottery:remove:{lottery_id}", style=disnake.ButtonStyle.red),
+               disnake.ui.Button(label="Repeat", emoji="🔂", custom_id=f"event_item_lottery:repeat:{lottery_id}", style=disnake.ButtonStyle.primary)]
+
+    await message.edit(embed=embed, components=buttons)
+  else:
+    embed = message.embeds[0]
+    embed.description = f"**Ended**\n" + embed.description
+
+    await message.edit(embed=embed, components=None)
 
 async def process_lottery_result(bot: BaseAutoshardedBot, lottery: dt_event_item_lottery_repo.DTEventItemLottery, result: Tuple[int, Optional[Dict[int, List[discord_objects_repo.DiscordUser]]]]):
   if result[1] is None: return
 
   guild = await lottery.guild.to_object(bot)
 
-  destination = await lottery.get_lotery_message(bot)
-  if destination is None:
-    destination = await lottery.get_lotery_channel(bot)
+  lottery_message = await lottery.get_lotery_message(bot)
+  if lottery_message.author.id != bot.user.id: lottery_message = None
 
-  if destination is None:
+  if lottery_message is None:
+    lottery_channel = await lottery.get_lotery_channel(bot)
+  else:
+    lottery_channel = lottery_message.channel
+
+  if lottery_message is None and lottery_channel is None:
     logger.warning(f"Failed to get any destination for guild `{guild.name if guild is not None else lottery.guild_id}` and lottery `{lottery.id}`")
+    await delete_lottery(bot, lottery)
     return
 
-  if isinstance(destination, disnake.Message):
-    if not lottery.auto_repeat:
-      try:
-        embed = destination.embeds[0]
-        embed.description = f"**Ended**\n" + embed.description
-
-        buttons = [disnake.ui.Button(label="Delete", emoji="♻️", custom_id=f"event_item_lottery:remove:{lottery.id}", style=disnake.ButtonStyle.red),
-                   disnake.ui.Button(label="Repeat", emoji="🔂", custom_id=f"event_item_lottery:repeat:{lottery.id}", style=disnake.ButtonStyle.primary)]
-
-        await destination.edit(embed=embed, components=buttons)
-      except:
-        pass
-    else:
-      try:
-        embed = destination.embeds[0]
-        embed.description = f"**Ended**\n" + embed.description
-
-        await destination.edit(embed=embed, components=None)
-      except:
-        pass
+  if lottery_message is not None:
+    await handle_closing_lottery_message(lottery_message, lottery.id, lottery.auto_repeat)
 
   author = await lottery.get_author(bot)
   if author is None:
@@ -53,13 +62,10 @@ async def process_lottery_result(bot: BaseAutoshardedBot, lottery: dt_event_item
   else:
     author_name = author.display_name
 
-  table_data = []
-
-  event_items_table = dt_report_generators.get_event_items_table(lottery.event_specification, only_names=True)
-
   positions = list(result[1].keys())
   positions.sort(reverse=True)
 
+  table_data = []
   winner_ids = []
   for position in positions:
     if position == 1:
@@ -96,7 +102,10 @@ async def process_lottery_result(bot: BaseAutoshardedBot, lottery: dt_event_item
     reward = (reward_item_amount / len(winner_names)) if lottery.split_rewards else reward_item_amount
     table_data.append((position, f"{string_manipulation.format_number(reward)} {reward_item_name}", ",\n".join(winner_names)))
 
-  if not table_data:
+  destination = lottery_message or lottery_channel
+
+  event_items_table = dt_report_generators.get_event_items_table(lottery.event_specification, only_names=True)
+  if not winner_ids:
     message = f"Event items lottery result for `{lottery.event_specification.event_year} {lottery.event_specification.event_week}` by {author_name}\nParticipants: {result[0]}\n```\n{event_items_table}\n```\n**There are no winners**"
     if isinstance(destination, disnake.Message):
       await destination.reply(message)
@@ -108,8 +117,6 @@ async def process_lottery_result(bot: BaseAutoshardedBot, lottery: dt_event_item
                    *(f"```\n{event_items_table}\n```".split("\n")),
                    *("```\n" + table2ascii(["Guessed", "Reward each", "Winners"], table_data, alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.LEFT], first_col_heading=True) + "\n```").split("\n")]
 
-    original_destination_link = destination.jump_url if isinstance(destination, disnake.Message) else None
-
     while table_lines:
       final_string, table_lines = string_manipulation.add_string_until_length(table_lines, 1900, "\n")
       if isinstance(destination, disnake.Message):
@@ -118,8 +125,8 @@ async def process_lottery_result(bot: BaseAutoshardedBot, lottery: dt_event_item
         destination = await destination.send(final_string)
       await asyncio.sleep(0.005)
 
-    if isinstance(destination, disnake.Message) and original_destination_link is not None:
-      await destination.edit(components=disnake.ui.Button(label="Jump to lottery", url=original_destination_link, style=disnake.ButtonStyle.primary))
+    if lottery_message is not None and isinstance(destination, disnake.Message):
+      await destination.edit(components=disnake.ui.Button(label="Jump to lottery", url=lottery_message.jump_url, style=disnake.ButtonStyle.primary))
 
     if winner_ids and lottery.autoping_winners:
       mention_strings = [f"<@{uid}>" for uid in winner_ids]

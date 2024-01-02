@@ -1,10 +1,13 @@
 import asyncio
+import datetime
+
 import disnake
 from typing import Optional
-from disnake.ext import commands
+from disnake.ext import commands, tasks
 
 from config import cooldowns, permissions
 from config.strings import Strings
+from config import config
 from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
 from utils import message_utils, dt_autocomplete, items_lottery
@@ -53,6 +56,14 @@ async def make_guess(inter: disnake.CommandInteraction,
 class DTEventItemLottery(Base_Cog):
   def __init__(self, bot):
     super(DTEventItemLottery, self).__init__(bot, __file__)
+
+  def cog_load(self) -> None:
+    if not self.delete_long_closed_lotteries_task.is_running():
+      self.delete_long_closed_lotteries_task.start()
+
+  def cog_unload(self) -> None:
+    if self.delete_long_closed_lotteries_task.is_running():
+      self.delete_long_closed_lotteries_task.cancel()
 
   @commands.slash_command(name="lottery")
   async def lottery_command(self, inter: disnake.CommandInteraction):
@@ -219,6 +230,15 @@ class DTEventItemLottery(Base_Cog):
         await message_utils.generate_error_message(inter, Strings.lottery_button_listener_not_author)
     else:
       await message_utils.generate_error_message(inter, Strings.lottery_button_listener_invalid_command)
+
+  @tasks.loop(hours=24 * config.lotteries.clean_old_lotteries_period_days)
+  async def delete_long_closed_lotteries_task(self):
+    logger.info("Starting clearup of old closed lotteries")
+    lotteries_to_delete = await dt_event_item_lottery_repo.get_lotteries_closed_before_date(datetime.datetime.utcnow() - datetime.timedelta(days=config.lotteries.clean_lotteries_closed_for_more_than_days))
+    for lottery in lotteries_to_delete:
+      await items_lottery.delete_lottery(self.bot, lottery)
+      await asyncio.sleep(0.1)
+    logger.info(f"Cleared {len(lotteries_to_delete)} old closed lotteries")
 
 def setup(bot):
   bot.add_cog(DTEventItemLottery(bot))

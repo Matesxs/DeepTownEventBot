@@ -17,8 +17,8 @@ async def get_or_create_discord_guild(guild: disnake.Guild, commit: bool=True) -
   else:
     guild_it.update(guild)
 
-  if commit:
-    await run_commit()
+    if commit:
+      await run_commit()
   return guild_it
 
 async def remove_discord_guild(guild_id: int):
@@ -44,8 +44,8 @@ async def get_or_create_discord_user(user: Union[disnake.Member, disnake.User], 
   else:
     item.update(user)
 
-  if comit:
-    await run_commit()
+    if comit:
+      await run_commit()
 
   return item
 
@@ -76,8 +76,8 @@ async def get_or_create_discord_member(member: disnake.Member, comit: bool=True)
   else:
     item.update(member)
 
-  if comit:
-    await run_commit()
+    if comit:
+      await run_commit()
 
   return item
 

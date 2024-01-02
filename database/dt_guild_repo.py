@@ -41,8 +41,7 @@ async def get_and_update_dt_guild(guild_data: DTGuildData) -> Optional[DTGuild]:
     await add_item(item)
   else:
     item.update(guild_data)
-
-  await run_commit()
+    await run_commit()
 
   return item
 

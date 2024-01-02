@@ -60,6 +60,9 @@ class CommandCallAuditlog(Base_Cog):
       item = await self.data_queue.get()
       context = await command_utils.parse_context(item[0])
 
+      if "system logout" in context["command"] or "system update" in context["command"]:
+        continue
+
       await command_call_auditlog.CommandCallAuditlog.create_from_context(context, item[1], commit=False)
 
     await database.run_commit()

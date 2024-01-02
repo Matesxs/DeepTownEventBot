@@ -55,6 +55,13 @@ async def add_item(item):
   session_lock.release()
   return item
 
+async def remove_item(item):
+  await session_lock.acquire()
+  session.delete(item)
+  await asyncio.to_thread(session.commit)
+  session_lock.release()
+  return item
+
 async def add_items(items):
   await session_lock.acquire()
   for item in items:

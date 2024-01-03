@@ -48,6 +48,10 @@ async def get_all_dt_items() -> List[DTItem]:
   result = await run_query(select(DTItem).order_by(DTItem.name))
   return result.scalars().all()
 
+async def get_all_item_names() -> List[str]:
+  result = await run_query(select(DTItem.name))
+  return result.scalars().all()
+
 async def get_component_mapping(target_item_name: str, component_item_name: str) -> Optional[DTItemComponentMapping]:
   result = await run_query(select(DTItemComponentMapping).filter(DTItemComponentMapping.target_item_name == target_item_name, DTItemComponentMapping.component_item_name == component_item_name))
   return result.scalars().all()

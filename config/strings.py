@@ -321,6 +321,17 @@ class Strings(metaclass=Formatable):
   lottery_guess_no_guess_to_remove = "No guess to remove"
   lottery_guess_for_author_param_description = "User you managing guess for"
 
+  lottery_auto_guess_whitelist_add_description = "Add guild channel to whitelist for automatic lottery guesses"
+  lottery_auto_guess_whitelist_add_success = "Channel `{channel}` added to whitelist for automatic lottery guesses"
+  lottery_auto_guess_whitelist_add_failed = "Channel `{channel}` is already on whitelist"
+
+  lottery_auto_guess_whitelist_list_description = "List whitelisted channels for automatic lottery guesses"
+  lottery_auto_guess_whitelist_list_no_channels = "No whitelisted channels"
+
+  lottery_auto_guess_whitelist_remove_description = "Remove guild channel from whitelist for automatic lottery guesses"
+  lottery_auto_guess_whitelist_remove_success = "Channel `{channel}` removed from whitelist for automatic lottery guesses"
+  lottery_auto_guess_whitelist_remove_failed = "Channel `{channel}` is not on whitelist"
+
   lottery_update_description = "Update all lotteries, closed the ended ones and send results"
   lottery_update_no_active_lotteries = "No active lotteries to update"
   lottery_update_success = "Processed `{results}` lotteries and cleared `{guesses_cleared}` guesses"

@@ -1,9 +1,10 @@
 import asyncio
 import datetime
-
 import disnake
 from typing import Optional
 from disnake.ext import commands, tasks
+from Levenshtein import ratio
+import math
 
 from config import cooldowns, permissions
 from config.strings import Strings
@@ -11,11 +12,14 @@ from config import config
 from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
 from utils import message_utils, dt_autocomplete, items_lottery, dt_helpers
-from database import dt_items_repo, dt_event_item_lottery_repo, run_commit, event_participation_repo
+import database
+from database import dt_items_repo, dt_event_item_lottery_repo, run_commit, event_participation_repo, automatic_lottery_guesses_whitelist_repo
+from features.views import confirm_view
+from features.views.paginator import EmbedView
 
 logger = setup_custom_logger(__name__)
 
-async def make_guess(inter: disnake.CommandInteraction,
+async def make_guess(inter: disnake.CommandInteraction | commands.Context | disnake.Message,
                      author: disnake.Member,
                      guess_item_1: Optional[str],
                      guess_item_2: Optional[str],
@@ -207,6 +211,109 @@ class DTEventItemLottery(Base_Cog):
       await message_utils.generate_success_message(inter, Strings.lottery_guess_removed_sucessfully)
     else:
       await message_utils.generate_error_message(inter, Strings.lottery_guess_no_guess_to_remove)
+
+  @lottery_command.sub_command_group(name="auto_guess_whitelist")
+  @commands.guild_only()
+  @permissions.guild_administrator_role()
+  @cooldowns.default_cooldown
+  async def auto_lottery_guess_whitelist_commands(self, inter: disnake.CommandInteraction):
+    await inter.response.defer(with_message=True, ephemeral=True)
+
+  @auto_lottery_guess_whitelist_commands.sub_command(name="add", description=Strings.lottery_auto_guess_whitelist_add_description)
+  async def auto_lottery_guess_whitelist_add(self, inter: disnake.CommandInteraction,
+                                             channel: disnake.TextChannel=commands.Param(description=Strings.discord_text_channel_param_description)):
+    if await automatic_lottery_guesses_whitelist_repo.add_to_whitelist(channel.guild, channel.id):
+      return await message_utils.generate_success_message(inter, Strings.lottery_auto_guess_whitelist_add_success(channel=channel.name))
+    await message_utils.generate_error_message(inter, Strings.lottery_auto_guess_whitelist_add_failed(channel=channel.name))
+
+  @auto_lottery_guess_whitelist_commands.sub_command(name="list", description=Strings.lottery_auto_guess_whitelist_list_description)
+  async def auto_lottery_guess_whitelist_list(self, inter: disnake.CommandInteraction):
+    whitelisted_channel_objects = await automatic_lottery_guesses_whitelist_repo.get_whitelist_channels(inter.guild.id)
+    whitelisted_channels = []
+    for wcho in whitelisted_channel_objects:
+      channel = await wcho.get_channel(self.bot)
+      if channel is not None:
+        whitelisted_channels.append(channel)
+      else:
+        await database.remove_item(wcho)
+
+    if not whitelisted_channels:
+      return await message_utils.generate_error_message(inter, Strings.lottery_auto_guess_whitelist_list_no_channels)
+
+    num_of_batches = math.ceil(len(whitelisted_channels) / 12)
+    batches = [whitelisted_channels[i * 12:i * 12 + 12] for i in range(num_of_batches)]
+
+    pages = []
+    for batch in batches:
+      whitelisted_channels_string = "\n".join([f"[#{channel.name}]({channel.jump_url})" for channel in batch])
+      page = disnake.Embed(title="Automatic lottery guesses whitelisted channels", color=disnake.Color.dark_blue(), description=whitelisted_channels_string)
+      message_utils.add_author_footer(page, inter.author)
+      pages.append(page)
+
+    embed_view = EmbedView(inter.author, pages, invisible=True)
+    await embed_view.run(inter)
+
+  @auto_lottery_guess_whitelist_commands.sub_command(name="remove", description=Strings.lottery_auto_guess_whitelist_remove_description)
+  async def auto_lottery_guess_whitelist_remove(self, inter: disnake.CommandInteraction,
+                                                channel: disnake.TextChannel=commands.Param(description=Strings.discord_text_channel_param_description)):
+    if await automatic_lottery_guesses_whitelist_repo.remove_from_whitelist(channel.guild.id, channel.id):
+      return await message_utils.generate_success_message(inter, Strings.lottery_auto_guess_whitelist_remove_success(channel=channel.name))
+    await message_utils.generate_error_message(inter, Strings.lottery_auto_guess_whitelist_remove_failed(channel=channel.name))
+
+  @commands.Cog.listener()
+  async def on_message(self, message: disnake.Message):
+    if message.guild is None: return
+    if message.author.bot or message.author.system: return
+    if message.content == "" or message.content.startswith(config.base.command_prefix): return
+    if not message.channel.permissions_for(message.guild.me).send_messages: return
+
+    message_lines = message.content.split("\n")
+    if len(message_lines) > 4: return
+
+    if not await automatic_lottery_guesses_whitelist_repo.is_on_whitelist(message.guild.id, message.channel.id):
+      return
+
+    all_item_names = await dt_items_repo.get_all_item_names()
+    all_item_names = [(name, name.lower()) for name in all_item_names]
+
+    guessed_items_data = []
+    for message_line in message_lines:
+      message_line = message_line.lower()
+
+      max_score = 0
+      guessed_item_name = None
+      for item_name, item_name_lower in all_item_names:
+        score = ratio(message_line, item_name_lower)
+
+        if score > max_score:
+          max_score = score
+          guessed_item_name = item_name
+
+        if max_score > 0.9:
+          break
+
+      if max_score > 0.7:
+        guessed_items_data.append((guessed_item_name, max_score * 100))
+
+    if guessed_items_data:
+      guessed_items_data.sort(key=lambda x: x[1], reverse=True)
+
+      item_names = []
+      deduplicated_data = []
+      for data in guessed_items_data:
+        if data[0] not in item_names:
+          item_names.append(data[0])
+          deduplicated_data.append(data)
+
+      items_list_string = "\n".join([f"`{item_name}` - {confidence:.1f}% confidence" for item_name, confidence in deduplicated_data])
+      prompt_string = f"Detected lottery guess\nAre these items correct and do you want to add them as a guess to lottery?\n\n**Guessed items:**\n{items_list_string}"
+
+      confirmation_view = confirm_view.ConfirmView(message, prompt_string)
+      if await confirmation_view.run():
+        await confirmation_view.wait()
+
+        if confirmation_view.get_result():
+          await make_guess(message, message.author, *item_names)
 
   @commands.Cog.listener()
   async def on_button_click(self, inter: disnake.MessageInteraction):

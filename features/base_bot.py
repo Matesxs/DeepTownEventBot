@@ -9,6 +9,7 @@ from utils import message_utils, object_getters, command_utils
 from config import config
 from utils.logger import setup_custom_logger
 from features.presence_handler import PresenceHandler
+from features.error_logger import ErrorLogger
 
 logger = setup_custom_logger(__name__)
 
@@ -31,6 +32,7 @@ class BaseAutoshardedBot(commands.AutoShardedBot):
     self.extensions_folder = extensions_folder
 
     self.presence_handler = PresenceHandler(self, config.presence.status_messages, config.presence.cycle_interval_s)
+    self.error_logger = ErrorLogger(self)
 
     self.event(self.on_ready)
 
@@ -69,3 +71,6 @@ class BaseAutoshardedBot(commands.AutoShardedBot):
     if log_channel is not None:
       await message_utils.generate_success_message(log_channel, "Bot is ready!")
     logger.info("Ready!")
+
+  async def on_error(self, event, *args, **kwargs):
+    return await self.error_logger.default_error_handling(event, args, kwargs)

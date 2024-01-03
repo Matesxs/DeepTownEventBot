@@ -332,7 +332,7 @@ class DTEventItemLottery(Base_Cog):
       await message_utils.delete_message(self.bot, inter.message)
       return await message_utils.generate_error_message(inter, Strings.lottery_button_listener_invalid_lottery)
 
-    is_author = (inter.author.id == int(lottery.author_id)) or (await permissions.predicate_bot_developer(inter))
+    is_author = (inter.author.id == int(lottery.author_id)) or (await permissions.is_bot_developer(inter.bot, inter.author))
 
     if command == "remove":
       if is_author or (await permissions.predicate_guild_administrator_role(inter)):

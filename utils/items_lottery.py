@@ -30,7 +30,7 @@ async def lottery_notify_closed_and_waiting(bot: BaseAutoshardedBot, lottery: dt
 async def handle_closing_lottery_message(message: disnake.Message, lottery_id: int, repeat: bool):
   if not repeat:
     embed = message.embeds[0]
-    embed.description = "**Ended**"
+    embed.description = "**Closed and results were send**"
 
     buttons = [disnake.ui.Button(label="Delete", emoji="♻️", custom_id=f"event_item_lottery:remove:{lottery_id}", style=disnake.ButtonStyle.red),
                disnake.ui.Button(label="Repeat", emoji="🔂", custom_id=f"event_item_lottery:repeat:{lottery_id}", style=disnake.ButtonStyle.primary)]

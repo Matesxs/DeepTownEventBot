@@ -16,7 +16,7 @@ class Settings(Base_Cog):
     pass
 
   @settings_commands.sub_command_group(name="admin_role")
-  @permissions.guild_owner()
+  @permissions.guild_administrator()
   @cooldowns.default_cooldown
   async def admin_role_commands(self, inter: disnake.CommandInteraction):
     await inter.response.defer(with_message=True, ephemeral=True)

@@ -13,12 +13,6 @@ async def is_bot_developer(bot, user):
 
   return False
 
-async def predicate_bot_developer(ctx):
-  if await is_bot_developer(ctx.bot, ctx.author):
-    return True
-
-  raise exceptions.NotBotDeveloper()
-
 def is_guild_administrator(ctx):
   if hasattr(ctx, "guild"):
     if ctx.author.guild_permissions.administrator:
@@ -28,7 +22,31 @@ def is_guild_administrator(ctx):
       return True
   return False
 
-async def predicate_is_guild_owner(ctx):
+async def has_guild_administrator_role(ctx):
+  if await is_bot_developer(ctx.bot, ctx.author):
+    return True
+
+  if hasattr(ctx, "guild"):
+    if is_guild_administrator(ctx):
+      return True
+
+    guild_admin_role_id = (await get_or_create_discord_guild(ctx.guild)).admin_role_id
+    if guild_admin_role_id is None:
+      return False
+
+    author_role_ids = [role.id for role in ctx.author.roles]
+    if int(guild_admin_role_id) in author_role_ids:
+      return True
+
+  return False
+
+async def __predicate_bot_developer(ctx):
+  if await is_bot_developer(ctx.bot, ctx.author):
+    return True
+
+  raise exceptions.NotBotDeveloper()
+
+async def __predicate_is_guild_owner(ctx):
   if await is_bot_developer(ctx.bot, ctx.author):
     return True
 
@@ -37,7 +55,7 @@ async def predicate_is_guild_owner(ctx):
 
   raise exceptions.NotGuildAdministrator()
 
-async def predicate_guild_administrator_role(ctx):
+async def __predicate_guild_administrator_role(ctx):
   if await is_bot_developer(ctx.bot, ctx.author):
     return True
 
@@ -58,10 +76,10 @@ async def predicate_guild_administrator_role(ctx):
   raise exceptions.NotGuildAdministrator()
 
 def bot_developer():
-  return commands.check(predicate_bot_developer)
+  return commands.check(__predicate_bot_developer)
 
-def guild_owner():
-  return commands.check(predicate_is_guild_owner)
+def guild_administrator():
+  return commands.check(__predicate_is_guild_owner)
 
 def guild_administrator_role():
-  return commands.check(predicate_guild_administrator_role)
+  return commands.check(__predicate_guild_administrator_role)

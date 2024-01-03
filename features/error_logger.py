@@ -36,7 +36,8 @@ class ContextMock:
 def create_embed(command: str, cmd_type: command_utils.CommandTypes, args: str, author: disnake.User, guild: Optional[disnake.Guild | str], jump_url: Optional[str], extra_fields: Dict[str, str] = None):
   embed = disnake.Embed(title=f"Ignoring exception in {command}", color=0xFF0000)
 
-  embed.add_field(name="Command type", value=cmd_type.name)
+  if cmd_type != command_utils.CommandTypes.UNKNOWN_COMMAND:
+    embed.add_field(name="Command type", value=cmd_type.name)
 
   if args:
     embed.add_field(name="Args", value=args)

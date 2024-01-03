@@ -6,19 +6,19 @@ from typing import List, Optional, Union
 
 from utils import message_utils
 
-def pagination_next(id: str, hor_page: int, vert_page: int, max_hor_page: int, max_vert_page: int, roll_around: bool = True):
-  if 'next' in id:
+def pagination_next(bid: str, hor_page: int, vert_page: int, max_hor_page: int, max_vert_page: int, roll_around: bool = True):
+  if 'next' in bid:
     hor_page = 1
     next_vert_page = vert_page + 1
-  elif 'prev' in id:
+  elif 'prev' in bid:
     hor_page = 1
     next_vert_page = vert_page - 1
   else:
     next_vert_page = vert_page
 
-  if 'up' in id:
+  if 'up' in bid:
     next_hor_page = hor_page + 1
-  elif 'down' in id:
+  elif 'down' in bid:
     next_hor_page = hor_page - 1
   else:
     next_hor_page = hor_page
@@ -39,7 +39,7 @@ reaction_ids = ["embed:prev_page", "embed:up_page", "embed:next_page", "embed:do
 
 class EmbedView2D(disnake.ui.View):
 
-  def __init__(self, author: disnake.User, embeds: List[List[disnake.Embed]], perma_lock: bool = False, roll_arroud: bool = True, timeout: Optional[float] = 600, invisible: bool=False, invert_list_dir: bool=False, delete_on_timeout: bool=False):
+  def __init__(self, author: disnake.User, embeds: List[List[disnake.Embed]], can_lock: bool = True, perma_lock: bool = False, roll_arroud: bool = True, timeout: Optional[float] = 600, invisible: bool=False, invert_list_dir: bool=False, delete_on_timeout: bool=False):
     self.message: Optional[Union[disnake.Message, disnake.ApplicationCommandInteraction, disnake.ModalInteraction, disnake.MessageCommandInteraction]] = None
     self.vert_page = 1
     self.hor_page = 1
@@ -84,7 +84,7 @@ class EmbedView2D(disnake.ui.View):
         )
       )
 
-      if not perma_lock and not invisible:
+      if not perma_lock and not invisible and can_lock:
         # if permanent lock is applied, dynamic lock is removed from buttons
         self.lock_button = disnake.ui.Button(
           emoji="🔓",
@@ -109,7 +109,7 @@ class EmbedView2D(disnake.ui.View):
           )
         )
 
-        if not perma_lock and not invisible:
+        if not perma_lock and not invisible and can_lock:
           # if permanent lock is applied, dynamic lock is removed from buttons
           self.lock_button = disnake.ui.Button(
             emoji="🔓",

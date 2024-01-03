@@ -11,7 +11,7 @@ from config import config
 from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
 from utils import message_utils, dt_autocomplete, items_lottery, dt_helpers
-from database import dt_items_repo, dt_event_item_lottery_repo, run_commit
+from database import dt_items_repo, dt_event_item_lottery_repo, run_commit, event_participation_repo
 
 logger = setup_custom_logger(__name__)
 
@@ -136,34 +136,8 @@ class DTEventItemLottery(Base_Cog):
 
     await items_lottery.create_lottery(inter.author, orig_message, lottery, True)
 
-  @lottery_command.sub_command(name="guess", description=Strings.lottery_guess_description)
-  @commands.guild_only()
-  @cooldowns.long_cooldown
-  async def lottery_make_guess(self, inter: disnake.CommandInteraction,
-                               guess_item_1: Optional[str] = commands.Param(default=None, description=Strings.lottery_guess_item_param_description(item_number=1), autocomplete=dt_autocomplete.autocomplete_item),
-                               guess_item_2: Optional[str] = commands.Param(default=None, description=Strings.lottery_guess_item_param_description(item_number=2), autocomplete=dt_autocomplete.autocomplete_item),
-                               guess_item_3: Optional[str] = commands.Param(default=None, description=Strings.lottery_guess_item_param_description(item_number=3), autocomplete=dt_autocomplete.autocomplete_item),
-                               guess_item_4: Optional[str] = commands.Param(default=None, description=Strings.lottery_guess_item_param_description(item_number=4), autocomplete=dt_autocomplete.autocomplete_item)):
-    await inter.response.defer(with_message=True, ephemeral=True)
-
-    await make_guess(inter, inter.author, guess_item_1, guess_item_2, guess_item_3, guess_item_4)
-
-  @lottery_command.sub_command(name="guess_for", description=Strings.lottery_guess_for_description)
-  @commands.guild_only()
-  @permissions.guild_administrator_role()
-  @cooldowns.long_cooldown
-  async def lottery_make_guess_for(self, inter: disnake.CommandInteraction,
-                                   author: disnake.Member = commands.Param(description=Strings.lottery_guess_for_author_param_description),
-                                   guess_item_1: Optional[str] = commands.Param(default=None, description=Strings.lottery_guess_item_param_description(item_number=1), autocomplete=dt_autocomplete.autocomplete_item),
-                                   guess_item_2: Optional[str] = commands.Param(default=None, description=Strings.lottery_guess_item_param_description(item_number=2), autocomplete=dt_autocomplete.autocomplete_item),
-                                   guess_item_3: Optional[str] = commands.Param(default=None, description=Strings.lottery_guess_item_param_description(item_number=3), autocomplete=dt_autocomplete.autocomplete_item),
-                                   guess_item_4: Optional[str] = commands.Param(default=None, description=Strings.lottery_guess_item_param_description(item_number=4), autocomplete=dt_autocomplete.autocomplete_item)):
-    await inter.response.defer(with_message=True, ephemeral=True)
-
-    await make_guess(inter, author, guess_item_1, guess_item_2, guess_item_3, guess_item_4)
-
   @lottery_command.sub_command(name="update", description=Strings.lottery_update_description)
-  @commands.is_owner()
+  @permissions.bot_developer()
   @cooldowns.long_cooldown
   async def lottery_update(self, inter: disnake.CommandInteraction):
     await inter.response.defer(with_message=True, ephemeral=True)
@@ -174,6 +148,65 @@ class DTEventItemLottery(Base_Cog):
 
     results, guesses_cleared = result
     await message_utils.generate_success_message(inter, Strings.lottery_update_success(results=results, guesses_cleared=guesses_cleared))
+
+  @lottery_command.sub_command_group(name="guess")
+  @commands.guild_only()
+  @cooldowns.long_cooldown
+  async def guess_commands(self, inter: disnake.CommandInteraction):
+    pass
+
+  @guess_commands.sub_command(name="create", description=Strings.lottery_guess_create_description)
+  async def lottery_make_guess(self, inter: disnake.CommandInteraction,
+                               guess_item_1: Optional[str] = commands.Param(default=None, description=Strings.lottery_guess_item_param_description(item_number=1), autocomplete=dt_autocomplete.autocomplete_item),
+                               guess_item_2: Optional[str] = commands.Param(default=None, description=Strings.lottery_guess_item_param_description(item_number=2), autocomplete=dt_autocomplete.autocomplete_item),
+                               guess_item_3: Optional[str] = commands.Param(default=None, description=Strings.lottery_guess_item_param_description(item_number=3), autocomplete=dt_autocomplete.autocomplete_item),
+                               guess_item_4: Optional[str] = commands.Param(default=None, description=Strings.lottery_guess_item_param_description(item_number=4), autocomplete=dt_autocomplete.autocomplete_item)):
+    await inter.response.defer(with_message=True, ephemeral=True)
+
+    await make_guess(inter, inter.author, guess_item_1, guess_item_2, guess_item_3, guess_item_4)
+
+  @guess_commands.sub_command(name="remove", description=Strings.lottery_guess_remove_description)
+  async def lottery_remove_guess(self, inter: disnake.CommandInteraction):
+    await inter.response.defer(with_message=True, ephemeral=True)
+
+    year, week = dt_helpers.get_event_index(datetime.datetime.utcnow() + datetime.timedelta(days=7))
+    event_specification = await event_participation_repo.get_or_create_event_specification(year, week)
+
+    if await dt_event_item_lottery_repo.remove_guess(inter.guild_id, inter.author.id, event_specification.event_id):
+      await message_utils.generate_success_message(inter, Strings.lottery_guess_removed_sucessfully)
+    else:
+      await message_utils.generate_error_message(inter, Strings.lottery_guess_no_guess_to_remove)
+
+  @lottery_command.sub_command_group(name="guess_for")
+  @commands.guild_only()
+  @permissions.guild_administrator_role()
+  @cooldowns.long_cooldown
+  async def guess_for_commands(self, inter: disnake.CommandInteraction):
+    pass
+
+  @guess_for_commands.sub_command(name="create", description=Strings.lottery_guess_for_create_description)
+  async def lottery_make_guess_for(self, inter: disnake.CommandInteraction,
+                                   author: disnake.Member = commands.Param(description=Strings.lottery_guess_for_author_param_description),
+                                   guess_item_1: Optional[str] = commands.Param(default=None, description=Strings.lottery_guess_item_param_description(item_number=1), autocomplete=dt_autocomplete.autocomplete_item),
+                                   guess_item_2: Optional[str] = commands.Param(default=None, description=Strings.lottery_guess_item_param_description(item_number=2), autocomplete=dt_autocomplete.autocomplete_item),
+                                   guess_item_3: Optional[str] = commands.Param(default=None, description=Strings.lottery_guess_item_param_description(item_number=3), autocomplete=dt_autocomplete.autocomplete_item),
+                                   guess_item_4: Optional[str] = commands.Param(default=None, description=Strings.lottery_guess_item_param_description(item_number=4), autocomplete=dt_autocomplete.autocomplete_item)):
+    await inter.response.defer(with_message=True, ephemeral=True)
+
+    await make_guess(inter, author, guess_item_1, guess_item_2, guess_item_3, guess_item_4)
+
+  @guess_for_commands.sub_command(name="remove", description=Strings.lottery_guess_for_remove_description)
+  async def lottery_remove_guess_for(self, inter: disnake.CommandInteraction,
+                                     author: disnake.Member = commands.Param(description=Strings.lottery_guess_for_author_param_description)):
+    await inter.response.defer(with_message=True, ephemeral=True)
+
+    year, week = dt_helpers.get_event_index(datetime.datetime.utcnow() + datetime.timedelta(days=7))
+    event_specification = await event_participation_repo.get_or_create_event_specification(year, week)
+
+    if await dt_event_item_lottery_repo.remove_guess(inter.guild_id, author.id, event_specification.event_id):
+      await message_utils.generate_success_message(inter, Strings.lottery_guess_removed_sucessfully)
+    else:
+      await message_utils.generate_error_message(inter, Strings.lottery_guess_no_guess_to_remove)
 
   @commands.Cog.listener()
   async def on_button_click(self, inter: disnake.MessageInteraction):

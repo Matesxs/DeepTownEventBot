@@ -70,6 +70,10 @@ async def get_guesses(guild_id: int, event_id: int) -> List[DTEventItemLotteryGu
   result = await run_query(select(DTEventItemLotteryGuess).filter(DTEventItemLotteryGuess.event_id == event_id, DTEventItemLotteryGuess.guild_id == str(guild_id)))
   return result.scalars().all()
 
+async def remove_guess(guild_id: int, author_id: int, event_id: int) -> bool:
+  result = await run_query(delete(DTEventItemLotteryGuess).filter(DTEventItemLotteryGuess.guild_id == str(guild_id), DTEventItemLotteryGuess.author_id == str(author_id), DTEventItemLotteryGuess.event_id == event_id))
+  return result.rowcount > 0
+
 async def make_next_event_guess(author: disnake.Member, items: List[dt_items_repo.DTItem]) -> Optional[DTEventItemLotteryGuess]:
   unique_item_names = list(set([item.name for item in items]))
   if len(unique_item_names) != len(items):

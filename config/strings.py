@@ -308,13 +308,18 @@ class Strings(metaclass=Formatable):
   lottery_create_reward_item_amount_param_description = "Number of reward items for guessing {item_number} event items right"
   lottery_create_no_reward_set = "You set no reward items"
 
-  lottery_guess_description = "Make a guess for next event items"
-  lottery_guess_for_description = "Make a guess for next event items for someone else"
+  lottery_guess_create_description = "Make a guess for next event items"
+  lottery_guess_remove_description = "Remove guess for next event items"
+  lottery_guess_for_create_description = "Make a guess for next event items for someone else"
+  lottery_guess_for_remove_description = "Remove someone elses guess for next event items"
   lottery_guess_item_param_description = "Item guess {item_number}"
-  lottery_guess_for_author_param_description = "User you are making guess for"
   lottery_guess_no_items = "You provided no items"
   lottery_guess_item_duplicates = "Detected item duplicates"
   lottery_guess_registered = "Guess registered for event `{event_year} {event_week}`\n`{items}`"
+
+  lottery_guess_removed_sucessfully = "Guess removed"
+  lottery_guess_no_guess_to_remove = "No guess to remove"
+  lottery_guess_for_author_param_description = "User you managing guess for"
 
   lottery_update_description = "Update all lotteries, closed the ended ones and send results"
   lottery_update_no_active_lotteries = "No active lotteries to update"

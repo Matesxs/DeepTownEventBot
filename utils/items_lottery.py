@@ -190,10 +190,10 @@ async def create_lottery(author: Union[str, disnake.Member], source_message: dis
   next_year, next_week = dt_helpers.get_event_index(datetime.datetime.utcnow() + datetime.timedelta(days=7))
 
   if isinstance(author, disnake.Member):
-    lottery_embed = disnake.Embed(title=f"Items guess lottery for event `{next_year} {next_week}` by {author.display_name}", description=f"```\n{lottery_table}\n```\nUse `/lottery guess` to participate in lotteries", color=disnake.Color.blurple())
+    lottery_embed = disnake.Embed(title=f"Items guess lottery for event `{next_year} {next_week}` by {author.display_name}", description=f"```\n{lottery_table}\n```\nUse `/lottery guess create` to participate in lotteries", color=disnake.Color.blurple())
     message_utils.add_author_footer(lottery_embed, author)
   else:
-    lottery_embed = disnake.Embed(title=f"Items guess lottery for event `{next_year} {next_week}` by {author}", description=f"```\n{lottery_table}\n```\nUse `/lottery guess` to participate in lotteries", color=disnake.Color.blurple())
+    lottery_embed = disnake.Embed(title=f"Items guess lottery for event `{next_year} {next_week}` by {author}", description=f"```\n{lottery_table}\n```\nUse `/lottery guess create` to participate in lotteries", color=disnake.Color.blurple())
 
   if not replace_message:
     source_message = await source_message.reply(embed=lottery_embed)

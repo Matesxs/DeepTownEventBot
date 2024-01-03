@@ -21,14 +21,12 @@ async def add_to_whitelist(guild: disnake.Guild, channel_id: int) -> bool:
   return True
 
 async def remove_from_whitelist(guild_id: int, channel_id: int) -> bool:
-  result = await run_query(delete(QuestionAndAnswerWhitelist).filter(QuestionAndAnswerWhitelist.guild_id == str(guild_id), QuestionAndAnswerWhitelist.channel_id == str(channel_id)))
-  await run_commit()
+  result = await run_query(delete(QuestionAndAnswerWhitelist).filter(QuestionAndAnswerWhitelist.guild_id == str(guild_id), QuestionAndAnswerWhitelist.channel_id == str(channel_id)), commit=True)
   return result.rowcount > 0
 
-async def get_whitelist_channel_ids(guild_id: int) -> List[int]:
-  result = await run_query(select(QuestionAndAnswerWhitelist.channel_id).filter(QuestionAndAnswerWhitelist.guild_id == str(guild_id)))
-  result = result.scalars().all()
-  return [int(r) for r in result]
+async def get_whitelist_channels(guild_id: int) -> List[QuestionAndAnswerWhitelist]:
+  result = await run_query(select(QuestionAndAnswerWhitelist).filter(QuestionAndAnswerWhitelist.guild_id == str(guild_id)))
+  return result.scalars().all()
 
 async def get_question_and_answer(qa_id: int) -> Optional[QuestionAndAnswer]:
   result = await run_query(select(QuestionAndAnswer).filter(QuestionAndAnswer.id == qa_id))

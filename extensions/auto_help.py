@@ -4,6 +4,7 @@ from disnake.ext import commands
 from Levenshtein import ratio
 import math
 
+import database
 from utils import message_utils, string_manipulation, command_utils
 from database import questions_and_answers_repo
 from config import config, cooldowns, permissions
@@ -142,8 +143,14 @@ class AutoHelp(Base_Cog):
   async def whitelist_list(self, inter: disnake.CommandInteraction):
     await inter.response.defer(with_message=True, ephemeral=True)
 
-    whitelisted_channel_ids = await questions_and_answers_repo.get_whitelist_channel_ids(inter.guild.id)
-    whitelisted_channels = [ch for ch in inter.guild.channels if ch.id in whitelisted_channel_ids]
+    whitelisted_channel_objects = await questions_and_answers_repo.get_whitelist_channels(inter.guild.id)
+    whitelisted_channels = []
+    for wcho in whitelisted_channel_objects:
+      channel = await wcho.get_channel(self.bot)
+      if channel is not None:
+        whitelisted_channels.append(channel)
+      else:
+        await database.remove_item(wcho)
 
     if not whitelisted_channels:
       return await message_utils.generate_error_message(inter, Strings.questions_and_answers_whitelist_list_no_channels)

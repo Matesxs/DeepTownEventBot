@@ -147,7 +147,7 @@ class Help(Base_Cog):
     pages = generate_help_pages(command_descriptiors, inter.author)
 
     if pages:
-      await EmbedView(inter.author, embeds=pages, perma_lock=True).run(inter)
+      await EmbedView(inter.author, embeds=pages).run(inter)
     else:
       emb = disnake.Embed(title="Help", description="*No help available*", colour=disnake.Color.orange())
       await inter.send(embed=emb)

@@ -97,11 +97,11 @@ class EmbedView(disnake.ui.View):
     return page
 
   async def run(self, ctx):
-    if isinstance(ctx, (disnake.ApplicationCommandInteraction, disnake.ModalInteraction, disnake.MessageCommandInteraction)):
+    if isinstance(ctx, (disnake.ApplicationCommandInteraction, disnake.ModalInteraction, disnake.MessageCommandInteraction, disnake.CommandInteraction)):
       await ctx.send(embed=self.embed(), view=self, ephemeral=self.invisible)
       self.message = ctx
     else:
-      self.message = await ctx.send(embed=self.embed(), view=self)
+      self.message = await ctx.reply(embed=self.embed(), view=self)
 
   async def interaction_check(self, interaction: disnake.MessageInteraction) -> None:
     if interaction.data.custom_id == "embed:lock":

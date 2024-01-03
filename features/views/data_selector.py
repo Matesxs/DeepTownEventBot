@@ -53,7 +53,7 @@ class DataSelector(disnake.ui.View):
       await ctx.send(view=self, ephemeral=self.invisible)
       self.message = await ctx.original_message()
     else:
-      self.message = await ctx.send(view=self)
+      self.message = await ctx.reply(view=self)
 
   def get_results(self):
     return [colm for colm in self.available_colms if colm in self.selected] # Only to keep order

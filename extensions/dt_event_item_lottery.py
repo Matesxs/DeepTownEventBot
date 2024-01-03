@@ -10,7 +10,7 @@ from config.strings import Strings
 from config import config
 from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
-from utils import message_utils, dt_autocomplete, items_lottery
+from utils import message_utils, dt_autocomplete, items_lottery, dt_helpers
 from database import dt_items_repo, dt_event_item_lottery_repo, run_commit
 
 logger = setup_custom_logger(__name__)
@@ -62,14 +62,23 @@ class DTEventItemLottery(Base_Cog):
     if not self.delete_long_closed_lotteries_task.is_running():
       self.delete_long_closed_lotteries_task.start()
 
+    if not self.notify_lottery_closed_task.is_running():
+      self.notify_lottery_closed_task.start()
+
   def cog_load(self) -> None:
     if self.bot.is_ready():
       if not self.delete_long_closed_lotteries_task.is_running():
         self.delete_long_closed_lotteries_task.start()
 
+      if not self.notify_lottery_closed_task.is_running():
+        self.notify_lottery_closed_task.start()
+
   def cog_unload(self) -> None:
     if self.delete_long_closed_lotteries_task.is_running():
       self.delete_long_closed_lotteries_task.cancel()
+
+    if self.notify_lottery_closed_task.is_running():
+      self.notify_lottery_closed_task.cancel()
 
   @commands.slash_command(name="lottery")
   async def lottery_command(self, inter: disnake.CommandInteraction):
@@ -239,12 +248,29 @@ class DTEventItemLottery(Base_Cog):
 
   @tasks.loop(hours=24 * config.lotteries.clean_old_lotteries_period_days)
   async def delete_long_closed_lotteries_task(self):
-    logger.info("Starting clearup of old closed lotteries")
     lotteries_to_delete = await dt_event_item_lottery_repo.get_lotteries_closed_before_date(datetime.datetime.utcnow() - datetime.timedelta(days=config.lotteries.clean_lotteries_closed_for_more_than_days))
-    for lottery in lotteries_to_delete:
-      await items_lottery.delete_lottery(self.bot, lottery)
-      await asyncio.sleep(0.1)
-    logger.info(f"Cleared {len(lotteries_to_delete)} old closed lotteries")
+
+    if lotteries_to_delete:
+      logger.info("Starting clearup of old closed lotteries")
+      for lottery in lotteries_to_delete:
+        await items_lottery.delete_lottery(self.bot, lottery)
+        await asyncio.sleep(0.1)
+      logger.info(f"Cleared {len(lotteries_to_delete)} old closed lotteries")
+
+  @tasks.loop(time=datetime.time(hour=config.event_tracker.event_start_hour, minute=0, second=0))
+  async def notify_lottery_closed_task(self):
+    current_datetime = datetime.datetime.utcnow()
+
+    if current_datetime.day == config.event_tracker.event_start_day:
+      year, week = dt_helpers.get_event_index(current_datetime)
+      lotteries_to_notify = await dt_event_item_lottery_repo.get_active_lotteries(year, week)
+
+      if lotteries_to_notify:
+        logger.info("Notifying that lotteries are closed")
+        for lottery in lotteries_to_notify:
+          await items_lottery.lottery_notify_closed_and_waiting(self.bot, lottery)
+          await asyncio.sleep(0.1)
+        logger.info(f"Notified {len(lotteries_to_notify)} lotteries")
 
 def setup(bot):
   bot.add_cog(DTEventItemLottery(bot))

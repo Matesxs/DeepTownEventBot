@@ -19,10 +19,18 @@ async def delete_lottery(bot: BaseAutoshardedBot, lottery: dt_event_item_lottery
 
   await database.remove_item(lottery)
 
+async def lottery_notify_closed_and_waiting(bot: BaseAutoshardedBot, lottery: dt_event_item_lottery_repo.DTEventItemLottery):
+  lottery_message = await lottery.get_lotery_message(bot)
+  if lottery_message is not None and lottery_message.author.id == bot.user.id:
+    embed = lottery_message.embeds[0]
+    embed.description = "**Closed and waiting for evaluation**\n**!!No new guesses will count towards this lottery!!**"
+
+    await lottery_message.edit(embed=embed, components=None)
+
 async def handle_closing_lottery_message(message: disnake.Message, lottery_id: int, repeat: bool):
   if not repeat:
     embed = message.embeds[0]
-    embed.description = f"**Ended**\n" + embed.description
+    embed.description = "**Ended**"
 
     buttons = [disnake.ui.Button(label="Delete", emoji="♻️", custom_id=f"event_item_lottery:remove:{lottery_id}", style=disnake.ButtonStyle.red),
                disnake.ui.Button(label="Repeat", emoji="🔂", custom_id=f"event_item_lottery:repeat:{lottery_id}", style=disnake.ButtonStyle.primary)]
@@ -30,7 +38,7 @@ async def handle_closing_lottery_message(message: disnake.Message, lottery_id: i
     await message.edit(embed=embed, components=buttons)
   else:
     embed = message.embeds[0]
-    embed.description = f"**Ended**\n" + embed.description
+    embed.description = "**Ended**"
 
     await message.edit(embed=embed, components=None)
 

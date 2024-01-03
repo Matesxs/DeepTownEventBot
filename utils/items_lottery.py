@@ -116,9 +116,9 @@ async def process_lottery_result(bot: BaseAutoshardedBot, lottery: dt_event_item
   if not winner_ids:
     message = f"Event items lottery result for `{lottery.event_specification.event_year} {lottery.event_specification.event_week}` by {author_name}\nParticipants: {result[0]}\n```\n{event_items_table}\n```\n**There are no winners**"
     if isinstance(destination, disnake.Message):
-      await destination.reply(message)
+      destination = await destination.reply(message)
     else:
-      await destination.send(message)
+      destination = await destination.send(message)
   else:
     table_lines = [f"Event items lottery result for `{lottery.event_specification.event_year} {lottery.event_specification.event_week}` by {author_name}",
                    f"Participants: {result[0]}",
@@ -141,8 +141,13 @@ async def process_lottery_result(bot: BaseAutoshardedBot, lottery: dt_event_item
 
       while mention_strings:
         final_string, mention_strings = string_manipulation.add_string_until_length(mention_strings, 1800, " ")
-        await destination.send(final_string)
+        await destination.reply(final_string)
         await asyncio.sleep(0.05)
+
+  if lottery.autoshow_guesses:
+    for table in (await generate_guesses_tables(bot, lottery)):
+      await destination.reply(f"```\n{table}\n```")
+      await asyncio.sleep(0.05)
 
   # Close or repeat lottery
   if lottery.auto_repeat:
@@ -176,7 +181,8 @@ def get_lottery_buttons(lottery):
                disnake.ui.Button(label="Delete", emoji="♻️", custom_id=f"event_item_lottery:remove:{lottery.id}", style=disnake.ButtonStyle.red),
                disnake.ui.Button(label="Split rewards", emoji="🪓", custom_id=f"event_item_lottery:split_rewards:{lottery.id}", style=disnake.ButtonStyle.success if lottery.split_rewards else disnake.ButtonStyle.danger),
                disnake.ui.Button(label="Auto Repeat", emoji="🔁", custom_id=f"event_item_lottery:auto_repeat:{lottery.id}", style=disnake.ButtonStyle.success if lottery.auto_repeat else disnake.ButtonStyle.danger),
-               disnake.ui.Button(label="Auto Ping", emoji="📯", custom_id=f"event_item_lottery:auto_ping:{lottery.id}", style=disnake.ButtonStyle.success if lottery.autoping_winners else disnake.ButtonStyle.danger)),
+               disnake.ui.Button(label="Auto Ping", emoji="📯", custom_id=f"event_item_lottery:auto_ping:{lottery.id}", style=disnake.ButtonStyle.success if lottery.autoping_winners else disnake.ButtonStyle.danger),
+               disnake.ui.Button(label="Auto Show Guesses at end", emoji="📜", custom_id=f"event_item_lottery:auto_show_guesses:{lottery.id}", style=disnake.ButtonStyle.success if lottery.autoshow_guesses else disnake.ButtonStyle.danger)),
              disnake.ui.Button(label="Show participants", emoji="🧾", custom_id=f"event_item_lottery:show:{lottery.id}", style=disnake.ButtonStyle.blurple)]
   return buttons
 

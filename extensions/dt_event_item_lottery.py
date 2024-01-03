@@ -348,6 +348,14 @@ class DTEventItemLottery(Base_Cog):
         for table in (await items_lottery.generate_guesses_tables(self.bot, lottery)):
           await inter.send(f"```\n{table}\n```", ephemeral=True, delete_after=60)
           await asyncio.sleep(0.05)
+    elif command == "auto_show_guesses":
+      if is_author or (await permissions.has_guild_administrator_role(inter)):
+        lottery.autoshow_guesses = not lottery.autoshow_guesses
+        await run_commit()
+
+        await inter.edit_original_response(components=items_lottery.get_lottery_buttons(lottery))
+      else:
+        await message_utils.generate_error_message(inter, Strings.lottery_button_listener_not_author)
     elif command == "repeat":
       if is_author:
         next_event_lottery = await dt_event_item_lottery_repo.get_next_event_item_lottery_by_constrained(int(lottery.author_id), int(lottery.guild_id))

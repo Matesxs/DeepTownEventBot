@@ -368,7 +368,7 @@ class DTEventItemLottery(Base_Cog):
       else:
         await message_utils.generate_error_message(inter, Strings.lottery_button_listener_not_author)
     elif command == "auto_repeat":
-      if is_author:
+      if is_author or (await permissions.has_guild_administrator_role(inter)):
         lottery.auto_repeat = not lottery.auto_repeat
         await run_commit()
 
@@ -376,7 +376,7 @@ class DTEventItemLottery(Base_Cog):
       else:
         await message_utils.generate_error_message(inter, Strings.lottery_button_listener_not_author)
     elif command == "auto_ping":
-      if is_author:
+      if is_author or (await permissions.has_guild_administrator_role(inter)):
         lottery.autoping_winners = not lottery.autoping_winners
         await run_commit()
 

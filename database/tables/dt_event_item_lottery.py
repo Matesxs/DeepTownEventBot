@@ -21,6 +21,7 @@ class DTEventItemLotteryGuess(database.base):
   __table_args__ = (UniqueConstraint('guild_id', 'author_id', "event_id"),)
 
   id = Column(database.BigIntegerType, primary_key=True, autoincrement=True)
+  created_at = Column(DateTime, nullable=False, default=datetime.datetime.utcnow)
 
   event_id = Column(database.BigIntegerType, ForeignKey("event_specifications.event_id", ondelete="CASCADE", onupdate="CASCADE"), nullable=False)
   guild_id = Column(String, ForeignKey("discord_guilds.id", ondelete="CASCADE", onupdate="CASCADE"), nullable=False, index=True)
@@ -49,6 +50,7 @@ class DTEventItemLottery(database.base):
   lottery_message_id = Column(String, nullable=True)
 
   event_id = Column(database.BigIntegerType, ForeignKey("event_specifications.event_id", ondelete="CASCADE", onupdate="CASCADE"), nullable=False)
+  created_at = Column(DateTime, nullable=False, default=datetime.datetime.utcnow)
   closed_at = Column(DateTime, nullable=True, default=None)
 
   auto_repeat = Column(Boolean, nullable=False, default=False)

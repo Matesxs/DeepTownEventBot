@@ -182,7 +182,7 @@ def get_lottery_buttons(lottery):
                disnake.ui.Button(label="Split rewards", emoji="🪓", custom_id=f"event_item_lottery:split_rewards:{lottery.id}", style=disnake.ButtonStyle.success if lottery.split_rewards else disnake.ButtonStyle.danger),
                disnake.ui.Button(label="Auto Repeat", emoji="🔁", custom_id=f"event_item_lottery:auto_repeat:{lottery.id}", style=disnake.ButtonStyle.success if lottery.auto_repeat else disnake.ButtonStyle.danger),
                disnake.ui.Button(label="Auto Ping", emoji="📯", custom_id=f"event_item_lottery:auto_ping:{lottery.id}", style=disnake.ButtonStyle.success if lottery.autoping_winners else disnake.ButtonStyle.danger),
-               disnake.ui.Button(label="Auto Show Guesses at end", emoji="📜", custom_id=f"event_item_lottery:auto_show_guesses:{lottery.id}", style=disnake.ButtonStyle.success if lottery.autoshow_guesses else disnake.ButtonStyle.danger)),
+               disnake.ui.Button(label="Auto Show Guesses at End", emoji="📜", custom_id=f"event_item_lottery:auto_show_guesses:{lottery.id}", style=disnake.ButtonStyle.success if lottery.autoshow_guesses else disnake.ButtonStyle.danger)),
              disnake.ui.Button(label="Show participants", emoji="🧾", custom_id=f"event_item_lottery:show:{lottery.id}", style=disnake.ButtonStyle.blurple)]
   return buttons
 

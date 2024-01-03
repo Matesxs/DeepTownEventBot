@@ -1,4 +1,5 @@
 import disnake
+import datetime
 
 from utils import message_utils, string_manipulation
 
@@ -8,7 +9,8 @@ class ConfirmView(disnake.ui.View):
     self.ctx = ctx
     self.message = None
     self.invisible = invisible
-    self.text = string_manipulation.truncate_string(text, 4000)
+    self.text = text
+    self.cstm_timeout = timeout
 
     self.result = False
 
@@ -16,7 +18,8 @@ class ConfirmView(disnake.ui.View):
     if self.ctx is None:
       return False
 
-    prompt_embed = disnake.Embed(title="Confirmation prompt", description=self.text, color=disnake.Color.dark_blue())
+    timeout_timestamp = int((datetime.datetime.now() + datetime.timedelta(seconds=self.cstm_timeout)).timestamp())
+    prompt_embed = disnake.Embed(title="Confirmation prompt", description=string_manipulation.truncate_string(self.text + f"\n\nClosing <t:{timeout_timestamp}:R> (<t:{timeout_timestamp}:f>)", 4000).strip(), color=disnake.Color.dark_blue())
     message_utils.add_author_footer(prompt_embed, self.ctx.author)
 
     try:

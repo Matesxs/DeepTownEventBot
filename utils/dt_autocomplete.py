@@ -7,28 +7,49 @@ from utils import string_manipulation, dt_helpers
 
 id_in_identifier_regex = re.compile(r"([A-Z]*) .*\((\d*)\).*")
 
-async def autocomplete_identifier_user(_, string: str):
+async def autocomplete_identifier_user(_, string: Optional[str]):
   if string is None or not string:
-    return [f"USER {string_manipulation.truncate_string(user.username, 40)} ({user.id})" for user in (await dt_user_repo.get_all_users(limit=20))]
-  return [f"USER {string_manipulation.truncate_string(user.username, 40)} ({user.id})" for user in (await dt_user_repo.get_all_users(search=string, limit=20))]
+    all_users = await dt_user_repo.get_all_users(limit=20)
+    user_strings = []
+    for user in all_users:
+      prefix = f"USER ({user.id}) "
+      prefix_len = len(prefix)
+      user_strings.append(prefix + string_manipulation.truncate_string(user.username, 25 - prefix_len))
+    return user_strings
 
-async def autocomplete_identifier_guild(_, string: str):
+  all_users = await dt_user_repo.get_all_users(limit=20, search=string)
+  user_strings = []
+  for user in all_users:
+    prefix = f"USER ({user.id}) "
+    prefix_len = len(prefix)
+    user_strings.append(prefix + string_manipulation.truncate_string(user.username, 25 - prefix_len))
+  return user_strings
+
+async def autocomplete_identifier_guild(_, string: Optional[str]):
   if string is None or not string:
-    return [f"GUILD {string_manipulation.truncate_string(guild.name, 40)} ({guild.id})" for guild in (await dt_guild_repo.search_guilds(limit=20))]
-  return [f"GUILD {string_manipulation.truncate_string(guild.name, 40)} ({guild.id})" for guild in (await dt_guild_repo.search_guilds(search=string, limit=20))]
+    all_guilds = await dt_guild_repo.search_guilds(limit=20)
+    guild_strings = []
+    for guild in all_guilds:
+      prefix = F"GUILD ({guild.id}) "
+      prefix_length = len(prefix)
+      guild_strings.append(prefix + string_manipulation.truncate_string(guild.name, 25 - prefix_length))
+    return guild_strings
 
-async def autocomplete_identifier_guild_and_user(_, string: str):
-  if string is None or not string:
-    result = [f"USER {string_manipulation.truncate_string(user.username, 40)} ({user.id})" for user in (await dt_user_repo.get_all_users(limit=20))]
-    rest = 20 - len(result)
-    if rest > 0:
-      result.extend([f"GUILD {string_manipulation.truncate_string(guild.name, 40)} ({guild.id})" for guild in (await dt_guild_repo.search_guilds(limit=rest))])
-    return result
+  all_guilds = await dt_guild_repo.search_guilds(limit=20, search=string)
+  guild_strings = []
+  for guild in all_guilds:
+    prefix = F"GUILD ({guild.id}) "
+    prefix_length = len(prefix)
+    guild_strings.append(prefix + string_manipulation.truncate_string(guild.name, 25 - prefix_length))
+  return guild_strings
 
-  result = [f"USER {string_manipulation.truncate_string(user.username, 40)} ({user.id})" for user in (await dt_user_repo.get_all_users(search=string, limit=20))]
+async def autocomplete_identifier_guild_and_user(_, string: Optional[str]):
+  result = await autocomplete_identifier_user(None, string)
   rest = 20 - len(result)
   if rest > 0:
-    result.extend([f"GUILD {string_manipulation.truncate_string(guild.name, 40)} ({guild.id})" for guild in (await dt_guild_repo.search_guilds(search=string, limit=20))])
+    guilds = await autocomplete_identifier_guild(None, string)
+    for _ in range(min(rest, len(guilds))):
+      result.append(guilds.pop())
   return result
 
 async def autocomplete_item(_, string: str):

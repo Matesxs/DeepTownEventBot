@@ -155,46 +155,30 @@ async def get_event_participation_stats(guild_id: Optional[int]=None, user_id: O
     return data[0], additional_data[0] if ignore_zero_participation_average else data[1], median if median is not None else 0
   return data[0], data[1], data[2] if data[2] is not None else 0
 
-async def get_guild_event_participations_data(guild_id: int, year: Optional[int] = None, week: Optional[int] = None, limit: int = 500, ignore_zero_participation_median: bool=False, ignore_zero_participation_average: bool=False) -> List[Tuple[int, int, int, float, float]]:
+async def get_guild_event_participations_data(guild_id: int, year: Optional[int] = None, week: Optional[int] = None, limit: int = 500, ignore_zero_participation_average: bool=False) -> List[Tuple[int, int, int, float]]:
   """
   :param guild_id: Deep Town Guild ID
   :param year: Event year
   :param week: Event week
   :param limit: Limit of retrieved data rows
-  :param ignore_zero_participation_median: Ignore zero participations for calculation of median
   :param ignore_zero_participation_average: Ignore zero participations for calculation of average
-  :return: List[Tuple[event_year, event_week, total, average, median]]
+  :return: List[Tuple[event_year, event_week, total, average]]
   """
   filters = [EventParticipation.dt_guild_id == guild_id]
   if year is not None:
     filters.append(EventSpecification.event_year == year)
   if week is not None:
     filters.append(EventSpecification.event_week == week)
+  if ignore_zero_participation_average:
+    filters.append(EventParticipation.amount > 0)
 
-  data = (await run_query(select(EventSpecification.event_year, EventSpecification.event_week, func.sum(EventParticipation.amount), func.avg(EventParticipation.amount), func.percentile_cont(0.5).within_group(EventParticipation.amount))
+  data = (await run_query(select(EventSpecification.event_year, EventSpecification.event_week, func.sum(EventParticipation.amount), func.avg(EventParticipation.amount))
       .join(EventParticipation)
       .filter(*filters)
       .order_by(EventSpecification.event_year.desc(), EventSpecification.event_week.desc())
       .group_by(EventSpecification.event_year, EventSpecification.event_week)
       .limit(limit))).all()
-
-  if ignore_zero_participation_average or ignore_zero_participation_median:
-    output_data = []
-
-    for year, week, total, average, median in data:
-      additional_data = (await run_query(select(func.avg(EventParticipation.amount), func.percentile_cont(0.5).within_group(EventParticipation.amount))
-        .join(EventSpecification)
-        .filter(EventParticipation.dt_guild_id == guild_id, EventSpecification.event_year == year, EventSpecification.event_week == week, EventParticipation.amount > 0)))\
-        .one()
-
-      ignore_zero_average, ignore_zero_median = 0, 0
-      if all(additional_data):
-        ignore_zero_average, ignore_zero_median = float(additional_data[0]), float(additional_data[1])
-
-      output_data.append((year, week, total, ignore_zero_average if ignore_zero_participation_average else average, ignore_zero_median if ignore_zero_participation_median else median))
-
-    return output_data
-  return [(d[0], d[1], d[2], d[3], d[4] if d[4] is not None else 0) for d in data]
+  return [(d[0], d[1], d[2], d[3]) for d in data]
 
 async def get_event_participation(user_id: int, guild_id: int, event_year: int, event_week: int) -> Optional[EventParticipation]:
   result = await run_query(select(EventParticipation).filter(EventSpecification.event_year == event_year, EventSpecification.event_week == event_week, EventParticipation.dt_user_id == user_id, EventParticipation.dt_guild_id == guild_id).join(EventSpecification))

@@ -446,7 +446,7 @@ class DTDataInterface(Base_Cog):
     pass
 
   @leaderboard_commands.sub_command(name="users", description=Strings.public_interface_event_leaderboard_users_description)
-  @cooldowns.huge_cooldown
+  @cooldowns.long_cooldown
   async def user_event_leaderboard(self, inter: disnake.CommandInteraction,
                                    event_identifier = commands.Param(default=None, description=Strings.dt_event_identifier_param_description, autocomplete=dt_autocomplete.autocomplete_event_identifier, converter=dt_autocomplete.event_identifier_converter, convert_defaults=True),
                                    limit: int = commands.Param(default=20, min_value=1, max_value=200, description=Strings.public_interface_event_leaderboard_limit_param_description)):
@@ -474,7 +474,7 @@ class DTDataInterface(Base_Cog):
       await inter.send(f"```\n{data_string}\n```")
 
   @leaderboard_commands.sub_command(name="guilds", description=Strings.public_interface_event_leaderboard_guilds_description)
-  @cooldowns.huge_cooldown
+  @cooldowns.long_cooldown
   async def guild_event_leaderboard(self, inter: disnake.CommandInteraction,
                                     event_identifier=commands.Param(default=None, description=Strings.dt_event_identifier_param_description, autocomplete=dt_autocomplete.autocomplete_event_identifier, converter=dt_autocomplete.event_identifier_converter, convert_defaults=True),
                                     limit: int = commands.Param(default=20, min_value=1, max_value=200, description=Strings.public_interface_event_leaderboard_limit_param_description)):

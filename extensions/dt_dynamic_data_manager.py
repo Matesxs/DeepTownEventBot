@@ -28,7 +28,7 @@ class DTDynamicDataManager(Base_Cog):
     pass
 
   @data_manager.sub_command(description=Strings.data_manager_update_guild_description)
-  @cooldowns.huge_cooldown
+  @cooldowns.default_cooldown
   @commands.is_owner()
   async def update_guild(self, inter: disnake.CommandInteraction,
                          identifier=commands.Param(description=Strings.dt_guild_identifier_param_description, autocomp=dt_autocomplete.autocomplete_identifier_guild, converter=dt_autocomplete.guild_user_identifier_converter)):

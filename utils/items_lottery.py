@@ -1,16 +1,47 @@
 import asyncio
 import disnake
-import datetime
-from typing import Optional, List, Dict, Union, Tuple
+from typing import Optional, List, Dict, Tuple
 from table2ascii import table2ascii, Alignment
 
 import database
 from features.base_bot import BaseAutoshardedBot
 from database import dt_event_item_lottery_repo, discord_objects_repo, run_commit
+from database.tables import discord_objects
 from utils.logger import setup_custom_logger
-from utils import string_manipulation, dt_helpers, message_utils, dt_report_generators
+from utils import string_manipulation, message_utils, dt_report_generators
 
 logger = setup_custom_logger(__name__)
+
+async def get_lottery_author_name(bot: BaseAutoshardedBot, lottery: dt_event_item_lottery_repo.DTEventItemLottery) -> str:
+  author = await lottery.get_author(bot)
+  if author is None and lottery.user is not None:
+    author = await lottery.user.to_object(bot)
+
+  if author is not None:
+    author_name = author.display_name
+  else:
+    author = lottery.member or lottery.user
+    if author is not None:
+      author_name = author.name
+    else:
+      author_name = "*Unknown*"
+  return author_name
+
+def create_lottery_embed(author: Optional[disnake.Member | disnake.User], lottery: dt_event_item_lottery_repo.DTEventItemLottery) -> disnake.Embed:
+  table_data = [(4, f"{string_manipulation.format_number(lottery.guessed_4_item_reward_amount)} {string_manipulation.truncate_string(lottery.guessed_4_reward_item_name, 20)}" if lottery.guessed_4_reward_item_name is not None and lottery.guessed_4_item_reward_amount > 0 else "*No Reward*"),
+                (3, f"{string_manipulation.format_number(lottery.guessed_3_item_reward_amount)} {string_manipulation.truncate_string(lottery.guessed_3_reward_item_name, 20)}" if lottery.guessed_3_reward_item_name is not None and lottery.guessed_3_item_reward_amount > 0 else "*No Reward*"),
+                (2, f"{string_manipulation.format_number(lottery.guessed_2_item_reward_amount)} {string_manipulation.truncate_string(lottery.guessed_2_reward_item_name, 20)}" if lottery.guessed_2_reward_item_name is not None and lottery.guessed_2_item_reward_amount > 0 else "*No Reward*"),
+                (1, f"{string_manipulation.format_number(lottery.guessed_1_item_reward_amount)} {string_manipulation.truncate_string(lottery.guessed_1_reward_item_name, 20)}" if lottery.guessed_1_reward_item_name is not None and lottery.guessed_1_item_reward_amount > 0 else "*No Reward*")]
+  lottery_table = table2ascii(["Guessed", "Reward"], table_data, alignments=[Alignment.RIGHT, Alignment.LEFT], first_col_heading=True)
+
+  next_year, next_week = lottery.event_specification.event_year, lottery.event_specification.event_week
+
+  author_name = author.display_name if author is not None else "*Unknown*"
+
+  lottery_embed = disnake.Embed(title=f"Items guess lottery for event `{next_year} {next_week}` by {author_name}", description=f"```\n{lottery_table}\n```\nUse `/lottery guess create` to participate in lotteries", color=disnake.Color.blurple())
+  if author is not None:
+    message_utils.add_author_footer(lottery_embed, author)
+  return lottery_embed
 
 async def delete_lottery(bot: BaseAutoshardedBot, lottery: dt_event_item_lottery_repo.DTEventItemLottery):
   lottery_message = await lottery.get_lotery_message(bot)
@@ -21,24 +52,28 @@ async def delete_lottery(bot: BaseAutoshardedBot, lottery: dt_event_item_lottery
 
 async def lottery_notify_closed_and_waiting(bot: BaseAutoshardedBot, lottery: dt_event_item_lottery_repo.DTEventItemLottery):
   lottery_message = await lottery.get_lotery_message(bot)
+  lottery_author = await lottery.get_author(bot)
+
   if lottery_message is not None and lottery_message.author.id == bot.user.id:
-    embed = lottery_message.embeds[0]
-    embed.description = "**Closed and waiting for evaluation**\n**!!No new guesses will count towards this lottery!!**"
+    embed = create_lottery_embed(lottery_author, lottery)
+    embed.description = "**Closed and waiting for evaluation**\n**!!No new guesses will count towards this lottery!!**\n\n" + embed.description
 
     await lottery_message.edit(embed=embed, components=None)
 
-async def handle_closing_lottery_message(message: disnake.Message, lottery_id: int, repeat: bool):
-  if not repeat:
-    embed = message.embeds[0]
-    embed.description = "**Closed and results were send**"
+async def handle_closing_lottery_message(bot: BaseAutoshardedBot, message: disnake.Message, lottery: dt_event_item_lottery_repo.DTEventItemLottery, repeat: bool):
+  lottery_author = await lottery.get_author(bot)
 
-    buttons = [disnake.ui.Button(label="Delete", emoji="♻️", custom_id=f"event_item_lottery:remove:{lottery_id}", style=disnake.ButtonStyle.red),
-               disnake.ui.Button(label="Repeat", emoji="🔂", custom_id=f"event_item_lottery:repeat:{lottery_id}", style=disnake.ButtonStyle.primary)]
+  if not repeat:
+    embed = create_lottery_embed(lottery_author, lottery)
+    embed.description = "**Closed and results were send**\n\n" + embed.description
+
+    buttons = [disnake.ui.Button(label="Delete", emoji="♻️", custom_id=f"event_item_lottery:remove:{lottery.id}", style=disnake.ButtonStyle.red),
+               disnake.ui.Button(label="Repeat", emoji="🔂", custom_id=f"event_item_lottery:repeat:{lottery.id}", style=disnake.ButtonStyle.primary)]
 
     await message.edit(embed=embed, components=buttons)
   else:
-    embed = message.embeds[0]
-    embed.description = "**Ended**"
+    embed = create_lottery_embed(lottery_author, lottery)
+    embed.description = "**Closed and results were send**\n\n" + embed.description
 
     await message.edit(embed=embed, components=None)
 
@@ -60,15 +95,8 @@ async def process_lottery_result(bot: BaseAutoshardedBot, lottery: dt_event_item
     await delete_lottery(bot, lottery)
     return
 
-  if lottery_message is not None:
-    await handle_closing_lottery_message(lottery_message, lottery.id, lottery.auto_repeat)
-
-  author = await lottery.get_author(bot)
-  if author is None:
-    author = await discord_objects_repo.get_discord_member(int(lottery.guild_id), int(lottery.author_id))
-    author_name = author.name
-  else:
-    author_name = author.display_name
+  # Get lottery author name
+  author_name = await get_lottery_author_name(bot, lottery)
 
   positions = list(result[1].keys())
   positions.sort(reverse=True)
@@ -96,16 +124,18 @@ async def process_lottery_result(bot: BaseAutoshardedBot, lottery: dt_event_item
       continue
 
     winner_names = []
-    for member_object in result[1][position]:
-      guess_author = await member_object.to_object(bot)
-      winner_ids.append(int(member_object.author_id))
+    for user_object in result[1][position]:
+      if isinstance(user_object, discord_objects.DiscordUser):
+        winner_ids.append(int(user_object.id))
+      elif isinstance(user_object, discord_objects.DiscordMember):
+        winner_ids.append(int(user_object.user_id))
+      else:
+        continue
+
+      guess_author = await user_object.to_object(bot)
 
       if guess_author is None:
-        guess_author = await discord_objects_repo.get_discord_member(int(lottery.guild_id), int(member_object.author_id))
-        if guess_author is not None:
-          guess_author_name = guess_author.name
-        else:
-          guess_author_name = member_object.name
+        guess_author_name = user_object.name
       else:
         guess_author_name = guess_author.display_name
       winner_names.append(string_manipulation.truncate_string(guess_author_name, 15))
@@ -136,9 +166,6 @@ async def process_lottery_result(bot: BaseAutoshardedBot, lottery: dt_event_item
         destination = await destination.send(final_string)
       await asyncio.sleep(0.005)
 
-    if lottery_message is not None and isinstance(destination, disnake.Message):
-      await destination.edit(components=disnake.ui.Button(label="Jump to lottery", url=lottery_message.jump_url, style=disnake.ButtonStyle.primary))
-
     if winner_ids and lottery.autoping_winners:
       mention_strings = [f"<@{uid}>" for uid in winner_ids]
 
@@ -147,6 +174,9 @@ async def process_lottery_result(bot: BaseAutoshardedBot, lottery: dt_event_item
         await destination.reply(final_string)
         await asyncio.sleep(0.05)
 
+  if lottery_message is not None and isinstance(destination, disnake.Message):
+    await destination.edit(components=disnake.ui.Button(label="Jump to lottery", url=lottery_message.jump_url, style=disnake.ButtonStyle.primary))
+
   if lottery.autoshow_guesses:
     for table in (await generate_guesses_tables(bot, lottery)):
       await destination.reply(f"```\n{table}\n```")
@@ -154,13 +184,27 @@ async def process_lottery_result(bot: BaseAutoshardedBot, lottery: dt_event_item
 
   # Close or repeat lottery
   if lottery.auto_repeat:
-    next_event_lottery = await dt_event_item_lottery_repo.get_next_event_item_lottery_by_constrained(int(lottery.author_id), int(lottery.guild_id))
-    if next_event_lottery is None:
-      await lottery.repeat()
-      await create_lottery(author or author_name, (await lottery.get_lotery_message(bot)) or destination, lottery, False)
+    author = await lottery.get_author(bot)
+
+    if author is not None:
+      next_event_lottery = await dt_event_item_lottery_repo.get_next_event_item_lottery_by_constrained(int(lottery.author_id), int(lottery.guild_id))
+      if next_event_lottery is None:
+        if lottery_message is not None:
+          await handle_closing_lottery_message(bot, lottery_message, lottery, True)
+
+        await lottery.repeat()
+        await create_lottery(author or author_name, (await lottery.get_lotery_message(bot)) or destination, lottery, False)
+      else:
+        if lottery_message is not None:
+          await handle_closing_lottery_message(bot, lottery_message, lottery, False)
+        await lottery.close()
     else:
+      if lottery_message is not None:
+        await handle_closing_lottery_message(bot, lottery_message, lottery, False)
       await lottery.close()
   else:
+    if lottery_message is not None:
+      await handle_closing_lottery_message(bot, lottery_message, lottery, False)
     await lottery.close()
 
 async def process_loterries(bot: BaseAutoshardedBot, year: Optional[int] = None, week: Optional[int] = None):
@@ -189,20 +233,8 @@ def get_lottery_buttons(lottery):
              disnake.ui.Button(label="Show participants", emoji="🧾", custom_id=f"event_item_lottery:show:{lottery.id}", style=disnake.ButtonStyle.blurple)]
   return buttons
 
-async def create_lottery(author: Union[str, disnake.Member], source_message: disnake.Message, lottery: dt_event_item_lottery_repo.DTEventItemLottery, replace_message: bool=False):
-  table_data = [(4, f"{string_manipulation.format_number(lottery.guessed_4_item_reward_amount)} {string_manipulation.truncate_string(lottery.guessed_4_reward_item_name, 20)}" if lottery.guessed_4_reward_item_name is not None and lottery.guessed_4_item_reward_amount > 0 else "*No Reward*"),
-                (3, f"{string_manipulation.format_number(lottery.guessed_3_item_reward_amount)} {string_manipulation.truncate_string(lottery.guessed_3_reward_item_name, 20)}" if lottery.guessed_3_reward_item_name is not None and lottery.guessed_3_item_reward_amount > 0 else "*No Reward*"),
-                (2, f"{string_manipulation.format_number(lottery.guessed_2_item_reward_amount)} {string_manipulation.truncate_string(lottery.guessed_2_reward_item_name, 20)}" if lottery.guessed_2_reward_item_name is not None and lottery.guessed_2_item_reward_amount > 0 else "*No Reward*"),
-                (1, f"{string_manipulation.format_number(lottery.guessed_1_item_reward_amount)} {string_manipulation.truncate_string(lottery.guessed_1_reward_item_name, 20)}" if lottery.guessed_1_reward_item_name is not None and lottery.guessed_1_item_reward_amount > 0 else "*No Reward*")]
-  lottery_table = table2ascii(["Guessed", "Reward"], table_data, alignments=[Alignment.RIGHT, Alignment.LEFT], first_col_heading=True)
-
-  next_year, next_week = dt_helpers.get_event_index(datetime.datetime.utcnow() + datetime.timedelta(days=7))
-
-  if isinstance(author, disnake.Member):
-    lottery_embed = disnake.Embed(title=f"Items guess lottery for event `{next_year} {next_week}` by {author.display_name}", description=f"```\n{lottery_table}\n```\nUse `/lottery guess create` to participate in lotteries", color=disnake.Color.blurple())
-    message_utils.add_author_footer(lottery_embed, author)
-  else:
-    lottery_embed = disnake.Embed(title=f"Items guess lottery for event `{next_year} {next_week}` by {author}", description=f"```\n{lottery_table}\n```\nUse `/lottery guess create` to participate in lotteries", color=disnake.Color.blurple())
+async def create_lottery(author: disnake.Member | disnake.User, source_message: disnake.Message, lottery: dt_event_item_lottery_repo.DTEventItemLottery, replace_message: bool=False):
+  lottery_embed = create_lottery_embed(author, lottery)
 
   if not replace_message:
     source_message = await source_message.reply(embed=lottery_embed)

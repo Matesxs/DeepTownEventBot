@@ -301,6 +301,7 @@ class Strings(metaclass=Formatable):
   lottery_button_listener_not_author = "You are not author of this lottery"
   lottery_already_created = "You already have lottery for next week created!"
   lottery_button_listener_invalid_command = "Invalid lottery message command received"
+  lottery_failed_to_get_author = "Failed to create lottery, failed to get author"
 
   lottery_create_description = "Create event items lotery for next event"
   lottery_create_split_rewards_param_description = "Split reward amounts between winners"

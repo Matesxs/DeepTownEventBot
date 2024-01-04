@@ -33,10 +33,13 @@ class DTEventItemLotteryGuess(database.base):
   member = relationship("DiscordMember", uselist=False, primaryjoin="and_(foreign(DTEventItemLotteryGuess.guild_id) == DiscordMember.guild_id, foreign(DTEventItemLotteryGuess.author_id) == DiscordMember.user_id)", viewonly=True)
   guild = relationship("DiscordGuild", uselist=False)
 
-  async def get_author(self, bot: BaseAutoshardedBot) -> Optional[disnake.Member]:
+  async def get_author(self, bot: BaseAutoshardedBot) -> Optional[disnake.Member | disnake.User]:
     guild = await self.guild.to_object(bot)
     if guild is None: return None
-    return await object_getters.get_or_fetch_member(guild, int(self.author_id))
+    author = await object_getters.get_or_fetch_member(guild, int(self.author_id))
+    if author is None:
+      author = await object_getters.get_or_fetch_user(bot, int(self.author_id))
+    return author
 
 class DTEventItemLottery(database.base):
   __tablename__ = "dt_event_item_lotteries"
@@ -91,10 +94,13 @@ class DTEventItemLottery(database.base):
     lotery_message = await object_getters.get_or_fetch_message(bot, channel, int(self.lottery_message_id))
     return lotery_message
 
-  async def get_author(self, bot: BaseAutoshardedBot) -> Optional[disnake.Member]:
+  async def get_author(self, bot: BaseAutoshardedBot) -> Optional[disnake.Member | disnake.User]:
     guild = await self.guild.to_object(bot)
     if guild is None: return None
-    return await object_getters.get_or_fetch_member(guild, int(self.author_id))
+    author = await object_getters.get_or_fetch_member(guild, int(self.author_id))
+    if author is None:
+      author = await object_getters.get_or_fetch_user(bot, int(self.author_id))
+    return author
 
   async def close(self):
     self.closed_at = datetime.datetime.utcnow()

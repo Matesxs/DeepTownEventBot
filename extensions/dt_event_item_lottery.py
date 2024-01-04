@@ -413,8 +413,13 @@ class DTEventItemLottery(Base_Cog):
         next_event_lottery = await dt_event_item_lottery_repo.get_next_event_item_lottery_by_constrained(int(lottery.author_id), int(lottery.guild_id))
         if next_event_lottery is None:
           message = await inter.original_message()
-          await lottery.repeat()
-          await items_lottery.create_lottery(lottery.member.name, message, lottery, False)
+
+          author = await lottery.get_author(self.bot)
+          if author is not None:
+            await lottery.repeat()
+            await items_lottery.create_lottery(author, message, lottery, False)
+          else:
+            await message_utils.generate_error_message(inter, Strings.lottery_failed_to_get_author)
         else:
           await message_utils.generate_error_message(inter, Strings.lottery_already_created)
       else:

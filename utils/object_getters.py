@@ -33,3 +33,12 @@ async def get_or_fetch_member(source: Union[disnake.Guild, commands.AutoShardedB
     users = source.get_all_members()
     user = disnake.utils.get(users, id=member_id)
   return user
+
+async def get_or_fetch_user(source: commands.AutoShardedBot, user_id: int) -> Optional[disnake.User]:
+  user = source.get_user(user_id)
+  if user is None:
+    try:
+      user = await source.fetch_user(user_id)
+    except:
+      return None
+  return user

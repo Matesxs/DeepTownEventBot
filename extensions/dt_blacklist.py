@@ -32,7 +32,7 @@ class DTBlacklist(Base_Cog):
       return False
 
     await dt_blacklist_repo.create_blacklist_item(block_type, entity_id, subject_name)
-    await asyncio.sleep(0.1)
+    await asyncio.sleep(1.0)
 
     if block_type == dt_blacklist_repo.BlacklistType.USER:
       await dt_user_repo.remove_user(entity_id)

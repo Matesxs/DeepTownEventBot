@@ -172,7 +172,7 @@ class DTEventItemLottery(Base_Cog):
 
       embed.add_field(name="Created", value=f"{lottery.created_at.day}.{lottery.created_at.month}.{lottery.created_at.year}")
       embed.add_field(name="Resolved", value=f"{lottery.closed_at.day}.{lottery.closed_at.month}.{lottery.closed_at.year}" if lottery.closed_at is not None else "Never")
-      embed.add_field(name="Closed", value="Yes" if end_date < datetime.datetime.utcnow() else "No")
+      embed.add_field(name="Closed", value="Yes" if start_date < datetime.datetime.utcnow() else "No")
 
       embed.add_field(name="For Event", value=f"{lottery.event_specification.event_year} {lottery.event_specification.event_week}")
       embed.add_field(name="\u200b", value="\u200b")

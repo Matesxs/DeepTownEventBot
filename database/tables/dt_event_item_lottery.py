@@ -101,6 +101,7 @@ class DTEventItemLottery(database.base):
     event_specification = await event_participation_repo.get_or_create_event_specification(next_year, next_week)
 
     self.event_id = event_specification.event_id
+    self.created_at = datetime.datetime.utcnow()
     self.closed_at = None
 
     await database.run_commit()

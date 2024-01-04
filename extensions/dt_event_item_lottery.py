@@ -5,13 +5,14 @@ from typing import Optional
 from disnake.ext import commands, tasks
 from Levenshtein import ratio
 import math
+from table2ascii import table2ascii, Alignment
 
 from config import cooldowns, permissions
 from config.strings import Strings
 from config import config
 from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
-from utils import message_utils, dt_autocomplete, items_lottery, dt_helpers
+from utils import message_utils, dt_autocomplete, items_lottery, dt_helpers, string_manipulation
 import database
 from database import dt_items_repo, dt_event_item_lottery_repo, run_commit, event_participation_repo, automatic_lottery_guesses_whitelist_repo
 from features.views import confirm_view
@@ -139,6 +140,47 @@ class DTEventItemLottery(Base_Cog):
       return await message_utils.generate_error_message(inter, Strings.lottery_already_created)
 
     await items_lottery.create_lottery(inter.author, orig_message, lottery, True)
+
+  @lottery_command.sub_command(name="list", description=Strings.lottery_list_description)
+  @commands.guild_only()
+  @cooldowns.long_cooldown
+  async def lottery_list(self, inter: disnake.CommandInteraction):
+    await inter.response.defer(with_message=True, ephemeral=True)
+
+    lotteries = await dt_event_item_lottery_repo.get_lotteries_in_guild(inter.guild_id)
+    if not lotteries:
+      return await message_utils.generate_error_message(inter, Strings.lottery_list_no_lotteries)
+
+    lottery_pages = []
+    for lottery in lotteries:
+      table_data = [(4, f"{string_manipulation.format_number(lottery.guessed_4_item_reward_amount)} {string_manipulation.truncate_string(lottery.guessed_4_reward_item_name, 20)}" if lottery.guessed_4_reward_item_name is not None and lottery.guessed_4_item_reward_amount > 0 else "*No Reward*"),
+                    (3, f"{string_manipulation.format_number(lottery.guessed_3_item_reward_amount)} {string_manipulation.truncate_string(lottery.guessed_3_reward_item_name, 20)}" if lottery.guessed_3_reward_item_name is not None and lottery.guessed_3_item_reward_amount > 0 else "*No Reward*"),
+                    (2, f"{string_manipulation.format_number(lottery.guessed_2_item_reward_amount)} {string_manipulation.truncate_string(lottery.guessed_2_reward_item_name, 20)}" if lottery.guessed_2_reward_item_name is not None and lottery.guessed_2_item_reward_amount > 0 else "*No Reward*"),
+                    (1, f"{string_manipulation.format_number(lottery.guessed_1_item_reward_amount)} {string_manipulation.truncate_string(lottery.guessed_1_reward_item_name, 20)}" if lottery.guessed_1_reward_item_name is not None and lottery.guessed_1_item_reward_amount > 0 else "*No Reward*")]
+      lottery_table = table2ascii(["Guessed", "Reward"], table_data, alignments=[Alignment.RIGHT, Alignment.LEFT], first_col_heading=True)
+
+      embed = disnake.Embed(title=f"Lottery by {lottery.member.name}", description=f"```\n{lottery_table}\n```", color=disnake.Color.dark_blue())
+      message_utils.add_author_footer(embed, inter.author)
+
+      lottery_message = await lottery.get_lotery_message(self.bot)
+      if lottery_message is not None:
+        embed.url = lottery_message.jump_url
+
+      start_date, end_date = dt_helpers.event_index_to_date_range(lottery.event_specification.event_year, lottery.event_specification.event_week)
+
+      embed.add_field(name="Created", value=f"{lottery.created_at.day}.{lottery.created_at.month}.{lottery.created_at.year}")
+      embed.add_field(name="Resolved", value=f"{lottery.closed_at.day}.{lottery.closed_at.month}.{lottery.closed_at.year}" if lottery.closed_at is not None else "Never")
+      embed.add_field(name="Closed", value="Yes" if end_date < datetime.datetime.utcnow() else "No")
+
+      embed.add_field(name="For Event", value=f"{lottery.event_specification.event_year} {lottery.event_specification.event_week}")
+      embed.add_field(name="\u200b", value="\u200b")
+      embed.add_field(name="Event span", value=f"{start_date.day}.{start_date.month}.{start_date.year} - {end_date.day}.{end_date.month}.{end_date.year}")
+
+      lottery_pages.append(embed)
+      await asyncio.sleep(0.05)
+
+    embed_view = EmbedView(inter.author, lottery_pages, invisible=True)
+    await embed_view.run(inter)
 
   @lottery_command.sub_command(name="update", description=Strings.lottery_update_description)
   @permissions.bot_developer()

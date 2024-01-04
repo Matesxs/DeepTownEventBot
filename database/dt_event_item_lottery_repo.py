@@ -54,6 +54,10 @@ async def get_active_lotteries(year: Optional[int] = None, week: Optional[int] =
     result = await run_query(select(DTEventItemLottery).join(event_participation_repo.EventSpecification).filter(and_(DTEventItemLottery.closed_at == None, or_(event_participation_repo.EventSpecification.event_year == year, event_participation_repo.EventSpecification.event_week == week))))
   return result.scalars().all()
 
+async def get_lotteries_in_guild(guild_id: int) -> List[DTEventItemLottery]:
+  result = await run_query(select(DTEventItemLottery).filter(DTEventItemLottery.guild_id == str(guild_id)).order_by(DTEventItemLottery.created_at.desc()))
+  return result.scalars().all()
+
 async def get_lotteries_closed_before_date(date: datetime.datetime) -> List[DTEventItemLottery]:
   result = await run_query(select(DTEventItemLottery).filter(DTEventItemLottery.closed_at <= date))
   return result.scalars().all()

@@ -308,6 +308,9 @@ class Strings(metaclass=Formatable):
   lottery_create_reward_item_amount_param_description = "Number of reward items for guessing {item_number} event items right"
   lottery_create_no_reward_set = "You set no reward items"
 
+  lottery_list_description = "List all lotteries on server"
+  lottery_list_no_lotteries = "No lotteries in guild"
+
   lottery_guess_create_description = "Make a guess for next event items"
   lottery_guess_remove_description = "Remove guess for next event items"
   lottery_guess_for_create_description = "Make a guess for next event items for someone else"

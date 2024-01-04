@@ -73,6 +73,9 @@ class DTEventItemLottery(database.base):
   guesses: Mapped[List[DTEventItemLotteryGuess]] = relationship("DTEventItemLotteryGuess", uselist=True, primaryjoin="and_(foreign(DTEventItemLottery.guild_id) == DTEventItemLotteryGuess.guild_id, foreign(DTEventItemLottery.event_id) == DTEventItemLotteryGuess.event_id)", viewonly=True)
   event_specification = relationship("EventSpecification", uselist=False)
 
+  def get_lottery_message_url(self):
+    return f"https://discord.com/channels/{self.guild_id}/{self.lottery_channel_id}/{self.lottery_message_id}"
+
   async def get_lotery_channel(self, bot: BaseAutoshardedBot) -> Optional[Union[disnake.TextChannel, disnake.Thread, disnake.VoiceChannel, disnake.PartialMessageable]]:
     if self.lottery_channel_id is None: return None
     guild = await self.guild.to_object(bot)

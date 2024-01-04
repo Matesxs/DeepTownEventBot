@@ -165,6 +165,8 @@ class DTEventItemLottery(Base_Cog):
       lottery_message = await lottery.get_lotery_message(self.bot)
       if lottery_message is not None:
         embed.url = lottery_message.jump_url
+      else:
+        embed.url = lottery.get_lottery_message_url()
 
       start_date, end_date = dt_helpers.event_index_to_date_range(lottery.event_specification.event_year, lottery.event_specification.event_week)
 

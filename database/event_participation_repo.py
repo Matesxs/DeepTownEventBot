@@ -140,6 +140,8 @@ async def get_event_participation_stats(guild_id: Optional[int]=None, user_id: O
                          .subquery()
 
   data = (await run_query(select(func.sum(distinc_amount_query.c.amount), func.avg(distinc_amount_query.c.amount), func.percentile_cont(0.5).within_group(distinc_amount_query.c.amount)))).one()
+  if data[0] is None and data[1] is None and data[2] is None:
+    return 0, 0, 0
 
   if ignore_zero_participation_average or ignore_zero_participation_median:
     additional_data = (await run_query(select(func.avg(distinc_amount_query.c.amount), func.percentile_cont(0.5).within_group(distinc_amount_query.c.amount))

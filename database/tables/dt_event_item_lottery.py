@@ -30,6 +30,7 @@ class DTEventItemLotteryGuess(database.base):
   guessed_lotery_items: Mapped[List[DTEventItemLotteryGuessedItem]] = relationship("DTEventItemLotteryGuessedItem", uselist=True)
   event_specification = relationship("EventSpecification", uselist=False)
   user = relationship("DiscordUser", uselist=False)
+  member = relationship("DiscordMember", uselist=False, primaryjoin="and_(foreign(DTEventItemLotteryGuess.guild_id) == DiscordMember.guild_id, foreign(DTEventItemLotteryGuess.author_id) == DiscordMember.user_id)", viewonly=True)
   guild = relationship("DiscordGuild", uselist=False)
 
   async def get_author(self, bot: BaseAutoshardedBot) -> Optional[disnake.Member]:

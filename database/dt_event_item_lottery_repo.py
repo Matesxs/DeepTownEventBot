@@ -141,8 +141,8 @@ async def get_results(lottery: DTEventItemLottery) -> Tuple[int, Optional[Dict[i
     if guessed_right == 0: continue
 
     if guessed_right not in results.keys():
-      results[guessed_right] = [guess.user]
+      results[guessed_right] = [guess.member]
     else:
-      results[guessed_right].append(guess.user)
+      results[guessed_right].append(guess.member)
 
   return len(guesses), results

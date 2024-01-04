@@ -96,13 +96,16 @@ async def process_lottery_result(bot: BaseAutoshardedBot, lottery: dt_event_item
       continue
 
     winner_names = []
-    for user in result[1][position]:
-      guess_author = await user.to_object(bot)
-      winner_ids.append(int(user.id))
+    for member_object in result[1][position]:
+      guess_author = await member_object.to_object(bot)
+      winner_ids.append(int(member_object.author_id))
 
       if guess_author is None:
-        guess_author = await discord_objects_repo.get_discord_member(int(lottery.guild_id), int(user.id))
-        guess_author_name = guess_author.name
+        guess_author = await discord_objects_repo.get_discord_member(int(lottery.guild_id), int(member_object.author_id))
+        if guess_author is not None:
+          guess_author_name = guess_author.name
+        else:
+          guess_author_name = member_object.name
       else:
         guess_author_name = guess_author.display_name
       winner_names.append(string_manipulation.truncate_string(guess_author_name, 15))

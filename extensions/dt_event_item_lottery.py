@@ -352,10 +352,11 @@ class DTEventItemLottery(Base_Cog):
       year, week = dt_helpers.get_event_index(datetime.datetime.utcnow() + datetime.timedelta(days=7))
       event_spec = await event_participation_repo.get_or_create_event_specification(year, week)
       already_existing_guess = await dt_event_item_lottery_repo.get_guess(message.guild.id, message.author.id, event_spec.event_id)
-      already_existing_guessed_names = [guessed_item.item_name for guessed_item in already_existing_guess.guessed_lotery_items]
 
-      if all([now_guessed_item_name in already_existing_guessed_names for now_guessed_item_name in item_names]) and len(already_existing_guessed_names) == len(item_names):
-        return
+      if already_existing_guess is not None:
+        already_existing_guessed_names = [guessed_item.item_name for guessed_item in already_existing_guess.guessed_lotery_items]
+        if all([now_guessed_item_name in already_existing_guessed_names for now_guessed_item_name in item_names]) and len(already_existing_guessed_names) == len(item_names):
+          return
 
       items_list_string = "\n".join([f"`{item_name}` - {confidence:.1f}% confidence" for item_name, confidence in deduplicated_data])
       prompt_string = f"Detected lottery guess\nAre these items correct and do you want to add them as a guess to lottery?\n\n**Guessed items:**\n{items_list_string}"

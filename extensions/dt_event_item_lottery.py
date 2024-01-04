@@ -457,7 +457,7 @@ class DTEventItemLottery(Base_Cog):
         await asyncio.sleep(0.1)
       logger.info(f"Cleared {len(lotteries_to_delete)} old closed lotteries")
 
-  @tasks.loop(time=datetime.time(hour=config.event_tracker.event_start_hour, minute=0, second=0))
+  @tasks.loop(time=datetime.time(hour=config.event_tracker.event_start_hour, minute=config.event_tracker.event_start_minute, second=0))
   async def notify_lottery_closed_task(self):
     current_datetime = datetime.datetime.utcnow()
 

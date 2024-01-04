@@ -68,7 +68,9 @@ def get_event_index(date:datetime.datetime):
   if date.month == 1 and week_number > 5:
     event_year -= 1
 
-  if date.weekday() < config.event_tracker.event_start_day or (date.weekday() == config.event_tracker.event_start_day and date.hour < config.event_tracker.event_start_hour):
+  if (date.weekday() < config.event_tracker.event_start_day or
+      (date.weekday() == config.event_tracker.event_start_day and date.hour < config.event_tracker.event_start_hour) or
+      (date.weekday() == config.event_tracker.event_start_day and date.hour == config.event_tracker.event_start_hour and date.minute < config.event_tracker.event_start_minute)):
     week_number -= 1
 
   if week_number <= 0:
@@ -79,7 +81,7 @@ def get_event_index(date:datetime.datetime):
 
 def event_index_to_date_range(year: int, week: int) -> Tuple[datetime.datetime, datetime.datetime]:
   date_string = f"{year}-{week}-4"
-  start_date = datetime.datetime.strptime(date_string, "%Y-%W-%w")
+  start_date = datetime.datetime.strptime(date_string, "%Y-%W-%w").replace(hour=config.event_tracker.event_start_hour, minute=config.event_tracker.event_start_minute)
   return start_date, start_date + datetime.timedelta(days=4)
 
 async def get_dt_guild_data(guild_id:int, update: bool=False) -> Optional[DTGuildData]:

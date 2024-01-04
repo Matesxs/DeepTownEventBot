@@ -46,6 +46,7 @@ tracker_limit_per_guild = 5
 # Dont change if you dont know what you are doing
 event_start_day = 3 # 0 - monday, 6 - sunday
 event_start_hour = 8
+event_start_minute = 0
 
 # Dont change if you dont know what you are doing
 announce_day_index = 0 # 0 - monday, 6 - sunday

@@ -74,7 +74,7 @@ def generate_help_pages(command_descriptors: List[CommandGroup], author: disnake
   pages = []
 
   for descriptor in command_descriptors:
-    title = f"{str(descriptor.name) if descriptor.name is not None else 'Free commands'} Help"
+    title = f"{string_manipulation.truncate_string(str(descriptor.name) if descriptor.name is not None else 'Free commands', 250)} Help"
     emb = disnake.Embed(title=title, colour=disnake.Color.green(), description=descriptor.description if descriptor.description is not None and descriptor.description != "-" else None)
     message_utils.add_author_footer(emb, author)
     commands_data = descriptor.commands
@@ -85,7 +85,7 @@ def generate_help_pages(command_descriptors: List[CommandGroup], author: disnake
       embed_len = len(emb)
       added_length = len(command_data.signature) + len(command_data.description)
 
-      if embed_len + added_length > 5000:
+      if embed_len + added_length > 6000:
         pages.append(emb)
         emb = disnake.Embed(title=title, colour=disnake.Color.green())
         message_utils.add_author_footer(emb, author)

@@ -130,7 +130,7 @@ class DTBlacklist(Base_Cog):
 
     blacklist_pages = []
     while blacklist_table_lines:
-      output_string, blacklist_table_lines = string_manipulation.add_string_until_length(blacklist_table_lines, 2000, "\n")
+      output_string, blacklist_table_lines = string_manipulation.add_string_until_length(blacklist_table_lines, 4000, "\n", 42)
       embed = disnake.Embed(title="Blacklist", description=f"```\n{output_string}\n```", color=disnake.Color.orange())
       message_utils.add_author_footer(embed, inter.author)
       blacklist_pages.append(embed)

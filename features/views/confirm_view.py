@@ -19,7 +19,7 @@ class ConfirmView(disnake.ui.View):
       return False
 
     timeout_timestamp = int((datetime.datetime.now() + datetime.timedelta(seconds=self.cstm_timeout)).timestamp())
-    prompt_embed = disnake.Embed(title="Confirmation prompt", description=string_manipulation.truncate_string(self.text + f"\n\nClosing <t:{timeout_timestamp}:R> (<t:{timeout_timestamp}:T>) and will be rejected", 4000).strip(), color=disnake.Color.dark_blue())
+    prompt_embed = disnake.Embed(title="Confirmation prompt", description=string_manipulation.truncate_string(self.text, 3000) + f"\n\nClosing <t:{timeout_timestamp}:R> (<t:{timeout_timestamp}:T>) and will be rejected", color=disnake.Color.dark_blue())
     message_utils.add_author_footer(prompt_embed, self.ctx.author)
 
     try:

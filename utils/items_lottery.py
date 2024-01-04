@@ -36,9 +36,7 @@ def create_lottery_embed(author: Optional[disnake.Member | disnake.User], lotter
 
   next_year, next_week = lottery.event_specification.event_year, lottery.event_specification.event_week
 
-  author_name = author.display_name if author is not None else "*Unknown*"
-
-  lottery_embed = disnake.Embed(title=f"Items guess lottery for event `{next_year} {next_week}` by {author_name}", description=f"```\n{lottery_table}\n```\nUse `/lottery guess create` to participate in lotteries", color=disnake.Color.blurple())
+  lottery_embed = disnake.Embed(title=f"Items guess lottery for event `{next_year} {next_week}` by {lottery.member.name}", description=f"```\n{lottery_table}\n```\nUse `/lottery guess create` to participate in lotteries", color=disnake.Color.blurple())
   if author is not None:
     message_utils.add_author_footer(lottery_embed, author)
   return lottery_embed

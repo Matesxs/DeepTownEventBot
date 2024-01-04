@@ -159,7 +159,7 @@ class DTEventItemLottery(Base_Cog):
                     (1, f"{string_manipulation.format_number(lottery.guessed_1_item_reward_amount)} {string_manipulation.truncate_string(lottery.guessed_1_reward_item_name, 20)}" if lottery.guessed_1_reward_item_name is not None and lottery.guessed_1_item_reward_amount > 0 else "*No Reward*")]
       lottery_table = table2ascii(["Guessed", "Reward"], table_data, alignments=[Alignment.RIGHT, Alignment.LEFT], first_col_heading=True)
 
-      embed = disnake.Embed(title=f"Lottery by {lottery.member.name}", description=f"```\n{lottery_table}\n```", color=disnake.Color.dark_blue())
+      embed = disnake.Embed(title=f"Lottery by {string_manipulation.truncate_string(lottery.member.name, 200)}", description=f"```\n{lottery_table}\n```", color=disnake.Color.dark_blue())
       message_utils.add_author_footer(embed, inter.author)
 
       lottery_message = await lottery.get_lotery_message(self.bot)

@@ -95,7 +95,7 @@ class DTDataInterface(Base_Cog):
     current_year, _ = dt_helpers.get_event_index(current_time)
 
     # Front page
-    guild_front_page = disnake.Embed(title=f"{string_manipulation.truncate_string(guild.name, 20)}", color=disnake.Color.dark_blue())
+    guild_front_page = disnake.Embed(title=f"{string_manipulation.truncate_string(guild.name, 200)}", color=disnake.Color.dark_blue())
     message_utils.add_author_footer(guild_front_page, inter.author)
     guild_front_page.add_field(name="ID", value=str(guild.id))
     guild_front_page.add_field(name="Level", value=str(guild.level))
@@ -114,11 +114,11 @@ class DTDataInterface(Base_Cog):
     member_table_strings = table2ascii(body=member_data, header=["ID", "Name", "Level", "Online"], alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.RIGHT, Alignment.LEFT]).split("\n")
     member_page_strings = []
     while member_table_strings:
-      data_string, member_table_strings = string_manipulation.add_string_until_length(member_table_strings, 3000, "\n")
+      data_string, member_table_strings = string_manipulation.add_string_until_length(member_table_strings, 4000, "\n", 42)
       member_page_strings.append(data_string)
 
     for member_page_string in member_page_strings:
-      member_page = disnake.Embed(title=f"{string_manipulation.truncate_string(guild.name, 20)} members", color=disnake.Color.dark_blue(), description=f"```\n{member_page_string}\n```")
+      member_page = disnake.Embed(title=f"{string_manipulation.truncate_string(guild.name, 200)} members", color=disnake.Color.dark_blue(), description=f"```\n{member_page_string}\n```")
       message_utils.add_author_footer(member_page, inter.author)
       guild_profile_lists.append(member_page)
 
@@ -126,7 +126,7 @@ class DTDataInterface(Base_Cog):
     all_time_total, all_time_average, all_time_median = await event_participation_repo.get_event_participation_stats(guild_id=guild.id, ignore_zero_participation_median=True)
     all_time_total_last_year, all_time_average_last_year, all_time_median_last_year = await event_participation_repo.get_event_participation_stats(guild_id=guild.id, year=current_year, ignore_zero_participation_median=True)
 
-    guild_event_participations_stats_page = disnake.Embed(title=f"{string_manipulation.truncate_string(guild.name, 20)} event participations stats", color=disnake.Color.dark_blue())
+    guild_event_participations_stats_page = disnake.Embed(title=f"{string_manipulation.truncate_string(guild.name, 200)} event participations stats", color=disnake.Color.dark_blue())
     message_utils.add_author_footer(guild_event_participations_stats_page, inter.author)
     guild_event_participations_stats_page.add_field(name="Total event participation", value=string_manipulation.format_number(all_time_total, 4), inline=False)
     guild_event_participations_stats_page.add_field(name="Average donate per event", value=string_manipulation.format_number(all_time_average, 4), inline=False)
@@ -144,8 +144,8 @@ class DTDataInterface(Base_Cog):
     event_best_contributors_table_strings = table2ascii(body=top_event_contributors_data, header=["No°", "Name", "Total", "Average", "Median"], alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.RIGHT, Alignment.RIGHT, Alignment.RIGHT], first_col_heading=True).split("\n")
 
     while event_best_contributors_table_strings:
-      data_string, event_best_contributors_table_strings = string_manipulation.add_string_until_length(event_best_contributors_table_strings, 3000, "\n")
-      best_event_contributors_page = disnake.Embed(title=f"{string_manipulation.truncate_string(guild.name, 20)} best event contributors", color=disnake.Color.dark_blue(), description=f"```\n{data_string}\n```")
+      data_string, event_best_contributors_table_strings = string_manipulation.add_string_until_length(event_best_contributors_table_strings, 4000, "\n", 42)
+      best_event_contributors_page = disnake.Embed(title=f"{string_manipulation.truncate_string(guild.name, 200)} best event contributors", color=disnake.Color.dark_blue(), description=f"```\n{data_string}\n```")
       message_utils.add_author_footer(best_event_contributors_page, inter.author)
       guild_profile_lists.append(best_event_contributors_page)
 
@@ -157,8 +157,8 @@ class DTDataInterface(Base_Cog):
     event_worst_contributors_table_strings = table2ascii(body=worst_event_contributors_data, header=["No°", "Name", "Total", "Average", "Median"], alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.RIGHT, Alignment.RIGHT, Alignment.RIGHT], first_col_heading=True).split("\n")
 
     while event_worst_contributors_table_strings:
-      data_string, event_worst_contributors_table_strings = string_manipulation.add_string_until_length(event_worst_contributors_table_strings, 3000, "\n")
-      worst_event_contributors_page = disnake.Embed(title=f"{string_manipulation.truncate_string(guild.name, 20)} worst event contributors", color=disnake.Color.dark_blue(), description=f"```\n{data_string}\n```")
+      data_string, event_worst_contributors_table_strings = string_manipulation.add_string_until_length(event_worst_contributors_table_strings, 4000, "\n", 42)
+      worst_event_contributors_page = disnake.Embed(title=f"{string_manipulation.truncate_string(guild.name, 200)} worst event contributors", color=disnake.Color.dark_blue(), description=f"```\n{data_string}\n```")
       message_utils.add_author_footer(worst_event_contributors_page, inter.author)
       guild_profile_lists.append(worst_event_contributors_page)
 
@@ -174,8 +174,8 @@ class DTDataInterface(Base_Cog):
 
     event_participations_strings = table2ascii(body=event_participations_data, header=["Year", "Week", "Top Member", "Top Donate", "Average"], alignments=[Alignment.RIGHT, Alignment.RIGHT, Alignment.LEFT, Alignment.RIGHT, Alignment.RIGHT]).split("\n")
     while event_participations_strings:
-      data_string, event_participations_strings = string_manipulation.add_string_until_length(event_participations_strings, 3000, "\n")
-      event_participation_page = disnake.Embed(title=f"{string_manipulation.truncate_string(guild.name, 20)} event participations", color=disnake.Color.dark_blue(), description=f"```\n{data_string}\n```")
+      data_string, event_participations_strings = string_manipulation.add_string_until_length(event_participations_strings, 4000, "\n", 42)
+      event_participation_page = disnake.Embed(title=f"{string_manipulation.truncate_string(guild.name, 200)} event participations", color=disnake.Color.dark_blue(), description=f"```\n{data_string}\n```")
       message_utils.add_author_footer(event_participation_page, inter.author)
       guild_profile_lists.append(event_participation_page)
 
@@ -205,12 +205,12 @@ class DTDataInterface(Base_Cog):
     event_participations_strings = table2ascii(body=event_participations_data, header=["Year", "Week", "Top Member", "Top Donate", "Average"], alignments=[Alignment.RIGHT, Alignment.RIGHT, Alignment.LEFT, Alignment.RIGHT, Alignment.RIGHT]).split("\n")
     event_participations_page_strings = []
     while event_participations_strings:
-      data_string, event_participations_strings = string_manipulation.add_string_until_length(event_participations_strings, 3000, "\n")
+      data_string, event_participations_strings = string_manipulation.add_string_until_length(event_participations_strings, 4000, "\n", 42)
       event_participations_page_strings.append(data_string)
 
     guild_participation_pages = []
     for event_participations_page_string in event_participations_page_strings:
-      event_participation_page = disnake.Embed(title=f"{string_manipulation.truncate_string(guild.name, 20)} event participations", color=disnake.Color.dark_blue(), description=f"```\n{event_participations_page_string}\n```")
+      event_participation_page = disnake.Embed(title=f"{string_manipulation.truncate_string(guild.name, 200)} event participations", color=disnake.Color.dark_blue(), description=f"```\n{event_participations_page_string}\n```")
       message_utils.add_author_footer(event_participation_page, inter.author)
       guild_participation_pages.append(event_participation_page)
 
@@ -235,7 +235,7 @@ class DTDataInterface(Base_Cog):
 
     standing_pages = []
     while standing_table_strings:
-      description, standing_table_strings = string_manipulation.add_string_until_length(standing_table_strings, 2000, "\n")
+      description, standing_table_strings = string_manipulation.add_string_until_length(standing_table_strings, 4000, "\n", 42)
 
       embed = disnake.Embed(title="Deep Town Guilds Leaderboard", color=disnake.Color.dark_blue(), description=f"```\n{description}\n```")
       message_utils.add_author_footer(embed, inter.author)
@@ -266,7 +266,7 @@ class DTDataInterface(Base_Cog):
     user_participations = []
     participation_pages_data = dt_report_generators.generate_participations_page_strings(all_participations)
     for participation_page_data in participation_pages_data:
-      participation_page = disnake.Embed(title=f"{string_manipulation.truncate_string(user.username, 20)} ({user.id}) event participations", description=f"```\n{participation_page_data}\n```", color=disnake.Color.dark_blue())
+      participation_page = disnake.Embed(title=f"{string_manipulation.truncate_string(user.username, 200)} event participations", description=f"```\n{participation_page_data}\n```", color=disnake.Color.dark_blue())
       message_utils.add_author_footer(participation_page, inter.author)
       user_participations.append(participation_page)
 
@@ -292,7 +292,7 @@ class DTDataInterface(Base_Cog):
     user_profile_lists = []
 
     # Front page
-    user_front_page = disnake.Embed(title=f"{string_manipulation.truncate_string(user.username, 20)}", color=disnake.Color.dark_blue())
+    user_front_page = disnake.Embed(title=f"{string_manipulation.truncate_string(user.username, 200)}", color=disnake.Color.dark_blue())
     message_utils.add_author_footer(user_front_page, inter.author)
     user_front_page.add_field(name="ID", value=str(user.id))
     user_front_page.add_field(name="Level", value=str(user.level))
@@ -303,7 +303,7 @@ class DTDataInterface(Base_Cog):
     user_profile_lists.append(user_front_page)
 
     # Buildings page
-    user_buildings_page = disnake.Embed(title=f"{string_manipulation.truncate_string(user.username, 20)} buildings", color=disnake.Color.dark_blue())
+    user_buildings_page = disnake.Embed(title=f"{string_manipulation.truncate_string(user.username, 200)} buildings", color=disnake.Color.dark_blue())
     message_utils.add_author_footer(user_buildings_page, inter.author)
     user_buildings_page.add_field(name="Mines", value=str(user.mines))
     user_buildings_page.add_field(name="Chemical mines", value=str(user.chem_mines))
@@ -319,7 +319,7 @@ class DTDataInterface(Base_Cog):
     all_time_total, all_time_average, all_time_median = await event_participation_repo.get_event_participation_stats(user_id=user.id, ignore_zero_participation_median=True)
     all_time_total_last_year, all_time_average_last_year, all_time_median_last_year = await event_participation_repo.get_event_participation_stats(user_id=user.id, year=current_year, ignore_zero_participation_median=True)
 
-    user_event_participations_stats_page = disnake.Embed(title=f"{string_manipulation.truncate_string(user.username, 20)} event participations stats", color=disnake.Color.dark_blue())
+    user_event_participations_stats_page = disnake.Embed(title=f"{string_manipulation.truncate_string(user.username, 200)} event participations stats", color=disnake.Color.dark_blue())
     message_utils.add_author_footer(user_event_participations_stats_page, inter.author)
     user_event_participations_stats_page.add_field(name="Total event participation", value=string_manipulation.format_number(all_time_total, 4), inline=False)
     user_event_participations_stats_page.add_field(name="Average donate", value=string_manipulation.format_number(all_time_average, 4), inline=False)
@@ -334,7 +334,7 @@ class DTDataInterface(Base_Cog):
     # Event participations
     participation_pages_data = dt_report_generators.generate_participations_page_strings(await event_participation_repo.get_event_participations(user_id=user.id))
     for participation_page_data in participation_pages_data:
-      participation_page = disnake.Embed(title=f"{string_manipulation.truncate_string(user.username, 20)} event participations", description=f"```\n{participation_page_data}\n```", color=disnake.Color.dark_blue())
+      participation_page = disnake.Embed(title=f"{string_manipulation.truncate_string(user.username, 200)} event participations", description=f"```\n{participation_page_data}\n```", color=disnake.Color.dark_blue())
       message_utils.add_author_footer(participation_page, inter.author)
       user_profile_lists.append(participation_page)
 
@@ -406,7 +406,7 @@ class DTDataInterface(Base_Cog):
     table_strings = table2ascii(["Event", "Items"], event_item_history_data, alignments=[Alignment.LEFT, Alignment.LEFT]).split("\n")
     pages = []
     while table_strings:
-      final_string, table_strings = string_manipulation.add_string_until_length(table_strings, 1500, "\n")
+      final_string, table_strings = string_manipulation.add_string_until_length(table_strings, 4000, "\n", 42)
 
       embed = disnake.Embed(title="Event item history", color=disnake.Color.dark_blue(), description=f"```\n{final_string}\n```")
       message_utils.add_author_footer(embed, inter.author)
@@ -432,7 +432,7 @@ class DTDataInterface(Base_Cog):
 
     pages = []
     while table_lines:
-      final_string, table_lines = string_manipulation.add_string_until_length(table_lines, 2000, "\n")
+      final_string, table_lines = string_manipulation.add_string_until_length(table_lines, 4000, "\n", 42)
 
       embed = disnake.Embed(title="Event item statistics" if year is None else f"Event statistics for `{year}`", color=disnake.Color.dark_blue(), description=f"```\n{final_string}\n```")
       message_utils.add_author_footer(embed, inter.author)

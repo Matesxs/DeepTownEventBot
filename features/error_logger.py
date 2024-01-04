@@ -40,7 +40,7 @@ def create_embed(command: str, cmd_type: command_utils.CommandTypes, args: str, 
     embed.add_field(name="Command type", value=cmd_type.name)
 
   if args:
-    embed.add_field(name="Args", value=args)
+    embed.add_field(name="Args", value=string_manipulation.truncate_string(args, 1000))
 
   embed.add_field(name="Autor", value=str(author))
 

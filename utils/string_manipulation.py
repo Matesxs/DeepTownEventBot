@@ -1,8 +1,10 @@
 import math
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Optional
 
-def add_string_until_length(strings:List[str], max_length:int, sep:str) -> Tuple[str, List[str]]:
+def add_string_until_length(strings:List[str], max_length:int, sep:str, max_connections: Optional[int] = None) -> Tuple[str, List[str]]:
   output = ""
+  connection_count = 0
+
   while strings:
     if len(strings[0]) > max_length:
       parts = split_to_parts(strings[0], max_length)
@@ -15,7 +17,11 @@ def add_string_until_length(strings:List[str], max_length:int, sep:str) -> Tuple
       break
 
     strings.pop(0)
+    connection_count += 1
     output = tmp_output
+
+    if max_connections is not None and connection_count >= max_connections:
+      break
   return output, strings
 
 def truncate_string(string: str, limit: int, ellipsis: str = "…", from_beginning: bool = False, strip: bool = True) -> str:

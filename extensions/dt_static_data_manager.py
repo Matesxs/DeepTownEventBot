@@ -73,7 +73,7 @@ class DTStaticDataManager(Base_Cog):
 
     pages = []
     while item_table_strings:
-      data_string, item_table_strings = string_manipulation.add_string_until_length(item_table_strings, 2000, "\n")
+      data_string, item_table_strings = string_manipulation.add_string_until_length(item_table_strings, 4000, "\n", 42)
       embed = disnake.Embed(title="Deep Town Items", description=f"```\n{data_string}\n```", color=disnake.Color.dark_blue())
       message_utils.add_author_footer(embed, inter.author)
       pages.append(embed)

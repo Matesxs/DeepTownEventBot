@@ -4,6 +4,7 @@ from typing import Union, Iterable, Any
 import datetime
 
 from config import config
+from utils import string_manipulation
 
 async def generate_error_message(ctx: Union[commands.Context, disnake.abc.Messageable, disnake.Message, disnake.MessageInteraction, disnake.ModalInteraction, disnake.ApplicationCommandInteraction], text: str):
   if hasattr(ctx, "channel") and hasattr(ctx, "guild"):
@@ -11,7 +12,7 @@ async def generate_error_message(ctx: Union[commands.Context, disnake.abc.Messag
       if not ctx.channel.permissions_for(ctx.guild.me).send_messages:
         return None
 
-  response_embed = disnake.Embed(color=disnake.Color.dark_red(), title=":x: | Error", description=text)
+  response_embed = disnake.Embed(color=disnake.Color.dark_red(), title=":x: | Error", description=string_manipulation.truncate_string(text, 4000))
   if isinstance(ctx, (disnake.ModalInteraction, disnake.ApplicationCommandInteraction, disnake.MessageInteraction)):
     return await ctx.send(embed=response_embed, ephemeral=True)
   elif isinstance(ctx, disnake.Message):
@@ -25,7 +26,7 @@ async def generate_success_message(ctx: Union[commands.Context, disnake.abc.Mess
       if not ctx.channel.permissions_for(ctx.guild.me).send_messages:
         return None
 
-  response_embed = disnake.Embed(color=disnake.Color.green(), title=":white_check_mark: | Success", description=text)
+  response_embed = disnake.Embed(color=disnake.Color.green(), title=":white_check_mark: | Success", description=string_manipulation.truncate_string(text, 4000))
   if isinstance(ctx, (disnake.ModalInteraction, disnake.ApplicationCommandInteraction, disnake.MessageInteraction)):
     return await ctx.send(embed=response_embed, ephemeral=True)
   elif isinstance(ctx, disnake.Message):

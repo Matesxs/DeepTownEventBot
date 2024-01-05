@@ -33,8 +33,9 @@ class ContextMock:
   async def send(self, *args):
     return await self.channel.send(*args)
 
-def create_embed(command: str, cmd_type: command_utils.CommandTypes, args: str, author: disnake.User, guild: Optional[disnake.Guild | str], jump_url: Optional[str], extra_fields: Dict[str, str] = None):
+def create_embed(command: str, cmd_type: command_utils.CommandTypes, error: Exception, args: str, author: disnake.User, guild: Optional[disnake.Guild | str], jump_url: Optional[str], extra_fields: Dict[str, str] = None):
   embed = disnake.Embed(title=f"Ignoring exception in {command}", color=0xFF0000)
+  embed.add_field(name="Error", value=type(error).__name__)
 
   if cmd_type != command_utils.CommandTypes.UNKNOWN_COMMAND:
     embed.add_field(name="Command type", value=cmd_type.name)
@@ -109,12 +110,12 @@ class ErrorLogger:
   def __init__(self, bot):
     self.bot = bot
 
-  async def handle_context_error(self, ctx, traceback):
+  async def handle_context_error(self, ctx, error, traceback):
     log_channel = self.bot.get_channel(config.base.log_channel_id)
     if log_channel is None: return
 
     parsed_context = await command_utils.parse_context(ctx)
-    embed = create_embed(parsed_context["command"], parsed_context["command_type"], parsed_context["args"][:1000], ctx.author, ctx.guild, parsed_context["url"])
+    embed = create_embed(parsed_context["command"], parsed_context["command_type"], error, parsed_context["args"][:1000], ctx.author, ctx.guild, parsed_context["url"])
 
     await log_channel.send(embed=embed)
 
@@ -145,12 +146,12 @@ class ErrorLogger:
     logger.error(output)
 
     if event == "on_application_command_autocomplete":
-      await self.handle_context_error(arg, output)
+      await self.handle_context_error(arg, error, output)
     else:
       log_channel = self.bot.get_channel(config.base.log_channel_id)
       if log_channel is None: return
 
-      embed = create_embed(cmd_type=command_utils.CommandTypes.UNKNOWN_COMMAND, command=event, args=args, author=author, guild=guild, jump_url=None)
+      embed = create_embed(error=error, cmd_type=command_utils.CommandTypes.UNKNOWN_COMMAND, command=event, args=args, author=author, guild=guild, jump_url=None)
       await log_channel.send(embed=embed)
 
       output = string_manipulation.split_to_parts(output, 1900)
@@ -174,4 +175,4 @@ class ErrorLogger:
         logger.warning(f"Database rollback")
         session.rollback()
 
-      await self.handle_context_error(ctx, output)
+      await self.handle_context_error(ctx, error, output)

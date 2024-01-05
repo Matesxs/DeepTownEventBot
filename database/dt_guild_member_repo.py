@@ -20,7 +20,10 @@ async def create_dummy_dt_guild_member(user_id: int, guild_id: int) -> Optional[
     if (await create_dummy_dt_user(user_id)) is None:
       return None
 
-    item = DTGuildMember(dt_user_id=user_id, dt_guild_id=guild_id, current_member=False)
+    # Remove all other memberships asociated with this used id
+    await run_query(delete(DTGuildMember).filter(DTGuildMember.dt_guild_id != guild_id, DTGuildMember.dt_user_id == user_id), commit=True)
+
+    item = DTGuildMember(dt_user_id=user_id, dt_guild_id=guild_id)
     await add_item(item)
 
   return item

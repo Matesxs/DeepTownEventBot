@@ -109,6 +109,25 @@ class ErrorLogger:
   def __init__(self, bot):
     self.bot = bot
 
+  async def handle_context_error(self, ctx, traceback):
+    log_channel = self.bot.get_channel(config.base.log_channel_id)
+    if log_channel is None: return
+
+    parsed_context = await command_utils.parse_context(ctx)
+    embed = create_embed(parsed_context["command"], parsed_context["command_type"], parsed_context["args"][:1000], ctx.author, ctx.guild, parsed_context["url"])
+
+    await log_channel.send(embed=embed)
+
+    output = string_manipulation.split_to_parts(traceback, 1900)
+    if log_channel is not None:
+      for message in output:
+        await log_channel.send(f"```\n{message}\n```")
+
+    try:
+      await message_utils.generate_error_message(ctx, Strings.error_unknown_error)
+    except:
+      pass
+
   async def default_error_handling(self, event: str, args, _):
     arg = args[0]
     error = sys.exc_info()[1]
@@ -125,16 +144,19 @@ class ErrorLogger:
     output = "".join(traceback.format_exception(type(error), error, error.__traceback__))
     logger.error(output)
 
-    log_channel = self.bot.get_channel(config.base.log_channel_id)
-    if log_channel is None: return
+    if event == "on_application_command_autocomplete":
+      await self.handle_context_error(arg, output)
+    else:
+      log_channel = self.bot.get_channel(config.base.log_channel_id)
+      if log_channel is None: return
 
-    embed = create_embed(cmd_type=command_utils.CommandTypes.UNKNOWN_COMMAND, command=event, args=args, author=author, guild=guild, jump_url=None)
-    await log_channel.send(embed=embed)
+      embed = create_embed(cmd_type=command_utils.CommandTypes.UNKNOWN_COMMAND, command=event, args=args, author=author, guild=guild, jump_url=None)
+      await log_channel.send(embed=embed)
 
-    output = string_manipulation.split_to_parts(output, 1900)
-    if log_channel is not None:
-      for message in output:
-        await log_channel.send(f"```\n{message}\n```")
+      output = string_manipulation.split_to_parts(output, 1900)
+      if log_channel is not None:
+        for message in output:
+          await log_channel.send(f"```\n{message}\n```")
 
     return True
 
@@ -152,20 +174,4 @@ class ErrorLogger:
         logger.warning(f"Database rollback")
         session.rollback()
 
-      log_channel = self.bot.get_channel(config.base.log_channel_id)
-      if log_channel is None: return
-
-      parsed_context = await command_utils.parse_context(ctx)
-      embed = create_embed(parsed_context["command"], parsed_context["command_type"], parsed_context["args"][:1000], ctx.author, ctx.guild, parsed_context["url"])
-
-      await log_channel.send(embed=embed)
-
-      output = string_manipulation.split_to_parts(output, 1900)
-      if log_channel is not None:
-        for message in output:
-          await log_channel.send(f"```\n{message}\n```")
-
-      try:
-        await message_utils.generate_error_message(ctx, Strings.error_unknown_error)
-      except:
-        pass
+      await self.handle_context_error(ctx, output)

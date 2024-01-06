@@ -28,10 +28,8 @@ logger = setup_custom_logger(__name__)
 plt.style.use("cyberpunk")
 
 async def send_stats(inter: disnake.CommandInteraction, user_data = None, guild_data = None):
-  files = []
-
-  if user_data is not None:
-    dataframe = pd.DataFrame(user_data, columns=["date", "active", "all"], index=None)
+  def process_data_to_dataframe(data):
+    dataframe = pd.DataFrame(data, columns=["date", "active", "all"], index=None)
 
     dataframe = dataframe.set_index(pd.DatetimeIndex(dataframe["date"], name="date")).drop("date", axis=1)
     dataframe = dataframe.resample("D").mean().interpolate(limit_direction="backward")
@@ -39,6 +37,12 @@ async def send_stats(inter: disnake.CommandInteraction, user_data = None, guild_
     dataframe["all"] = dataframe["all"].round().astype(int)
 
     dataframe.reset_index(inplace=True)
+    return dataframe
+
+  files = []
+
+  if user_data is not None:
+    dataframe = process_data_to_dataframe(user_data)
 
     fig = plt.figure()
     plt.title("User statistics")
@@ -82,14 +86,7 @@ async def send_stats(inter: disnake.CommandInteraction, user_data = None, guild_
     files.append(disnake.File(bio, filename="user_graph.png"))
 
   if guild_data is not None:
-    dataframe = pd.DataFrame(guild_data, columns=["date", "active", "all"], index=None)
-
-    dataframe = dataframe.set_index(pd.DatetimeIndex(dataframe["date"], name="date")).drop("date", axis=1)
-    dataframe = dataframe.resample("D").mean().interpolate(limit_direction="backward")
-    dataframe["active"] = dataframe["active"].round().astype(int)
-    dataframe["all"] = dataframe["all"].round().astype(int)
-
-    dataframe.reset_index(inplace=True)
+    dataframe = process_data_to_dataframe(guild_data)
 
     fig = plt.figure()
     plt.title("Guild statistics")

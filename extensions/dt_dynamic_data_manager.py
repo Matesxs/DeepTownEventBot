@@ -231,7 +231,14 @@ class DTDynamicDataManager(Base_Cog):
       for row_idx, (_, row) in enumerate(dataframe.iterrows()):
         try:
           user_id = int(row["user_id"])
-          ammount = int(row["amount"])
+
+          if "amount" in row.keys():
+            ammount = int(row["amount"])
+          elif "donate" in row.keys():
+            ammount = int(row["donate"])
+          else:
+            logger.warning("Donate amount not found")
+            break
 
           if "week" in row.keys() and "year" in row.keys():
             week = int(row["week"])
@@ -252,7 +259,7 @@ class DTDynamicDataManager(Base_Cog):
             logger.warning("Invalid event identifier")
             break
 
-          member = await dt_guild_member_repo.create_dummy_dt_guild_member(user_id, guild_id)
+          member = await dt_guild_member_repo.create_dummy_dt_guild_member(user_id, guild_id, year, week, ammount)
           if member is None:
             continue
 

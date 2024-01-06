@@ -5,8 +5,12 @@ from sqlalchemy import func, and_, select, or_, text
 from database import run_query, run_commit, add_item
 from database.tables.event_participation import EventParticipation, EventSpecification
 from database.dt_guild_member_repo import get_and_update_dt_guild_members, create_dummy_dt_guild_member
+from database.dt_member_criteria import have_participation_elsewhere
 from database import dt_user_repo, dt_guild_repo, dt_guild_member_repo
 from utils import dt_helpers
+from utils.logger import setup_custom_logger
+
+logger = setup_custom_logger(__name__)
 
 async def get_event_specification(year: int, week: int) -> Optional[EventSpecification]:
   result = await run_query(select(EventSpecification).filter(EventSpecification.event_year == year, EventSpecification.event_week == week))
@@ -210,6 +214,11 @@ async def remove_event_participations(guild_id: int, event_year: int, event_week
 async def get_and_update_event_participation(user_id: int, guild_id: int, event_year: int, event_week: int, participation_amount: int) -> Optional[EventParticipation]:
   item = await get_event_participation(user_id, guild_id, event_year, event_week)
   if item is None:
+    # If user have participation somewhere else (changed guild), skip him
+    if await have_participation_elsewhere(user_id, guild_id, event_year, event_week, participation_amount):
+      # logger.info(f"Skipped creation of participation in {event_year} {event_week} for user {user_id} in guild {guild_id}")
+      return None
+
     if (await create_dummy_dt_guild_member(user_id, guild_id)) is None:
       return None
 
@@ -223,11 +232,11 @@ async def get_and_update_event_participation(user_id: int, guild_id: int, event_
   return item
 
 async def generate_or_update_event_participations(guild_data: dt_helpers.DTGuildData) -> Optional[List[EventParticipation]]:
-  if (await get_and_update_dt_guild_members(guild_data)) is None:
-    return None
-
   event_year, event_week = dt_helpers.get_event_index(datetime.datetime.utcnow())
   prev_event_year, prev_event_week = dt_helpers.get_event_index(datetime.datetime.utcnow() - datetime.timedelta(days=7))
+
+  if (await get_and_update_dt_guild_members(guild_data, event_year, event_week)) is None:
+    return None
 
   participation_amounts = [p.last_event_contribution for p in guild_data.players]
   prev_event_participations = await get_event_participations(guild_id=guild_data.id, year=prev_event_year, week=prev_event_week)

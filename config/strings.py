@@ -8,6 +8,7 @@ class Strings(metaclass=Formatable):
   discord_cant_send_message_to_channel = "Cant send messages to channel `{channel_name}`"
   discord_cant_send_files_to_channel = "Cant send files to channel `{channel_name}`"
   unexpected_action = "You shouldn't be able to do this!"
+  work_in_progress = "WIP, check this function later"
 
   # Help
   help_description = "Show all commands and help for them"
@@ -214,10 +215,16 @@ class Strings(metaclass=Formatable):
   public_interface_event_stats_no_stats = "No statistics available"
 
   public_interface_event_leaderboard_users_description = "Show leaderboard of participants in specific event"
-
   public_interface_event_leaderboard_guilds_description = "Show leaderboard of guilds in specific event"
-
   public_interface_event_leaderboard_limit_param_description = "Number results to display"
+
+  public_interface_stats_activity_users_description = "Show Deep Town statistics about users"
+  public_interface_stats_activity_guilds_description = "Show Deep Town statistics about guilds"
+  public_interface_stats_activity_both_description = "Show Deep Town statistics about users and guilds"
+
+  public_interface_stats_activity_no_graphs = "No graphs generated"
+
+  public_interface_stats_no_data_found = "No data available"
 
   public_interface_delete_bot_message_invalid_message = "This is not message of this bot!"
 

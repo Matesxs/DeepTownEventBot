@@ -7,6 +7,12 @@ import humanize
 from table2ascii import table2ascii, Alignment
 import sqlalchemy
 from typing import Optional
+import io
+import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+import matplotlib.ticker as mticker
+import mplcyberpunk
 
 from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
@@ -14,10 +20,115 @@ from utils.humanize_wrapper import hum_naturaltime
 from config import cooldowns, Strings
 from utils import dt_helpers, dt_report_generators, message_utils, string_manipulation, dt_autocomplete
 from features.views.paginator import EmbedView
-from database import event_participation_repo, dt_user_repo, dt_guild_repo, dt_guild_member_repo, dt_items_repo
+from database import event_participation_repo, dt_user_repo, dt_guild_repo, dt_guild_member_repo, dt_items_repo, dt_statistics_repo
 from features.views.data_selector import DataSelector
 
 logger = setup_custom_logger(__name__)
+
+plt.style.use("cyberpunk")
+
+async def send_stats(inter: disnake.CommandInteraction, user_data = None, guild_data = None):
+  files = []
+
+  if user_data is not None:
+    dataframe = pd.DataFrame(user_data, columns=["date", "active", "all"], index=None)
+
+    dataframe = dataframe.set_index(pd.DatetimeIndex(dataframe["date"], name="date")).drop("date", axis=1)
+    dataframe = dataframe.resample("D").mean().interpolate(limit_direction="backward")
+    dataframe["active"] = dataframe["active"].round().astype(int)
+    dataframe["all"] = dataframe["all"].round().astype(int)
+
+    dataframe.reset_index(inplace=True)
+
+    fig = plt.figure()
+    plt.title("User statistics")
+    plt.ylabel("Users")
+
+    ax1 = plt.subplot()
+    ax2 = ax1.twinx()
+    ax1.grid(False)
+    ax2.grid(False)
+
+    plot1 = ax2.plot(dataframe.date, dataframe.active, label="Active Users", marker="o", color="#f851b7")
+    plot2 = ax1.bar(dataframe.date, dataframe["all"], width=0.8, label="All Users", color="#07e6ec", edgecolor="#07e6ec")
+
+    mplcyberpunk.make_lines_glow(ax2)
+    mplcyberpunk.add_glow_effects(ax1)
+
+    ax1.set_xticks(ax1.get_xticks(), ax1.get_xticklabels(), rotation=15, ha='right')
+    ax1.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
+    ax1.xaxis.set_major_locator(mticker.MaxNLocator(nbins=5, prune='both'))
+
+    ax1.set_ylim(dataframe["all"].values.min(), dataframe["all"].values.max())
+
+    ax1.tick_params(axis='x')
+    ax1.tick_params(axis='y', colors=plot2.patches[-1].get_facecolor())
+    ax2.tick_params(axis='y', colors=plot1[-1].get_color())
+    ax2.get_xaxis().set_visible(False)
+
+    fig.legend(labels=["All Users", "Active Users"])
+
+    bio = io.BytesIO()
+    plt.savefig(bio, transparent=True)
+
+    plt.close(plt.gcf())
+    plt.clf()
+
+    bio.seek(0)
+    files.append(disnake.File(bio, filename="user_graph.png"))
+
+  if guild_data is not None:
+    dataframe = pd.DataFrame(guild_data, columns=["date", "active", "all"], index=None)
+
+    dataframe = dataframe.set_index(pd.DatetimeIndex(dataframe["date"], name="date")).drop("date", axis=1)
+    dataframe = dataframe.resample("D").mean().interpolate(limit_direction="backward")
+    dataframe["active"] = dataframe["active"].round().astype(int)
+    dataframe["all"] = dataframe["all"].round().astype(int)
+
+    dataframe.reset_index(inplace=True)
+
+    fig = plt.figure()
+    plt.title("Guild statistics")
+    plt.ylabel("Guilds")
+
+    ax1 = plt.subplot()
+    ax2 = ax1.twinx()
+    ax1.grid(False)
+    ax2.grid(False)
+
+    plot1 = ax2.plot(dataframe.date, dataframe.active, label="Active Users", marker="o", color="#f851b7")
+    plot2 = ax1.bar(dataframe.date, dataframe["all"], width=0.8, label="All Users", color="#07e6ec", edgecolor="#07e6ec")
+
+    mplcyberpunk.make_lines_glow(ax2)
+    mplcyberpunk.add_glow_effects(ax1)
+
+    ax1.set_xticks(ax1.get_xticks(), ax1.get_xticklabels(), rotation=15, ha='right')
+    ax1.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
+    ax1.xaxis.set_major_locator(mticker.MaxNLocator(nbins=5, prune='both'))
+
+    ax1.set_ylim(dataframe["all"].values.min(), dataframe["all"].values.max())
+
+    ax1.tick_params(axis='x')
+    ax1.tick_params(axis='y', colors=plot2.patches[-1].get_facecolor())
+    ax2.tick_params(axis='y', colors=plot1[-1].get_color())
+    ax2.get_xaxis().set_visible(False)
+
+    fig.legend(labels=["All Guilds", "Active Guilds"])
+
+    bio = io.BytesIO()
+    plt.savefig(bio, transparent=True)
+
+    plt.close(plt.gcf())
+    plt.clf()
+
+    bio.seek(0)
+    files.append(disnake.File(bio, filename="guild_graph.png"))
+
+  if files:
+    for file in files:
+      await inter.send(file=file)
+  else:
+    await message_utils.generate_error_message(inter, Strings.public_interface_stats_activity_no_graphs)
 
 class DTDataInterface(Base_Cog):
   def __init__(self, bot):
@@ -500,6 +611,49 @@ class DTDataInterface(Base_Cog):
     while participant_data_table_strings:
       data_string, participant_data_table_strings = string_manipulation.add_string_until_length(participant_data_table_strings, 1900, "\n")
       await inter.send(f"```\n{data_string}\n```")
+
+  @commands.slash_command(name="stats")
+  async def stats_commands(self, inter: disnake.CommandInteraction):
+    pass
+
+  @stats_commands.sub_command_group(name="activity")
+  @cooldowns.default_cooldown
+  async def activity_stats_commands(self, inter: disnake.CommandInteraction):
+    await inter.response.defer(with_message=True)
+
+    if inter.guild is not None:
+      if not inter.channel.permissions_for(inter.guild.me).attach_files:
+        return await message_utils.generate_error_message(inter, Strings.discord_cant_send_files_to_channel(channel_name=inter.channel.name))
+
+  @activity_stats_commands.sub_command(name="users", description=Strings.public_interface_stats_activity_users_description)
+  async def active_user_statistics(self, inter: disnake.CommandInteraction,
+                                   days_back: int = commands.Param(default=365, min_value=10, max_value=730)):
+    statistics_data = await dt_statistics_repo.get_active_user_statistics(datetime.datetime.utcnow() - datetime.timedelta(days=days_back))
+    if not statistics_data:
+      return await message_utils.generate_error_message(inter, Strings.public_interface_stats_no_data_found)
+
+    await send_stats(inter, user_data=statistics_data)
+
+  @activity_stats_commands.sub_command(name="guilds", description=Strings.public_interface_stats_activity_guilds_description)
+  async def active_guild_statistics(self, inter: disnake.CommandInteraction,
+                                    days_back: int = commands.Param(default=365, min_value=10, max_value=730)):
+    statistics_data = await dt_statistics_repo.get_active_guild_statistics(datetime.datetime.utcnow() - datetime.timedelta(days=days_back))
+    if not statistics_data:
+      return await message_utils.generate_error_message(inter, Strings.public_interface_stats_no_data_found)
+
+    await send_stats(inter, guild_data=statistics_data)
+
+  @activity_stats_commands.sub_command(name="both", description=Strings.public_interface_stats_activity_both_description)
+  async def active_both_statistics(self, inter: disnake.CommandInteraction,
+                                   days_back: int = commands.Param(default=365, min_value=10, max_value=730)):
+
+    statistics_guild_data = await dt_statistics_repo.get_active_guild_statistics(datetime.datetime.utcnow() - datetime.timedelta(days=days_back))
+    statistics_user_data = await dt_statistics_repo.get_active_user_statistics(datetime.datetime.utcnow() - datetime.timedelta(days=days_back))
+
+    if not statistics_guild_data or not statistics_user_data:
+      return await message_utils.generate_error_message(inter, Strings.public_interface_stats_no_data_found)
+
+    await send_stats(inter, user_data=statistics_user_data, guild_data=statistics_guild_data)
 
 def setup(bot):
   bot.add_cog(DTDataInterface(bot))

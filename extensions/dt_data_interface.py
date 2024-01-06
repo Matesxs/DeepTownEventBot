@@ -39,95 +39,53 @@ async def send_stats(inter: disnake.CommandInteraction, user_data = None, guild_
     dataframe.reset_index(inplace=True)
     return dataframe
 
+  def generate_graph_file(data, title: str, ylabel: str, all_label: str, active_label: str, filename: str):
+    dataframe = process_data_to_dataframe(data)
+
+    fig = plt.figure()
+    plt.title(title)
+    plt.ylabel(ylabel)
+
+    ax1 = plt.subplot()
+    ax2 = ax1.twinx()
+    ax1.grid(False)
+    ax2.grid(False)
+
+    plot1 = ax1.bar(dataframe.date, dataframe["all"], width=0.8, color="#07e6ec", edgecolor="#07e6ec")
+    plot2 = ax2.plot(dataframe.date, dataframe.active, marker="o", color="#f851b7")
+    mplcyberpunk.make_lines_glow(ax2)
+    mplcyberpunk.add_glow_effects(ax1)
+
+    ax1.set_xticks(ax1.get_xticks(), ax1.get_xticklabels(), rotation=20, ha='right')
+    ax1.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
+    ax1.xaxis.set_major_locator(mticker.MaxNLocator(nbins=6, integer=True))
+    ax1.yaxis.set_major_locator(mticker.MaxNLocator(nbins=15, integer=True))
+    ax1.yaxis.set_major_formatter(mticker.ScalarFormatter())
+    ax2.yaxis.set_major_locator(mticker.MaxNLocator(nbins=15, integer=True))
+    ax2.yaxis.set_major_formatter(mticker.ScalarFormatter())
+    ax1.tick_params(axis='y', colors=plot1.patches[-1].get_facecolor())
+    ax2.tick_params(axis='y', colors=plot2[-1].get_color())
+    ax2.get_xaxis().set_visible(False)
+    ax1.set_ylim(dataframe["all"].values.min(), dataframe["all"].values.max())
+
+    fig.legend(labels=[all_label, active_label])
+
+    bio = io.BytesIO()
+    plt.savefig(bio, transparent=True)
+
+    plt.close(plt.gcf())
+    plt.clf()
+
+    bio.seek(0)
+    return disnake.File(bio, filename=filename)
+
   files = []
 
   if user_data is not None:
-    dataframe = process_data_to_dataframe(user_data)
-
-    fig = plt.figure()
-    plt.title("User statistics")
-    plt.ylabel("Users")
-
-    ax1 = plt.subplot()
-    ax2 = ax1.twinx()
-    ax1.grid(False)
-    ax2.grid(False)
-
-    plot1 = ax2.plot(dataframe.date, dataframe.active, label="Active Users", marker="o", color="#f851b7")
-    plot2 = ax1.bar(dataframe.date, dataframe["all"], width=0.8, label="All Users", color="#07e6ec", edgecolor="#07e6ec")
-
-    mplcyberpunk.make_lines_glow(ax2)
-    mplcyberpunk.add_glow_effects(ax1)
-
-    ax1.set_xticks(ax1.get_xticks(), ax1.get_xticklabels(), rotation=15, ha='right')
-    ax1.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
-    ax1.xaxis.set_major_locator(mticker.MaxNLocator(nbins=6, integer=True))
-    ax1.yaxis.set_major_locator(mticker.MaxNLocator(nbins=15, integer=True))
-    ax1.yaxis.set_major_formatter(mticker.ScalarFormatter())
-    ax2.yaxis.set_major_locator(mticker.MaxNLocator(nbins=15, integer=True))
-    ax2.yaxis.set_major_formatter(mticker.ScalarFormatter())
-
-    ax1.set_ylim(dataframe["all"].values.min(), dataframe["all"].values.max())
-
-    ax1.tick_params(axis='x')
-    ax1.tick_params(axis='y', colors=plot2.patches[-1].get_facecolor())
-    ax2.tick_params(axis='y', colors=plot1[-1].get_color())
-    ax2.get_xaxis().set_visible(False)
-
-    fig.legend(labels=["All Users", "Active Users"])
-
-    bio = io.BytesIO()
-    plt.savefig(bio, transparent=True)
-
-    plt.close(plt.gcf())
-    plt.clf()
-
-    bio.seek(0)
-    files.append(disnake.File(bio, filename="user_graph.png"))
+    files.append(generate_graph_file(user_data, "User Statistics", "Users", "All Users", "Active Users", "user_graph.png"))
 
   if guild_data is not None:
-    dataframe = process_data_to_dataframe(guild_data)
-
-    fig = plt.figure()
-    plt.title("Guild statistics")
-    plt.ylabel("Guilds")
-
-    ax1 = plt.subplot()
-    ax2 = ax1.twinx()
-    ax1.grid(False)
-    ax2.grid(False)
-
-    plot1 = ax2.plot(dataframe.date, dataframe.active, label="Active Users", marker="o", color="#f851b7")
-    plot2 = ax1.bar(dataframe.date, dataframe["all"], width=0.8, label="All Users", color="#07e6ec", edgecolor="#07e6ec")
-
-    mplcyberpunk.make_lines_glow(ax2)
-    mplcyberpunk.add_glow_effects(ax1)
-
-    ax1.set_xticks(ax1.get_xticks(), ax1.get_xticklabels(), rotation=15, ha='right')
-    ax1.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
-    ax1.xaxis.set_major_locator(mticker.MaxNLocator(nbins=6, integer=True))
-    ax1.yaxis.set_major_locator(mticker.MaxNLocator(nbins=15, integer=True))
-    ax1.yaxis.set_major_formatter(mticker.ScalarFormatter())
-    ax2.yaxis.set_major_locator(mticker.MaxNLocator(nbins=15, integer=True))
-    ax2.yaxis.set_major_formatter(mticker.ScalarFormatter())
-
-    ax1.set_ylim(dataframe["all"].values.min(), dataframe["all"].values.max())
-
-    ax1.tick_params(axis='x')
-    ax1.tick_params(axis='y', colors=plot2.patches[-1].get_facecolor())
-    ax2.tick_params(axis='y', colors=plot1[-1].get_color())
-    ax2.get_xaxis().set_visible(False)
-
-    fig.legend(labels=["All Guilds", "Active Guilds"])
-
-    bio = io.BytesIO()
-    plt.savefig(bio, transparent=True)
-
-    plt.close(plt.gcf())
-    plt.clf()
-
-    bio.seek(0)
-    files.append(disnake.File(bio, filename="guild_graph.png"))
+    files.append(generate_graph_file(guild_data, "Guild Statistics", "Guilds", "All Guilds", "Active Guilds", "guild_graph.png"))
 
   if files:
     for file in files:

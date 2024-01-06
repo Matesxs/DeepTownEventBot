@@ -342,10 +342,14 @@ class DTEventItemLottery(Base_Cog):
     if guessed_items_data:
       guessed_items_data.sort(key=lambda x: x[1], reverse=True)
 
+      all_sure = True
       item_names = []
       deduplicated_data = []
       for data in guessed_items_data:
         if data[0] not in item_names:
+          if data[1] < 90:
+            all_sure = False
+
           item_names.append(data[0])
           deduplicated_data.append(data)
 
@@ -358,15 +362,18 @@ class DTEventItemLottery(Base_Cog):
         if all([now_guessed_item_name in already_existing_guessed_names for now_guessed_item_name in item_names]) and len(already_existing_guessed_names) == len(item_names):
           return
 
-      items_list_string = "\n".join([f"`{item_name}` - {confidence:.1f}% confidence" for item_name, confidence in deduplicated_data])
-      prompt_string = f"Detected lottery guess\nAre these items correct and do you want to add them as a guess to lottery?\n\n**Guessed items:**\n{items_list_string}"
+      if len(item_names) and all_sure:
+        await make_guess(message, message.author, *item_names)
+      else:
+        items_list_string = "\n".join([f"`{item_name}` - {confidence:.1f}% confidence" for item_name, confidence in deduplicated_data])
+        prompt_string = f"Detected lottery guess\nAre these items correct and do you want to add them as a guess to lottery?\n\n**Guessed items:**\n{items_list_string}"
 
-      confirmation_view = confirm_view.ConfirmView(message, prompt_string)
-      if await confirmation_view.run():
-        await confirmation_view.wait()
+        confirmation_view = confirm_view.ConfirmView(message, prompt_string)
+        if await confirmation_view.run():
+          await confirmation_view.wait()
 
-        if confirmation_view.get_result():
-          await make_guess(message, message.author, *item_names)
+          if confirmation_view.get_result():
+            await make_guess(message, message.author, *item_names)
 
   @commands.Cog.listener()
   async def on_button_click(self, inter: disnake.MessageInteraction):

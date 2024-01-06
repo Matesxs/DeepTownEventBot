@@ -58,6 +58,10 @@ async def send_stats(inter: disnake.CommandInteraction, user_data = None, guild_
     ax1.set_xticks(ax1.get_xticks(), ax1.get_xticklabels(), rotation=15, ha='right')
     ax1.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
     ax1.xaxis.set_major_locator(mticker.MaxNLocator(nbins=6, integer=True))
+    ax1.yaxis.set_major_locator(mticker.MaxNLocator(nbins=15, integer=True))
+    ax1.yaxis.set_major_formatter(mticker.ScalarFormatter())
+    ax2.yaxis.set_major_locator(mticker.MaxNLocator(nbins=15, integer=True))
+    ax2.yaxis.set_major_formatter(mticker.ScalarFormatter())
 
     ax1.set_ylim(dataframe["all"].values.min(), dataframe["all"].values.max())
 
@@ -105,6 +109,10 @@ async def send_stats(inter: disnake.CommandInteraction, user_data = None, guild_
     ax1.set_xticks(ax1.get_xticks(), ax1.get_xticklabels(), rotation=15, ha='right')
     ax1.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
     ax1.xaxis.set_major_locator(mticker.MaxNLocator(nbins=6, integer=True))
+    ax1.yaxis.set_major_locator(mticker.MaxNLocator(nbins=15, integer=True))
+    ax1.yaxis.set_major_formatter(mticker.ScalarFormatter())
+    ax2.yaxis.set_major_locator(mticker.MaxNLocator(nbins=15, integer=True))
+    ax2.yaxis.set_major_formatter(mticker.ScalarFormatter())
 
     ax1.set_ylim(dataframe["all"].values.min(), dataframe["all"].values.max())
 

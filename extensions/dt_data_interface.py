@@ -40,6 +40,8 @@ async def send_stats(inter: disnake.CommandInteraction, user_data = None, guild_
     return dataframe
 
   def generate_graph_file(data, title: str, ylabel: str, all_label: str, active_label: str, filename: str):
+    if data is None: return None
+
     dataframe = process_data_to_dataframe(data)
 
     fig = plt.figure()

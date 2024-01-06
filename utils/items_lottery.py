@@ -2,13 +2,14 @@ import asyncio
 import disnake
 from typing import Optional, List, Dict, Tuple
 from table2ascii import table2ascii, Alignment
+from dateutil import tz
 
 import database
 from features.base_bot import BaseAutoshardedBot
 from database import dt_event_item_lottery_repo, discord_objects_repo, run_commit
 from database.tables import discord_objects
 from utils.logger import setup_custom_logger
-from utils import string_manipulation, message_utils, dt_report_generators
+from utils import string_manipulation, message_utils, dt_report_generators, dt_helpers
 
 logger = setup_custom_logger(__name__)
 
@@ -34,9 +35,11 @@ def create_lottery_embed(author: Optional[disnake.Member | disnake.User], lotter
                 (1, f"{string_manipulation.format_number(lottery.guessed_1_item_reward_amount)} {string_manipulation.truncate_string(lottery.guessed_1_reward_item_name, 20)}" if lottery.guessed_1_reward_item_name is not None and lottery.guessed_1_item_reward_amount > 0 else "*No Reward*")]
   lottery_table = table2ascii(["Guessed", "Reward"], table_data, alignments=[Alignment.RIGHT, Alignment.LEFT], first_col_heading=True)
 
-  next_year, next_week = lottery.event_specification.event_year, lottery.event_specification.event_week
+  year, week = lottery.event_specification.event_year, lottery.event_specification.event_week
+  start_date, _ = dt_helpers.event_index_to_date_range(year, week)
+  start_date = start_date.replace(tzinfo=tz.tzutc()).astimezone(tz.tzlocal())
 
-  lottery_embed = disnake.Embed(title=f"Items guess lottery for event `{next_year} {next_week}` by {lottery.member.name}", description=f"```\n{lottery_table}\n```\nUse `/lottery guess create` to participate in lotteries", color=disnake.Color.blurple())
+  lottery_embed = disnake.Embed(title=f"Items guess lottery for event `{year} {week}` by {lottery.member.name}", description=f"```\n{lottery_table}\n```\n\nThis Event Starts <t:{int(start_date.timestamp())}>\nLottery Closing <t:{int(start_date.timestamp())}:R>\n\nUse `/lottery guess create` to participate in lotteries", color=disnake.Color.blurple())
   if author is not None:
     message_utils.add_author_footer(lottery_embed, author)
   return lottery_embed

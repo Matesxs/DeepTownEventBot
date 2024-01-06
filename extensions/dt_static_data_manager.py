@@ -28,7 +28,7 @@ class DTStaticDataManager(Base_Cog):
   @cooldowns.short_cooldown
   @commands.is_owner()
   async def add_dt_item(self, inter: disnake.CommandInteraction,
-                        name: str = commands.Param(description=Strings.static_data_manager_add_remove_dt_item_name_param_description),
+                        name: str = commands.Param(description=Strings.static_data_manager_add_remove_dt_item_name_param_description, max_length=25),
                         item_type: dt_items_repo.ItemType = commands.Param(description=Strings.static_data_manager_add_dt_item_type_param_description),
                         item_source: dt_items_repo.ItemSource = commands.Param(description=Strings.static_data_manager_add_dt_item_source_param_description),
                         value: float = commands.Param(default=0.0, min_value=0.0, description=Strings.static_data_manager_add_dt_item_value_param_description),

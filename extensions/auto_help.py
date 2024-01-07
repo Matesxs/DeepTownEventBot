@@ -25,7 +25,9 @@ async def getApproximateAnswer(q):
 
   async for ans_id, question in all_questions:
     score = ratio(question, q)
-    if score >= 0.9:
+    if score <= 0.1:
+      continue
+    elif score >= 0.9:
       return question, await questions_and_answers_repo.get_answer_by_id(ans_id), score
     elif score > max_score:
       max_score = score

@@ -328,6 +328,7 @@ class DTEventItemLottery(Base_Cog):
       guessed_item_name = None
       for item_name, item_name_lower in all_item_names:
         score = ratio(message_line, item_name_lower)
+        if score <= 0.1: continue
 
         if score > max_score:
           max_score = score

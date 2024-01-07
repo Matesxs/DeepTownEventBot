@@ -605,7 +605,7 @@ class DTDataInterface(Base_Cog):
     pass
 
   @stats_commands.sub_command_group(name="activity")
-  @cooldowns.default_cooldown
+  @cooldowns.long_cooldown
   async def activity_stats_commands(self, inter: disnake.CommandInteraction):
     await inter.response.defer(with_message=True)
 

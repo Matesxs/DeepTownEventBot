@@ -2,13 +2,13 @@
 
 from disnake.ext import commands
 
-# 5x/30s
+# 4x/30s
 def short_cooldown(f):
-    return commands.cooldown(rate=5, per=30.0, type=commands.BucketType.user)(f)
+    return commands.cooldown(rate=4, per=30.0, type=commands.BucketType.user)(f)
 
-# 3x/30s
+# 2x/30s
 def default_cooldown(f):
-    return commands.cooldown(rate=3, per=30.0, type=commands.BucketType.user)(f)
+    return commands.cooldown(rate=2, per=30.0, type=commands.BucketType.user)(f)
 
 # 2x/60s
 def long_cooldown(f):

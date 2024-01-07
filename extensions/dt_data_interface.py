@@ -69,7 +69,9 @@ async def send_stats(inter: disnake.CommandInteraction, user_data = None, guild_
     ax1.yaxis.set_major_locator(mticker.MaxNLocator(nbins=10, integer=True))
     ax1.yaxis.set_major_formatter(mticker.ScalarFormatter())
     ax1.tick_params(axis='y', colors=plot1.patches[-1].get_facecolor())
-    ax1.set_ylim(dataframe["all"].values.min(), dataframe["all"].values.max())
+    min_val, max_val = dataframe["all"].values.min(), dataframe["all"].values.max()
+    distance = max_val - min_val
+    ax1.set_ylim(max(min_val - 0.1 * distance, 0), max_val + 0.1 * distance)
 
     plot2, = ax2.plot(dataframe.date, dataframe.active_percent, marker="o", color="#f5d300", label=active_percent)
     mplcyberpunk.make_lines_glow(ax2)

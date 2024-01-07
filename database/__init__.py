@@ -1,7 +1,7 @@
 import asyncio
-from typing import Any, Union
+from typing import Any
 from sqlalchemy import BigInteger, create_engine
-from sqlalchemy.engine import Result, CursorResult
+from sqlalchemy.engine import Result
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects import postgresql, sqlite
@@ -21,7 +21,6 @@ if config.base.database_connect_string is None or config.base.database_connect_s
 try:
   base = declarative_base()
   engine = create_engine(config.base.database_connect_string)
-
 except Exception:
   logger.error(f"Failed to create database connection\n{traceback.format_exc()}")
   exit(-1)

@@ -97,7 +97,7 @@ async def send_stats(inter: disnake.CommandInteraction, user_data = None, guild_
     distance = max_val - min_val
     ax3.set_ylim(max(min_val - 0.1 * distance, 0), max_val + 0.1 * distance)
 
-    fig.legend(handles=[plot1, plot2, plot3], loc="upper left", fontsize=16, bbox_to_anchor=(0,0,1,1), bbox_transform=ax1.transAxes, frameon=True, facecolor="black", framealpha=0.25, edgecolor="black")
+    fig.legend(handles=[plot1, plot2, plot3], loc="upper left", fontsize=16, bbox_to_anchor=(0,0,1,1), bbox_transform=ax1.transAxes, frameon=True, facecolor="black", framealpha=0.40, edgecolor="black")
 
     fig.tight_layout()
 

@@ -12,13 +12,13 @@ class DiscordUser(database.base):
 
   id = Column(String, primary_key=True)
   name = Column(String, nullable=False, index=True)
-  created_at = Column(DateTime, nullable=True)
+  created_at = Column(DateTime, nullable=False)
 
   command_calls = relationship("CommandCallAuditlog", uselist=True, back_populates="author")
 
   @classmethod
   def from_user(cls, user: disnake.Member | disnake.User):
-    return cls(id=str(user.id), name=user.name)
+    return cls(id=str(user.id), name=user.name, created_at=user.created_at)
 
   def update(self, user: disnake.Member | disnake.User):
     name = user.global_name or user.name
@@ -48,7 +48,7 @@ class DiscordMember(database.base):
 
   @classmethod
   def from_member(cls, member: disnake.Member):
-    return cls(user_id=str(member.id), guild_id=str(member.guild.id), name=member.display_name)
+    return cls(user_id=str(member.id), guild_id=str(member.guild.id), name=member.display_name, joined_at=member.joined_at)
 
   def update(self, member: disnake.Member):
     if self.name != member.display_name:

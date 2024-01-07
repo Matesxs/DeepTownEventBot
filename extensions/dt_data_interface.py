@@ -27,6 +27,8 @@ logger = setup_custom_logger(__name__)
 
 plt.style.use("cyberpunk")
 
+plt.rc('font', size=14)
+
 async def send_stats(inter: disnake.CommandInteraction, user_data = None, guild_data = None):
   def process_data_to_dataframe(data):
     dataframe = pd.DataFrame(data, columns=["date", "active", "all"], index=None)
@@ -35,42 +37,61 @@ async def send_stats(inter: disnake.CommandInteraction, user_data = None, guild_
     dataframe = dataframe.resample("D").mean().interpolate(limit_direction="backward")
     dataframe["active"] = dataframe["active"].round().astype(int)
     dataframe["all"] = dataframe["all"].round().astype(int)
+    dataframe["active_percent"] = dataframe["active"] / dataframe["all"] * 100
+
+    # logger.info(f"\n{dataframe.head(50)}")
 
     dataframe.reset_index(inplace=True)
     return dataframe
 
-  def generate_graph_file(data, title: str, ylabel: str, all_label: str, active_label: str, filename: str):
+  def generate_graph_file(data, title: str, ylabel: str, all_label: str, active_percent: str, active_label: str, filename: str):
     if data is None: return None
 
     dataframe = process_data_to_dataframe(data)
 
-    fig = plt.figure()
-    plt.title(title)
-    plt.ylabel(ylabel)
+    fig, ax1 = plt.subplots(sharex=True, sharey=False)
+    fig.subplots_adjust(right=0.85)
+    fig.set_size_inches(10.0, 6.0)
+    plt.title(title, fontsize=22)
+    plt.ylabel(ylabel, fontsize=16)
 
-    ax1 = plt.subplot()
     ax2 = ax1.twinx()
+    ax2.spines.right.set_position(("axes", 1.1))
+    ax3 = ax1.twinx()
     ax1.grid(False)
     ax2.grid(False)
+    ax3.grid(False)
 
-    plot1 = ax1.bar(dataframe.date, dataframe["all"], width=0.8, color="#07e6ec", edgecolor="#07e6ec")
-    plot2 = ax2.plot(dataframe.date, dataframe.active, marker="o", color="#f851b7")
-    mplcyberpunk.make_lines_glow(ax2)
-    mplcyberpunk.add_glow_effects(ax1)
-
+    plot1 = ax1.bar(dataframe.date, dataframe["all"], width=0.8, color="#07e6ec", edgecolor="#07e6ec", label=all_label)
     ax1.set_xticks(ax1.get_xticks(), ax1.get_xticklabels(), rotation=20, ha='right')
     ax1.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
     ax1.xaxis.set_major_locator(mticker.MaxNLocator(nbins=6, integer=True))
-    ax1.yaxis.set_major_locator(mticker.MaxNLocator(nbins=15, integer=True))
+    ax1.yaxis.set_major_locator(mticker.MaxNLocator(nbins=10, integer=True))
     ax1.yaxis.set_major_formatter(mticker.ScalarFormatter())
-    ax2.yaxis.set_major_locator(mticker.MaxNLocator(nbins=15, integer=True))
-    ax2.yaxis.set_major_formatter(mticker.ScalarFormatter())
     ax1.tick_params(axis='y', colors=plot1.patches[-1].get_facecolor())
-    ax2.tick_params(axis='y', colors=plot2[-1].get_color())
-    ax2.get_xaxis().set_visible(False)
     ax1.set_ylim(dataframe["all"].values.min(), dataframe["all"].values.max())
 
-    fig.legend(labels=[all_label, active_label])
+    plot2, = ax2.plot(dataframe.date, dataframe.active_percent, marker="o", color="#f5d300", label=active_percent)
+    mplcyberpunk.make_lines_glow(ax2)
+    # mplcyberpunk.add_gradient_fill(ax2, 0.5)
+    mplcyberpunk.add_underglow(ax2, alpha_underglow=0.2)
+    ax2.yaxis.set_major_locator(mticker.MaxNLocator(nbins=10))
+    ax2.yaxis.set_major_formatter(mticker.PercentFormatter(decimals=2, xmax=100))
+    ax2.tick_params(axis='y', colors=plot2.get_color())
+    ax2.get_xaxis().set_visible(False)
+
+    plot3, = ax3.plot(dataframe.date, dataframe.active, marker="o", color="#f851b7", label=active_label)
+    mplcyberpunk.make_lines_glow(ax3)
+    # mplcyberpunk.add_gradient_fill(ax3, 0.5)
+    mplcyberpunk.add_underglow(ax3, alpha_underglow=0.2)
+    ax3.yaxis.set_major_locator(mticker.MaxNLocator(nbins=10, integer=True))
+    ax3.yaxis.set_major_formatter(mticker.ScalarFormatter())
+    ax3.tick_params(axis='y', colors=plot3.get_color())
+    ax3.get_xaxis().set_visible(False)
+
+    fig.legend(handles=[plot1, plot2, plot3], loc="upper left", fontsize=12, bbox_to_anchor=(0,0,1,1), bbox_transform=ax1.transAxes)
+
+    fig.tight_layout()
 
     bio = io.BytesIO()
     plt.savefig(bio, transparent=True)
@@ -84,10 +105,10 @@ async def send_stats(inter: disnake.CommandInteraction, user_data = None, guild_
   files = []
 
   if user_data is not None:
-    files.append(generate_graph_file(user_data, "User Statistics", "Users", "All Users", "Active Users", "user_graph.png"))
+    files.append(generate_graph_file(user_data, "User Statistics", "Users", "All Users", "Percentage of Active Users", "Active Users", "user_graph.png"))
 
   if guild_data is not None:
-    files.append(generate_graph_file(guild_data, "Guild Statistics", "Guilds", "All Guilds", "Active Guilds", "guild_graph.png"))
+    files.append(generate_graph_file(guild_data, "Guild Statistics", "Guilds", "All Guilds", "Percentage of Active Guilds", "Active Guilds", "guild_graph.png"))
 
   if files:
     for file in files:

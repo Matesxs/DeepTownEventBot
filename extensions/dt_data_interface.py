@@ -78,9 +78,12 @@ async def send_stats(inter: disnake.CommandInteraction, user_data = None, guild_
     # mplcyberpunk.add_gradient_fill(ax2, 0.5)
     mplcyberpunk.add_underglow(ax2, alpha_underglow=0.2)
     ax2.yaxis.set_major_locator(mticker.MaxNLocator(nbins=10))
-    ax2.yaxis.set_major_formatter(mticker.PercentFormatter(decimals=2, xmax=100))
+    ax2.yaxis.set_major_formatter(mticker.PercentFormatter(decimals=3, xmax=100))
     ax2.tick_params(axis='y', colors=plot2.get_color())
     ax2.get_xaxis().set_visible(False)
+    min_val, max_val = dataframe["active_percent"].values.min(), dataframe["active_percent"].values.max()
+    distance = max_val - min_val
+    ax2.set_ylim(max(min_val - 0.1 * distance, 0), max_val + 0.1 * distance)
 
     plot3, = ax3.plot(dataframe.date, dataframe.active, marker="o", color="#f851b7", label=active_label)
     mplcyberpunk.make_lines_glow(ax3)
@@ -90,8 +93,11 @@ async def send_stats(inter: disnake.CommandInteraction, user_data = None, guild_
     ax3.yaxis.set_major_formatter(mticker.ScalarFormatter())
     ax3.tick_params(axis='y', colors=plot3.get_color())
     ax3.get_xaxis().set_visible(False)
+    min_val, max_val = dataframe["active"].values.min(), dataframe["active"].values.max()
+    distance = max_val - min_val
+    ax3.set_ylim(max(min_val - 0.1 * distance, 0), max_val + 0.1 * distance)
 
-    fig.legend(handles=[plot1, plot2, plot3], loc="upper left", fontsize=12, bbox_to_anchor=(0,0,1,1), bbox_transform=ax1.transAxes)
+    fig.legend(handles=[plot1, plot2, plot3], loc="upper left", fontsize=14, bbox_to_anchor=(0,0,1,1), bbox_transform=ax1.transAxes, frameon=True, facecolor="black", framealpha=0.2, edgecolor="black")
 
     fig.tight_layout()
 

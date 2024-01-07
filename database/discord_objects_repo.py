@@ -1,6 +1,6 @@
 import disnake
 from typing import Optional, Union, List
-from sqlalchemy import select, delete, text
+from sqlalchemy import select, delete, text, func
 
 from database import run_commit, run_query, add_item
 from database.tables.discord_objects import DiscordGuild, DiscordUser, DiscordMember
@@ -66,14 +66,16 @@ async def get_discord_member(guild_id: int, user_id: int) -> Optional[DiscordMem
   return result.scalar_one_or_none()
 
 async def get_or_create_discord_member(member: disnake.Member, comit: bool=True) -> DiscordMember:
+  user_item = await get_or_create_discord_user(member, comit=True)
   item = await get_discord_member(member.guild.id, member.id)
+
   if item is None:
     await get_or_create_discord_guild(member.guild, commit=False)
-    await get_or_create_discord_user(member, comit=True)
 
     item = DiscordMember.from_member(member)
     await add_item(item)
   else:
+    user_item.update(member)
     item.update(member)
 
     if comit:
@@ -84,6 +86,10 @@ async def get_or_create_discord_member(member: disnake.Member, comit: bool=True)
 async def remove_discord_member(guild_id: int, user_id: int):
   await run_query(delete(DiscordMember).filter(DiscordMember.guild_id == str(guild_id), DiscordMember.user_id == str(user_id)))
   await run_commit()
+
+  result = await run_query(select(func.count(DiscordMember.guild_id)).filter(DiscordMember.user_id == str(user_id), DiscordMember.guild_id != str(guild_id)))
+  if result.scalar_one() == 0:
+    await remove_discord_user(user_id)
 
 async def discord_member_cleanup(guild_id: int, current_user_ids: List[str]):
   await run_query(delete(DiscordMember).filter(DiscordMember.guild_id == str(guild_id), DiscordMember.user_id.notin_(current_user_ids)), commit=True)

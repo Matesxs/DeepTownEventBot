@@ -71,6 +71,12 @@ class DiscordManager(Base_Cog):
     await self.pull_data_seq()
     await message_utils.generate_success_message(inter, Strings.discord_manager_pull_data_success)
 
+
+  @commands.Cog.listener()
+  async def on_user_update(self, _, after: disnake.User):
+    await discord_objects_repo.get_or_create_discord_user(after)
+
+
   @commands.Cog.listener()
   async def on_guild_join(self, guild: disnake.Guild):
     await discord_objects_repo.get_or_create_discord_guild(guild)
@@ -87,6 +93,7 @@ class DiscordManager(Base_Cog):
   @commands.Cog.listener()
   async def on_guild_update(self, _, after: disnake.Guild):
     await discord_objects_repo.get_or_create_discord_guild(after)
+
 
   @commands.Cog.listener()
   async def on_member_join(self, member: disnake.Member):

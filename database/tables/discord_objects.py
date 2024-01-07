@@ -1,6 +1,6 @@
 import disnake
-from typing import Optional, Union
-from sqlalchemy import Column, String, ForeignKey, Boolean
+from typing import Optional
+from sqlalchemy import Column, String, ForeignKey, Boolean, DateTime
 from sqlalchemy.orm import relationship
 
 import database
@@ -12,15 +12,21 @@ class DiscordUser(database.base):
 
   id = Column(String, primary_key=True)
   name = Column(String, nullable=False, index=True)
+  created_at = Column(DateTime, nullable=True)
 
   command_calls = relationship("CommandCallAuditlog", uselist=True, back_populates="author")
 
   @classmethod
-  def from_user(cls, user: Union[disnake.Member, disnake.User]):
+  def from_user(cls, user: disnake.Member | disnake.User):
     return cls(id=str(user.id), name=user.name)
 
-  def update(self, user: Union[disnake.Member, disnake.User]):
-    self.name = user.name
+  def update(self, user: disnake.Member | disnake.User):
+    name = user.global_name or user.name
+    if self.name != name:
+      self.name = name
+
+    if self.created_at != user.created_at:
+      self.created_at = user.created_at
 
   async def to_object(self, bot: BaseAutoshardedBot) -> Optional[disnake.User]:
     user = bot.get_user(int(self.id))
@@ -35,6 +41,7 @@ class DiscordMember(database.base):
   guild_id = Column(String, ForeignKey("discord_guilds.id", ondelete="CASCADE", onupdate="CASCADE"), primary_key=True)
 
   name = Column(String, nullable=False, index=True)
+  joined_at = Column(DateTime, nullable=True)
 
   user = relationship("DiscordUser", uselist=False)
   guild = relationship("DiscordGuild", uselist=False, back_populates="members")
@@ -44,7 +51,11 @@ class DiscordMember(database.base):
     return cls(user_id=str(member.id), guild_id=str(member.guild.id), name=member.display_name)
 
   def update(self, member: disnake.Member):
-    self.name = member.display_name
+    if self.name != member.display_name:
+      self.name = member.display_name
+
+    if self.joined_at != member.joined_at:
+      self.joined_at = member.joined_at
 
   async def to_object(self, bot: BaseAutoshardedBot) -> Optional[disnake.Member]:
     guild = await self.guild.to_object(bot)

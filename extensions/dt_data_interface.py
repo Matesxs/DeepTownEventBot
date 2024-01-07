@@ -51,12 +51,12 @@ async def send_stats(inter: disnake.CommandInteraction, user_data = None, guild_
 
     fig, ax1 = plt.subplots(sharex=True, sharey=False)
     fig.subplots_adjust(right=0.85)
-    fig.set_size_inches(10.0, 6.0)
+    fig.set_size_inches(10.5, 6.0)
     plt.title(title, fontsize=22)
     plt.ylabel(ylabel, fontsize=16)
 
     ax2 = ax1.twinx()
-    ax2.spines.right.set_position(("axes", 1.1))
+    ax2.spines.right.set_position(("axes", 1.12))
     ax3 = ax1.twinx()
     ax1.grid(False)
     ax2.grid(False)
@@ -97,7 +97,7 @@ async def send_stats(inter: disnake.CommandInteraction, user_data = None, guild_
     distance = max_val - min_val
     ax3.set_ylim(max(min_val - 0.1 * distance, 0), max_val + 0.1 * distance)
 
-    fig.legend(handles=[plot1, plot2, plot3], loc="upper left", fontsize=14, bbox_to_anchor=(0,0,1,1), bbox_transform=ax1.transAxes, frameon=True, facecolor="black", framealpha=0.25, edgecolor="black")
+    fig.legend(handles=[plot1, plot2, plot3], loc="upper left", fontsize=16, bbox_to_anchor=(0,0,1,1), bbox_transform=ax1.transAxes, frameon=True, facecolor="black", framealpha=0.25, edgecolor="black")
 
     fig.tight_layout()
 

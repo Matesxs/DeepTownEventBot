@@ -105,6 +105,8 @@ class DTEventReportAnnouncer(Base_Cog):
   @report_announcer.sub_command(name="list", description=Strings.event_report_announcer_list_trackers_description)
   @cooldowns.default_cooldown
   async def list_guild_trackers(self, inter: disnake.CommandInteraction):
+    await inter.response.defer(with_message=True, ephemeral=True)
+
     guild_trackers = await tracking_settings_repo.get_all_guild_trackers(inter.guild.id)
     number_of_trackers = len(guild_trackers)
 

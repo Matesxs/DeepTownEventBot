@@ -97,9 +97,9 @@ class EmbedView(disnake.ui.View):
     return page
 
   async def run(self, ctx):
-    if isinstance(ctx, (disnake.ApplicationCommandInteraction, disnake.ModalInteraction, disnake.MessageCommandInteraction, disnake.CommandInteraction)):
+    if isinstance(ctx, (disnake.ApplicationCommandInteraction, disnake.ModalInteraction)):
       await ctx.send(embed=self.embed(), view=self, ephemeral=self.invisible)
-      self.message = ctx
+      self.message = await ctx.original_response()
     else:
       self.message = await ctx.reply(embed=self.embed(), view=self)
 
@@ -135,15 +135,11 @@ class EmbedView(disnake.ui.View):
   async def on_timeout(self):
     try:
       self.clear_items()
-      if isinstance(self.message, disnake.Message):
+      if self.message is not None:
         if self.delete_on_timeout:
           await self.message.delete()
         else:
+          self.add_item(message_utils.get_delete_button())
           await self.message.edit(view=self)
-      else:
-        if self.delete_on_timeout:
-          await self.message.delete_original_message()
-        else:
-          await self.message.edit_original_message(view=self)
     except:
       pass

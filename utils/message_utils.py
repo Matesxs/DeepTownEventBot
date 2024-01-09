@@ -56,3 +56,6 @@ async def delete_message(bot: commands.AutoShardedBot, cnt: Any):
         await cnt.delete()
   except:
     pass
+
+def get_delete_button():
+  return disnake.ui.Button(emoji="🗑️", style=disnake.ButtonStyle.red, custom_id="dtep_msg_delete")

@@ -379,6 +379,7 @@ class DTEventItemLottery(Base_Cog):
   @commands.Cog.listener()
   async def on_button_click(self, inter: disnake.MessageInteraction):
     if not isinstance(inter.component, disnake.Button): return
+    if inter.author.bot or inter.author.system: return
 
     button_custom_id = inter.component.custom_id
     if button_custom_id is None or not button_custom_id.startswith("event_item_lottery"): return

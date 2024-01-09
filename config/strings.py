@@ -161,6 +161,7 @@ class Strings(metaclass=Formatable):
   data_manager_load_data_no_attachments = "No attachments present"
   data_manager_load_data_loading_started = "Data loading started"
   data_manager_load_data_loaded = "New data loaded, `{count}` rows\nIf some data are missing then file was in invalid format or data keys were missing"
+  data_manager_load_data_no_files = "No csv files found"
 
   data_manager_dump_guild_participation_data_description = "Dump Deep Town guild event participation data"
   data_manager_dump_guild_participation_data_no_data = "No data found for guild with id `{identifier}`"

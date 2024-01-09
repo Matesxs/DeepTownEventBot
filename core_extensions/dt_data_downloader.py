@@ -10,7 +10,7 @@ import traceback
 from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
 from config import config, Strings, cooldowns
-from utils import dt_helpers, command_utils, message_utils, dt_autocomplete
+from utils import dt_helpers, command_utils, message_utils, dt_autocomplete, object_getters
 from database import dt_guild_repo, event_participation_repo, dt_blacklist_repo, tracking_settings_repo, dt_guild_member_repo
 from database.tables import dt_statistics
 
@@ -69,53 +69,21 @@ class DTDataDownloader(Base_Cog):
   @cooldowns.huge_cooldown
   @commands.is_owner()
   async def update_all_guilds(self, inter: disnake.CommandInteraction):
-    await inter.response.defer(with_message=True, ephemeral=True)
+    await inter.response.defer(with_message=True)
+    message = await object_getters.get_or_fetch_message(self.bot, inter.channel, (await inter.original_response()).id)
 
     guild_ids = await dt_helpers.get_ids_of_all_guilds()
 
     last_update = datetime.datetime.utcnow()
 
     if guild_ids is not None or not guild_ids:
+      await inter.send("Starting data update...")
       pulled_data = 0
 
       for idx, guild_id in enumerate(guild_ids):
         data = await dt_helpers.get_dt_guild_data(guild_id)
         if datetime.datetime.utcnow() - last_update > datetime.timedelta(seconds=10):
-          await inter.edit_original_response(f"```\nGuild {idx + 1}/{len(guild_ids)}\n```")
-          last_update = datetime.datetime.utcnow()
-
-        await asyncio.sleep(1)
-        if data is None: continue
-
-        await event_participation_repo.generate_or_update_event_participations(data)
-        pulled_data += 1
-
-      if not inter.is_expired():
-        return await message_utils.generate_success_message(inter, Strings.data_manager_update_all_guilds_success_without_periodic_update(guild_num=pulled_data))
-
-      original_message = await inter.original_message()
-      if original_message is not None:
-        await message_utils.generate_success_message(original_message, Strings.data_manager_update_all_guilds_success_without_periodic_update(guild_num=pulled_data))
-      return
-    await message_utils.generate_error_message(inter, Strings.data_manager_update_all_guilds_failed_without_periodic_update)
-
-  @data_update_commands.sub_command(name="tracked_guilds", description=Strings.data_manager_update_tracked_guilds_description)
-  @cooldowns.huge_cooldown
-  @commands.is_owner()
-  async def update_tracked_guilds(self, inter: disnake.CommandInteraction):
-    await inter.response.defer(with_message=True, ephemeral=True)
-
-    guild_ids = await tracking_settings_repo.get_tracked_guild_ids()
-
-    if guild_ids is not None or not guild_ids:
-      pulled_data = 0
-
-      last_update = datetime.datetime.utcnow()
-
-      for idx, guild_id in enumerate(guild_ids):
-        data = await dt_helpers.get_dt_guild_data(guild_id, True)
-        if datetime.datetime.utcnow() - last_update > datetime.timedelta(seconds=10):
-          await inter.edit_original_response(f"```\nGuild {idx + 1}/{len(guild_ids)}\n```")
+          await message.edit(f"Guilds `{idx + 1}/{len(guild_ids)}` updated")
           last_update = datetime.datetime.utcnow()
 
         await asyncio.sleep(0.5)
@@ -124,14 +92,37 @@ class DTDataDownloader(Base_Cog):
         await event_participation_repo.generate_or_update_event_participations(data)
         pulled_data += 1
 
-      if not inter.is_expired():
-        return await message_utils.generate_success_message(inter, Strings.data_manager_update_tracked_guilds_success(guild_num=pulled_data))
+      return await message_utils.generate_success_message(message, Strings.data_manager_update_all_guilds_success_without_periodic_update(guild_num=pulled_data))
+    await message_utils.generate_error_message(inter, Strings.data_manager_update_all_guilds_failed_without_periodic_update)
 
-      original_message = await inter.original_message()
-      if original_message is not None:
-        await message_utils.generate_success_message(original_message, Strings.data_manager_update_tracked_guilds_success(guild_num=pulled_data))
-      return
+  @data_update_commands.sub_command(name="tracked_guilds", description=Strings.data_manager_update_tracked_guilds_description)
+  @cooldowns.huge_cooldown
+  @commands.is_owner()
+  async def update_tracked_guilds(self, inter: disnake.CommandInteraction):
+    await inter.response.defer(with_message=True)
+    message = await object_getters.get_or_fetch_message(self.bot, inter.channel, (await inter.original_response()).id)
 
+    guild_ids = await tracking_settings_repo.get_tracked_guild_ids()
+
+    if guild_ids is not None or not guild_ids:
+      await inter.send("Starting data update...")
+      pulled_data = 0
+
+      last_update = datetime.datetime.utcnow()
+
+      for idx, guild_id in enumerate(guild_ids):
+        data = await dt_helpers.get_dt_guild_data(guild_id, True)
+        if datetime.datetime.utcnow() - last_update > datetime.timedelta(seconds=10):
+          await message.edit(f"Guilds `{idx + 1}/{len(guild_ids)}` updated")
+          last_update = datetime.datetime.utcnow()
+
+        await asyncio.sleep(0.5)
+        if data is None: continue
+
+        await event_participation_repo.generate_or_update_event_participations(data)
+        pulled_data += 1
+
+      return await message_utils.generate_success_message(message, Strings.data_manager_update_tracked_guilds_success(guild_num=pulled_data))
     await message_utils.generate_error_message(inter, Strings.data_manager_update_tracked_guilds_failed)
 
   @command_utils.master_only_message_command(name="Load Event Data")
@@ -139,7 +130,8 @@ class DTDataDownloader(Base_Cog):
   @commands.max_concurrency(1, commands.BucketType.default)
   @commands.is_owner()
   async def load_data(self, inter: disnake.MessageCommandInteraction):
-    await inter.response.defer(with_message=True, ephemeral=True)
+    await inter.response.defer(with_message=True)
+    message = await object_getters.get_or_fetch_message(self.bot, inter.channel, (await inter.original_response()).id)
 
     attachments = inter.target.attachments
     if not attachments:
@@ -152,88 +144,77 @@ class DTDataDownloader(Base_Cog):
 
     last_sleep = datetime.datetime.utcnow()
 
-    updated_rows = 0
-    for file_idx, file in enumerate(csv_files):
-      try:
-        data = io.BytesIO(await file.read())
-        dataframe = pd.read_csv(data, sep=";")
-      except:
-        continue
-
-      guild_id_results = guild_id_regex.findall(file.filename.lower())
-      if len(guild_id_results) != 1 or not str(guild_id_results[0]).isnumeric():
-        logger.warning(f"Failed to get guild id from file `{file.filename}`")
-        continue
-
-      guild_id = int(guild_id_results[0])
-
-      for row_idx, (_, row) in enumerate(dataframe.iterrows()):
+    if csv_files:
+      await inter.send("Starting data update...")
+      updated_rows = 0
+      for file_idx, file in enumerate(csv_files):
         try:
-          user_id = int(row["user_id"])
+          data = io.BytesIO(await file.read())
+          dataframe = pd.read_csv(data, sep=";")
+        except:
+          continue
 
-          if "amount" in row.keys():
-            ammount = int(row["amount"])
-          elif "donate" in row.keys():
-            ammount = int(row["donate"])
-          else:
-            logger.warning("Donate amount not found")
-            break
+        guild_id_results = guild_id_regex.findall(file.filename.lower())
+        if len(guild_id_results) != 1 or not str(guild_id_results[0]).isnumeric():
+          logger.warning(f"Failed to get guild id from file `{file.filename}`")
+          continue
 
-          if "week" in row.keys() and "year" in row.keys():
-            week = int(row["week"])
-            year = int(row["year"])
-          elif "date" in row.keys():
-            try:
-              date = datetime.datetime.fromisoformat(row["date"])
-              year, week = dt_helpers.get_event_index(date)
-            except:
+        guild_id = int(guild_id_results[0])
+
+        for row_idx, (_, row) in enumerate(dataframe.iterrows()):
+          try:
+            user_id = int(row["user_id"])
+
+            if "amount" in row.keys():
+              ammount = int(row["amount"])
+            elif "donate" in row.keys():
+              ammount = int(row["donate"])
+            else:
+              logger.warning("Donate amount not found")
+              break
+
+            if "week" in row.keys() and "year" in row.keys():
+              week = int(row["week"])
+              year = int(row["year"])
+            elif "date" in row.keys():
+              try:
+                date = datetime.datetime.fromisoformat(row["date"])
+                year, week = dt_helpers.get_event_index(date)
+              except:
+                continue
+            elif "timestamp" in row.keys():
+              try:
+                date = datetime.datetime.fromtimestamp(row["timestamp"])
+                year, week = dt_helpers.get_event_index(date)
+              except:
+                continue
+            else:
+              logger.warning("Invalid event identifier")
+              break
+
+            member = await dt_guild_member_repo.create_dummy_dt_guild_member(user_id, guild_id, year, week, ammount)
+            if member is None:
               continue
-          elif "timestamp" in row.keys():
-            try:
-              date = datetime.datetime.fromtimestamp(row["timestamp"])
-              year, week = dt_helpers.get_event_index(date)
-            except:
-              continue
-          else:
-            logger.warning("Invalid event identifier")
-            break
 
-          member = await dt_guild_member_repo.create_dummy_dt_guild_member(user_id, guild_id, year, week, ammount)
-          if member is None:
-            continue
+            if "username" in row.keys():
+              member.user.username = row["username"]
 
-          if "username" in row.keys():
-            member.user.username = row["username"]
+            await event_participation_repo.get_and_update_event_participation(user_id, guild_id, year, week, ammount)
+            await asyncio.sleep(0.02)
 
-          await event_participation_repo.get_and_update_event_participation(user_id, guild_id, year, week, ammount)
-          await asyncio.sleep(0.02)
+            if datetime.datetime.utcnow() - last_sleep >= datetime.timedelta(seconds=10):
+              await message.edit(f"Files `{file_idx + 1}/{len(csv_files)}`\nData rows `{row_idx + 1}/{dataframe.shape[0]}`")
+              last_sleep = datetime.datetime.utcnow()
 
-          if datetime.datetime.utcnow() - last_sleep >= datetime.timedelta(seconds=20):
-            try:
-              await inter.edit_original_response(f"```\nFile {file_idx + 1}/{len(csv_files)}\nData row {row_idx + 1}/{dataframe.shape[0]}\n```")
-              logger.info(f"File {file_idx + 1}/{len(csv_files)} Data row {row_idx + 1}/{dataframe.shape[0]}")
-            except:
-              pass
-            last_sleep = datetime.datetime.utcnow()
+            updated_rows += 1
+          except Exception:
+            logger.warning(traceback.format_exc())
 
-          updated_rows += 1
-        except Exception:
-          logger.warning(traceback.format_exc())
+      await event_participation_repo.run_commit()
 
-    await event_participation_repo.run_commit()
-
-    logger.info(f"Loaded {updated_rows} data rows")
-
-    if not inter.is_expired():
-      return await message_utils.generate_success_message(inter, Strings.data_manager_load_data_loaded(count=updated_rows))
-
-    try:
-      message = await inter.original_message()
-
-      if message is not None:
-        await message_utils.generate_success_message(message, Strings.data_manager_load_data_loaded(count=updated_rows))
-    except:
-      pass
+      logger.info(f"Loaded {updated_rows} data rows")
+      return await message_utils.generate_success_message(message, Strings.data_manager_load_data_loaded(count=updated_rows))
+    await message_utils.generate_error_message(inter, Strings.data_manager_load_data_no_files)
 
   @tasks.loop(hours=config.data_manager.cleanup_rate_days * 24)
   async def cleanup_task(self):

@@ -4,6 +4,7 @@ from typing import List
 import asyncio
 import traceback
 
+from config import permissions
 from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
 from utils import object_getters, message_utils
@@ -23,13 +24,19 @@ class Listeners(Base_Cog):
 
     if button_custom_id == "dtep_msg_delete":
       if inter.message.author.id == self.bot.user.id:
-        messages = [inter.message]
+        can_alway_delete = (await permissions.is_bot_developer(self.bot, inter.author)) | (await permissions.has_guild_administrator_role(inter))
+        if not can_alway_delete and (inter.message.interaction.author.id != inter.author.id if inter.message.interaction is not None else False):
+          return await message_utils.generate_error_message(inter, "You are not allowed to delete this message")
 
+        messages = [inter.message]
         message_reference = inter.message.reference
         while message_reference is not None:
           message = await object_getters.get_or_fetch_message(self.bot, inter.message.channel, message_reference.message_id)
           if messages is not None:
             if message.author.id == self.bot.user.id:
+              if not can_alway_delete and (message.interaction.author.id != inter.author.id if message.interaction is not None else False):
+                return await message_utils.generate_error_message(inter, "You are not allowed to delete this message")
+
               messages.append(message)
 
         for message in messages:

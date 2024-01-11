@@ -484,7 +484,7 @@ class DTEventItemLottery(Base_Cog):
         logger.info("Notifying that lotteries are closed")
         for lottery in lotteries_to_notify:
           await items_lottery.lottery_notify_closed_and_waiting(self.bot, lottery)
-          await asyncio.sleep(0.1)
+          await asyncio.sleep(0.05)
         logger.info(f"Notified {len(lotteries_to_notify)} lotteries")
 
 def setup(bot):

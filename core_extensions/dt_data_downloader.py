@@ -56,6 +56,8 @@ class DTDataDownloader(Base_Cog):
       return await message_utils.generate_error_message(inter, Strings.dt_invalid_identifier)
 
     guild_id = identifier[1]
+    if await dt_blacklist_repo.is_on_blacklist(dt_blacklist_repo.BlacklistType.GUILD, guild_id):
+      return await message_utils.generate_error_message(inter, Strings.data_manager_update_guild_guild_on_blacklist(guild_index=guild_id))
 
     data = await dt_helpers.get_dt_guild_data(guild_id, True)
     if data is None:
@@ -81,6 +83,9 @@ class DTDataDownloader(Base_Cog):
       pulled_data = 0
 
       for idx, guild_id in enumerate(guild_ids):
+        if await dt_blacklist_repo.is_on_blacklist(dt_blacklist_repo.BlacklistType.GUILD, guild_id):
+          continue
+
         data = await dt_helpers.get_dt_guild_data(guild_id)
         if datetime.datetime.utcnow() - last_update > datetime.timedelta(seconds=10):
           await message.edit(f"Guilds `{idx + 1}/{len(guild_ids)}` updated")
@@ -160,6 +165,8 @@ class DTDataDownloader(Base_Cog):
           continue
 
         guild_id = int(guild_id_results[0])
+        if await dt_blacklist_repo.is_on_blacklist(dt_blacklist_repo.BlacklistType.GUILD, guild_id):
+          continue
 
         for row_idx, (_, row) in enumerate(dataframe.iterrows()):
           try:

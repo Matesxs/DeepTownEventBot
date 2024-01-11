@@ -132,6 +132,7 @@ class Strings(metaclass=Formatable):
 
   # Data manager
   data_manager_update_guild_description = "Update data of selected guild in database"
+  data_manager_update_guild_guild_on_blacklist = "Guild `{guild_index}` is on blacklist"
   data_manager_update_guild_get_failed = "Failed to get guild data for guild with identifier `{identifier}`"
   data_manager_update_guild_success = "Data for guild `{guild}` fetched and updated"
 

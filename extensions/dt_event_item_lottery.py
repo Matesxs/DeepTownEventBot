@@ -407,7 +407,7 @@ class DTEventItemLottery(Base_Cog):
       if inter.guild is None or str(inter.guild.id) != lottery.guild_id:
         await message_utils.generate_error_message(inter, Strings.unexpected_action)
       else:
-        for table in (await items_lottery.generate_guesses_tables(self.bot, lottery)):
+        for table in (await items_lottery.generate_guesses_tables(lottery)):
           await inter.send(f"```\n{table}\n```", ephemeral=True, delete_after=60)
           await asyncio.sleep(0.05)
     elif command == "auto_show_guesses":
@@ -426,7 +426,8 @@ class DTEventItemLottery(Base_Cog):
 
           author = await lottery.get_author(self.bot)
           if author is not None:
-            await lottery.repeat()
+            await items_lottery.handle_closing_lottery_message(self.bot, message, lottery, True)
+            lottery = await lottery.repeat()
             await items_lottery.create_lottery(author, message, lottery, False)
           else:
             await message_utils.generate_error_message(inter, Strings.lottery_failed_to_get_author)

@@ -1,7 +1,7 @@
 import datetime
 import disnake
 from typing import Optional, Union, List
-from sqlalchemy import String, Integer, ForeignKey, Column, UniqueConstraint, DateTime, Boolean
+from sqlalchemy import String, Integer, ForeignKey, Column, UniqueConstraint, DateTime, Boolean, select
 from sqlalchemy.orm import relationship, Mapped
 
 import database
@@ -111,7 +111,11 @@ class DTEventItemLottery(database.base):
     event_specification = await event_participation_repo.get_or_create_event_specification(next_year, next_week)
 
     self.event_id = event_specification.event_id
+
     self.created_at = datetime.datetime.utcnow()
     self.closed_at = None
 
     await database.run_commit()
+
+    # After change of specification id reference to that event is invalid so pulling new item
+    return (await database.run_query(select(DTEventItemLottery).filter(DTEventItemLottery.id == self.id))).scalar_one()

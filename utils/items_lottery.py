@@ -13,21 +13,6 @@ from utils import string_manipulation, message_utils, dt_report_generators, dt_h
 
 logger = setup_custom_logger(__name__)
 
-async def get_lottery_author_name(bot: BaseAutoshardedBot, lottery: dt_event_item_lottery_repo.DTEventItemLottery) -> str:
-  author = await lottery.get_author(bot)
-  if author is None and lottery.user is not None:
-    author = await lottery.user.to_object(bot)
-
-  if author is not None:
-    author_name = author.display_name
-  else:
-    author = lottery.member or lottery.user
-    if author is not None:
-      author_name = author.name
-    else:
-      author_name = "*Unknown*"
-  return author_name
-
 def create_lottery_embed(author: Optional[disnake.Member | disnake.User], lottery: dt_event_item_lottery_repo.DTEventItemLottery) -> disnake.Embed:
   table_data = [(4, f"{string_manipulation.format_number(lottery.guessed_4_item_reward_amount)} {string_manipulation.truncate_string(lottery.guessed_4_reward_item_name, 20)}" if lottery.guessed_4_reward_item_name is not None and lottery.guessed_4_item_reward_amount > 0 else "*No Reward*"),
                 (3, f"{string_manipulation.format_number(lottery.guessed_3_item_reward_amount)} {string_manipulation.truncate_string(lottery.guessed_3_reward_item_name, 20)}" if lottery.guessed_3_reward_item_name is not None and lottery.guessed_3_item_reward_amount > 0 else "*No Reward*"),
@@ -96,9 +81,6 @@ async def process_lottery_result(bot: BaseAutoshardedBot, lottery: dt_event_item
     await delete_lottery(bot, lottery)
     return
 
-  # Get lottery author name
-  author_name = await get_lottery_author_name(bot, lottery)
-
   positions = list(result[1].keys())
   positions.sort(reverse=True)
 
@@ -133,13 +115,7 @@ async def process_lottery_result(bot: BaseAutoshardedBot, lottery: dt_event_item
       else:
         continue
 
-      guess_author = await user_object.to_object(bot)
-
-      if guess_author is None:
-        guess_author_name = user_object.name
-      else:
-        guess_author_name = guess_author.display_name
-      winner_names.append(string_manipulation.truncate_string(guess_author_name, 15))
+      winner_names.append(string_manipulation.truncate_string(user_object.name, 15))
 
     reward = (reward_item_amount / len(winner_names)) if lottery.split_rewards else reward_item_amount
     table_data.append((position, f"{string_manipulation.format_number(reward)} {reward_item_name}", ",\n".join(winner_names)))
@@ -148,13 +124,13 @@ async def process_lottery_result(bot: BaseAutoshardedBot, lottery: dt_event_item
 
   event_items_table = dt_report_generators.get_event_items_table(lottery.event_specification, only_names=True)
   if not winner_ids:
-    message = f"Event items lottery result for `{lottery.event_specification.event_year} {lottery.event_specification.event_week}` by {author_name}\nParticipants: {result[0]}\n```\n{event_items_table}\n```\n**There are no winners**"
+    message = f"Event items lottery result for `{lottery.event_specification.event_year} {lottery.event_specification.event_week}` by {lottery.member.name}\nParticipants: {result[0]}\n```\n{event_items_table}\n```\n**There are no winners**"
     if isinstance(destination, disnake.Message):
       destination = await destination.reply(message)
     else:
       destination = await destination.send(message)
   else:
-    table_lines = [f"Event items lottery result for `{lottery.event_specification.event_year} {lottery.event_specification.event_week}` by {author_name}",
+    table_lines = [f"Event items lottery result for `{lottery.event_specification.event_year} {lottery.event_specification.event_week}` by {lottery.member.name}",
                    f"Participants: {result[0]}",
                    *(f"```\n{event_items_table}\n```".split("\n")),
                    *("```\n" + table2ascii(["Guessed", "Reward each", "Winners"], table_data, alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.LEFT], first_col_heading=True) + "\n```").split("\n")]
@@ -179,7 +155,7 @@ async def process_lottery_result(bot: BaseAutoshardedBot, lottery: dt_event_item
     await destination.edit(components=disnake.ui.Button(label="Jump to lottery", url=lottery_message.jump_url, style=disnake.ButtonStyle.primary))
 
   if lottery.autoshow_guesses:
-    for table in (await generate_guesses_tables(bot, lottery)):
+    for table in (await generate_guesses_tables(lottery)):
       await destination.reply(f"```\n{table}\n```")
       await asyncio.sleep(0.05)
 
@@ -193,8 +169,8 @@ async def process_lottery_result(bot: BaseAutoshardedBot, lottery: dt_event_item
         if lottery_message is not None:
           await handle_closing_lottery_message(bot, lottery_message, lottery, True)
 
-        await lottery.repeat()
-        await create_lottery(author or author_name, (await lottery.get_lotery_message(bot)) or destination, lottery, False)
+        lottery = await lottery.repeat()
+        await create_lottery(author, lottery_message or destination, lottery, False)
       else:
         if lottery_message is not None:
           await handle_closing_lottery_message(bot, lottery_message, lottery, False)
@@ -247,19 +223,12 @@ async def create_lottery(author: disnake.Member | disnake.User, source_message: 
 
   await source_message.edit(components=get_lottery_buttons(lottery))
 
-async def generate_guesses_tables(bot: BaseAutoshardedBot, lottery: dt_event_item_lottery_repo.DTEventItemLottery):
+async def generate_guesses_tables(lottery: dt_event_item_lottery_repo.DTEventItemLottery):
   data = []
 
   for guess in lottery.guesses:
-    author = await guess.get_author(bot)
-    if author is None:
-      author = await discord_objects_repo.get_discord_member(int(guess.guild_id), int(guess.author_id))
-      author_name = author.name
-    else:
-      author_name = author.display_name
-
     if not guess.guessed_lotery_items: continue
-    data.append((string_manipulation.truncate_string(author_name, 20), ",\n".join([i.item_name for i in guess.guessed_lotery_items])))
+    data.append((string_manipulation.truncate_string(guess.member.name, 20), ",\n".join([i.item_name for i in guess.guessed_lotery_items])))
 
   table_lines = table2ascii(["Guesser", "Items"], data, alignments=[Alignment.LEFT, Alignment.LEFT]).split("\n")
   tables = []

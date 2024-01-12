@@ -65,7 +65,7 @@ async def send_stats(inter: disnake.CommandInteraction, user_data = None, guild_
     plot1 = ax1.bar(dataframe.date, dataframe["all"], width=0.8, color="#07e6ec", edgecolor="#07e6ec", label=all_label)
     ax1.set_xticks(ax1.get_xticks(), ax1.get_xticklabels(), rotation=20, ha='right')
     ax1.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
-    ax1.xaxis.set_major_locator(mticker.MaxNLocator(nbins=6, integer=True))
+    ax1.xaxis.set_major_locator(mticker.MaxNLocator(nbins=6, integer=True, prune="lower"))
     ax1.yaxis.set_major_locator(mticker.MaxNLocator(nbins=10, integer=True))
     ax1.yaxis.set_major_formatter(mticker.ScalarFormatter())
     ax1.tick_params(axis='y', colors=plot1.patches[-1].get_facecolor())

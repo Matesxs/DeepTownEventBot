@@ -482,7 +482,7 @@ class DTEventItemLottery(Base_Cog):
       lotteries_to_notify = await dt_event_item_lottery_repo.get_active_lotteries(year, week)
 
       if lotteries_to_notify:
-        logger.info("Notifying that lotteries are closed")
+        logger.info("Notifying lotteries are closed")
         for lottery in lotteries_to_notify:
           await items_lottery.lottery_notify_closed_and_waiting(self.bot, lottery)
           await asyncio.sleep(0.05)

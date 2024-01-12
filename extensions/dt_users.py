@@ -13,9 +13,9 @@ from database import event_participation_repo, dt_user_repo
 
 logger = setup_custom_logger(__name__)
 
-class DTDataInterface(Base_Cog):
+class DTUsers(Base_Cog):
   def __init__(self, bot):
-    super(DTDataInterface, self).__init__(bot, __file__)
+    super(DTUsers, self).__init__(bot, __file__)
 
   @commands.slash_command(name="user")
   async def user_command(self, inter: disnake.CommandInteraction):
@@ -115,4 +115,4 @@ class DTDataInterface(Base_Cog):
     await embed_view.run(inter)
 
 def setup(bot):
-  bot.add_cog(DTDataInterface(bot))
+  bot.add_cog(DTUsers(bot))

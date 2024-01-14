@@ -9,7 +9,7 @@ id_in_identifier_regex = re.compile(r"([A-Z]*) .*\((\d*)\).*")
 
 async def autocomplete_identifier_user(_, string: Optional[str]):
   if string is None or not string:
-    all_users = await dt_user_repo.get_all_users(limit=20)
+    all_users = await dt_user_repo.get_all_users(limit=25)
     user_strings = []
     for user in all_users:
       prefix = f"USER ({user.id}) "
@@ -17,7 +17,7 @@ async def autocomplete_identifier_user(_, string: Optional[str]):
       user_strings.append(prefix + string_manipulation.truncate_string(user.username, 25 - prefix_len))
     return user_strings
 
-  all_users = await dt_user_repo.get_all_users(limit=20, search=string)
+  all_users = await dt_user_repo.get_all_users(limit=25, search=string)
   user_strings = []
   for user in all_users:
     prefix = f"USER ({user.id}) "
@@ -27,7 +27,7 @@ async def autocomplete_identifier_user(_, string: Optional[str]):
 
 async def autocomplete_identifier_guild(_, string: Optional[str]):
   if string is None or not string:
-    all_guilds = await dt_guild_repo.search_guilds(limit=20)
+    all_guilds = await dt_guild_repo.search_guilds(limit=25)
     guild_strings = []
     for guild in all_guilds:
       prefix = F"GUILD ({guild.id}) "
@@ -35,7 +35,7 @@ async def autocomplete_identifier_guild(_, string: Optional[str]):
       guild_strings.append(prefix + string_manipulation.truncate_string(guild.name, 25 - prefix_length))
     return guild_strings
 
-  all_guilds = await dt_guild_repo.search_guilds(limit=20, search=string)
+  all_guilds = await dt_guild_repo.search_guilds(limit=25, search=string)
   guild_strings = []
   for guild in all_guilds:
     prefix = F"GUILD ({guild.id}) "
@@ -45,7 +45,7 @@ async def autocomplete_identifier_guild(_, string: Optional[str]):
 
 async def autocomplete_identifier_guild_and_user(_, string: Optional[str]):
   result = await autocomplete_identifier_user(None, string)
-  rest = 20 - len(result)
+  rest = 25 - len(result)
   if rest > 0:
     guilds = await autocomplete_identifier_guild(None, string)
     for _ in range(min(rest, len(guilds))):

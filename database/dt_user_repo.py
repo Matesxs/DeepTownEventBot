@@ -22,13 +22,13 @@ async def get_all_users(search: Optional[str]=None, limit: int=25) -> List[DTUse
     result = await run_query(select(DTUser).order_by(DTUser.username).limit(limit))
   return result.scalars().all()
 
-async def create_dummy_dt_user(id: int) -> Optional[DTUser]:
-  item = await get_dt_user(id)
+async def create_dummy_dt_user(user_id: int) -> Optional[DTUser]:
+  item = await get_dt_user(user_id)
   if item is None:
-    if await dt_blacklist_repo.is_on_blacklist(dt_blacklist_repo.BlacklistType.USER, id):
+    if await dt_blacklist_repo.is_on_blacklist(dt_blacklist_repo.BlacklistType.USER, user_id):
       return None
 
-    item = DTUser(id=id, username="Unknown", level=-1, depth=-1)
+    item = DTUser(id=user_id, username="Unknown", level=-1, depth=-1)
     await add_item(item)
   return item
 

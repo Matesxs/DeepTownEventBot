@@ -13,7 +13,7 @@ from utils import string_manipulation, message_utils, dt_report_generators, dt_h
 
 logger = setup_custom_logger(__name__)
 
-def create_lottery_embed(author: Optional[disnake.Member | disnake.User], lottery: dt_event_item_lottery_repo.DTEventItemLottery) -> disnake.Embed:
+def create_lottery_embed(author: Optional[disnake.Member | disnake.User], lottery: dt_event_item_lottery_repo.DTEventItemLottery, closed: bool=False) -> disnake.Embed:
   table_data = [(4, f"{string_manipulation.format_number(lottery.guessed_4_item_reward_amount)} {string_manipulation.truncate_string(lottery.guessed_4_reward_item_name, 20)}" if lottery.guessed_4_reward_item_name is not None and lottery.guessed_4_item_reward_amount > 0 else "*No Reward*"),
                 (3, f"{string_manipulation.format_number(lottery.guessed_3_item_reward_amount)} {string_manipulation.truncate_string(lottery.guessed_3_reward_item_name, 20)}" if lottery.guessed_3_reward_item_name is not None and lottery.guessed_3_item_reward_amount > 0 else "*No Reward*"),
                 (2, f"{string_manipulation.format_number(lottery.guessed_2_item_reward_amount)} {string_manipulation.truncate_string(lottery.guessed_2_reward_item_name, 20)}" if lottery.guessed_2_reward_item_name is not None and lottery.guessed_2_item_reward_amount > 0 else "*No Reward*"),
@@ -24,7 +24,13 @@ def create_lottery_embed(author: Optional[disnake.Member | disnake.User], lotter
   start_date, _ = dt_helpers.event_index_to_date_range(year, week)
   start_date = start_date.replace(tzinfo=tz.tzutc()).astimezone(tz.tzlocal())
 
-  lottery_embed = disnake.Embed(title=f"Items guess lottery for event `{year} {week}` by {lottery.member.name}", description=f"```\n{lottery_table}\n```\n\nThis Event Starts <t:{int(start_date.timestamp())}>\nLottery Closing <t:{int(start_date.timestamp())}:R>\n\nUse `/lottery guess create` to participate in lotteries", color=disnake.Color.blurple())
+  description_parts = [f"```\n{lottery_table}\n```"]
+  if lottery.closed_at is None or not closed:
+    description_parts.append(f"\nThis Event Starts <t:{int(start_date.timestamp())}>\nLottery Closing <t:{int(start_date.timestamp())}:R>\n")
+  description_parts.append("Use `/lottery guess create` to participate in lotteries")
+  description_string = "\n".join(description_parts)
+
+  lottery_embed = disnake.Embed(title=f"Items guess lottery for event `{year} {week}` by {lottery.member.name}", description=description_string, color=disnake.Color.blurple())
   if author is not None:
     message_utils.add_author_footer(lottery_embed, author)
   return lottery_embed
@@ -41,7 +47,7 @@ async def lottery_notify_closed_and_waiting(bot: BaseAutoshardedBot, lottery: dt
   lottery_author = await lottery.get_author(bot)
 
   if lottery_message is not None and lottery_message.author.id == bot.user.id:
-    embed = create_lottery_embed(lottery_author, lottery)
+    embed = create_lottery_embed(lottery_author, lottery, closed=True)
     embed.description = "**Closed and waiting for evaluation**\n**!!No new guesses will count towards this lottery!!**\n\n" + embed.description
 
     await lottery_message.edit(embed=embed, components=None)
@@ -50,7 +56,7 @@ async def handle_closing_lottery_message(bot: BaseAutoshardedBot, message: disna
   lottery_author = await lottery.get_author(bot)
 
   if not repeat:
-    embed = create_lottery_embed(lottery_author, lottery)
+    embed = create_lottery_embed(lottery_author, lottery, closed=True)
     embed.description = "**Closed and results were send**\n\n" + embed.description
 
     buttons = [disnake.ui.Button(label="Delete", emoji="♻️", custom_id=f"event_item_lottery:remove:{lottery.id}", style=disnake.ButtonStyle.red),
@@ -58,7 +64,7 @@ async def handle_closing_lottery_message(bot: BaseAutoshardedBot, message: disna
 
     await message.edit(embed=embed, components=buttons)
   else:
-    embed = create_lottery_embed(lottery_author, lottery)
+    embed = create_lottery_embed(lottery_author, lottery, closed=True)
     embed.description = "**Closed and results were send**\n\n" + embed.description
 
     await message.edit(embed=embed, components=None)

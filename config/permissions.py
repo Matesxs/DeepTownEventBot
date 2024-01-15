@@ -14,7 +14,7 @@ async def is_bot_developer(bot, user):
   return False
 
 def is_guild_administrator(ctx):
-  if hasattr(ctx, "guild"):
+  if hasattr(ctx, "guild") and ctx.guild is not None:
     if ctx.author.guild_permissions.administrator:
       return True
 
@@ -26,7 +26,7 @@ async def has_guild_administrator_role(ctx):
   if await is_bot_developer(ctx.bot, ctx.author):
     return True
 
-  if hasattr(ctx, "guild"):
+  if hasattr(ctx, "guild") and ctx.guild is not None:
     if is_guild_administrator(ctx):
       return True
 

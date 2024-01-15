@@ -7,12 +7,12 @@ from config import config
 logging.getLogger('discord').setLevel(logging.WARNING)
 logging.getLogger('asyncio').setLevel(logging.CRITICAL)
 
-formater = logging.Formatter(fmt="%(asctime)s %(name)s %(levelname)s %(message)s", datefmt='%d-%m-%Y %H:%M:%S')
+formatter_string = "%(asctime)s %(name)s {%(filename)s:%(lineno)d} %(levelname)s %(message)s"
 
 if config.base.log_to_file:
 	fh = logging.FileHandler("discord.log")
 	fh.setLevel(logging.WARNING)
-	fh.setFormatter(formater)
+	fh.setFormatter(logging.Formatter(fmt=formatter_string, datefmt='%d-%m-%Y %H:%M:%S'))
 
 def setup_custom_logger(name, override_log_level=None):
 	logger = logging.getLogger(name)
@@ -20,8 +20,8 @@ def setup_custom_logger(name, override_log_level=None):
 		logger.addHandler(fh)
 
 	if not override_log_level:
-		coloredlogs.install(level="INFO", logger=logger)
+		coloredlogs.install(fmt=formatter_string, level="INFO", logger=logger)
 	else:
-		coloredlogs.install(level=override_log_level, logger=logger)
+		coloredlogs.install(fmt=formatter_string, level=override_log_level, logger=logger)
 
 	return logger

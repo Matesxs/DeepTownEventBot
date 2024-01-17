@@ -58,6 +58,78 @@ async def make_guess(inter: disnake.CommandInteraction | commands.Context | disn
   guessed_item_names_string = ", ".join([i.name for i in items])
   await message_utils.generate_success_message(inter, Strings.lottery_guess_registered(event_year=guess.event_specification.event_year, event_week=guess.event_specification.event_week, items=guessed_item_names_string))
 
+
+async def handle_guess_message(message: disnake.Message):
+  if message.guild is None: return
+  if message.author.bot or message.author.system: return
+  if message.content == "" or message.content.startswith(config.base.command_prefix): return
+  if not message.channel.permissions_for(message.guild.me).send_messages: return
+
+  message_lines = message.content.split("\n")
+  if len(message_lines) > 4: return
+
+  if not await automatic_lottery_guesses_whitelist_repo.is_on_whitelist(message.guild.id, message.channel.id):
+    return
+
+  all_item_names = await dt_items_repo.get_all_item_names()
+  all_item_names = [(name, name.lower()) for name in all_item_names]
+
+  guessed_items_data = []
+  for message_line in message_lines:
+    message_line = message_line.lower()
+
+    max_score = 0
+    guessed_item_name = None
+    for item_name, item_name_lower in all_item_names:
+      score = ratio(message_line, item_name_lower)
+      if score <= 0.1: continue
+
+      if score > max_score:
+        max_score = score
+        guessed_item_name = item_name
+
+      if max_score > 0.9:
+        break
+
+    if max_score > 0.7:
+      guessed_items_data.append((guessed_item_name, max_score * 100))
+
+  if guessed_items_data:
+    guessed_items_data.sort(key=lambda x: x[1], reverse=True)
+
+    all_sure = True
+    item_names = []
+    deduplicated_data = []
+    for data in guessed_items_data:
+      if data[0] not in item_names:
+        if data[1] < 90:
+          all_sure = False
+
+        item_names.append(data[0])
+        deduplicated_data.append(data)
+
+    year, week = dt_helpers.get_event_index(datetime.datetime.utcnow() + datetime.timedelta(days=7))
+    event_spec = await event_participation_repo.get_or_create_event_specification(year, week)
+    already_existing_guess = await dt_event_item_lottery_repo.get_guess(message.guild.id, message.author.id, event_spec.event_id)
+
+    if already_existing_guess is not None:
+      already_existing_guessed_names = [guessed_item.item_name for guessed_item in already_existing_guess.guessed_lotery_items]
+      if all([now_guessed_item_name in already_existing_guessed_names for now_guessed_item_name in item_names]) and len(already_existing_guessed_names) == len(item_names):
+        return
+
+    if len(item_names) and all_sure:
+      await make_guess(message, message.author, *item_names)
+    else:
+      items_list_string = "\n".join([f"`{item_name}` - {confidence:.1f}% confidence" for item_name, confidence in deduplicated_data])
+      prompt_string = f"Detected lottery guess\nAre these items correct and do you want to add them as a guess to lottery?\n\n**Guessed items:**\n{items_list_string}"
+
+      confirmation_view = confirm_view.ConfirmView(message, prompt_string)
+      if await confirmation_view.run():
+        await confirmation_view.wait()
+
+        if confirmation_view.get_result():
+          await make_guess(message, message.author, *item_names)
+
 class DTEventItemLottery(Base_Cog):
   def __init__(self, bot):
     super(DTEventItemLottery, self).__init__(bot, __file__)
@@ -304,77 +376,12 @@ class DTEventItemLottery(Base_Cog):
       return await message_utils.generate_success_message(inter, Strings.lottery_auto_guess_whitelist_remove_success(channel=channel.name))
     await message_utils.generate_error_message(inter, Strings.lottery_auto_guess_whitelist_remove_failed(channel=channel.name))
 
+  async def handle_message_edited(self, _, message: disnake.Message):
+    await handle_guess_message(message)
+
   @commands.Cog.listener()
   async def on_message(self, message: disnake.Message):
-    if message.guild is None: return
-    if message.author.bot or message.author.system: return
-    if message.content == "" or message.content.startswith(config.base.command_prefix): return
-    if not message.channel.permissions_for(message.guild.me).send_messages: return
-
-    message_lines = message.content.split("\n")
-    if len(message_lines) > 4: return
-
-    if not await automatic_lottery_guesses_whitelist_repo.is_on_whitelist(message.guild.id, message.channel.id):
-      return
-
-    all_item_names = await dt_items_repo.get_all_item_names()
-    all_item_names = [(name, name.lower()) for name in all_item_names]
-
-    guessed_items_data = []
-    for message_line in message_lines:
-      message_line = message_line.lower()
-
-      max_score = 0
-      guessed_item_name = None
-      for item_name, item_name_lower in all_item_names:
-        score = ratio(message_line, item_name_lower)
-        if score <= 0.1: continue
-
-        if score > max_score:
-          max_score = score
-          guessed_item_name = item_name
-
-        if max_score > 0.9:
-          break
-
-      if max_score > 0.7:
-        guessed_items_data.append((guessed_item_name, max_score * 100))
-
-    if guessed_items_data:
-      guessed_items_data.sort(key=lambda x: x[1], reverse=True)
-
-      all_sure = True
-      item_names = []
-      deduplicated_data = []
-      for data in guessed_items_data:
-        if data[0] not in item_names:
-          if data[1] < 90:
-            all_sure = False
-
-          item_names.append(data[0])
-          deduplicated_data.append(data)
-
-      year, week = dt_helpers.get_event_index(datetime.datetime.utcnow() + datetime.timedelta(days=7))
-      event_spec = await event_participation_repo.get_or_create_event_specification(year, week)
-      already_existing_guess = await dt_event_item_lottery_repo.get_guess(message.guild.id, message.author.id, event_spec.event_id)
-
-      if already_existing_guess is not None:
-        already_existing_guessed_names = [guessed_item.item_name for guessed_item in already_existing_guess.guessed_lotery_items]
-        if all([now_guessed_item_name in already_existing_guessed_names for now_guessed_item_name in item_names]) and len(already_existing_guessed_names) == len(item_names):
-          return
-
-      if len(item_names) and all_sure:
-        await make_guess(message, message.author, *item_names)
-      else:
-        items_list_string = "\n".join([f"`{item_name}` - {confidence:.1f}% confidence" for item_name, confidence in deduplicated_data])
-        prompt_string = f"Detected lottery guess\nAre these items correct and do you want to add them as a guess to lottery?\n\n**Guessed items:**\n{items_list_string}"
-
-        confirmation_view = confirm_view.ConfirmView(message, prompt_string)
-        if await confirmation_view.run():
-          await confirmation_view.wait()
-
-          if confirmation_view.get_result():
-            await make_guess(message, message.author, *item_names)
+    await handle_guess_message(message)
 
   @commands.Cog.listener()
   async def on_button_click(self, inter: disnake.MessageInteraction):

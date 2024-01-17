@@ -24,7 +24,7 @@ async def send_stats(inter: disnake.CommandInteraction, user_data = None, guild_
     dataframe = pd.DataFrame(data, columns=["date", "active", "all"], index=None)
 
     dataframe = dataframe.set_index(pd.DatetimeIndex(dataframe["date"], name="date")).drop("date", axis=1)
-    dataframe = dataframe.resample("D").mean().interpolate(limit_direction="backward")
+    dataframe = dataframe.resample("D").max().interpolate(limit_direction="backward")
     dataframe["active"] = dataframe["active"].round().astype(int)
     dataframe["all"] = dataframe["all"].round().astype(int)
     dataframe["active_percent"] = dataframe["active"] / dataframe["all"] * 100
@@ -134,7 +134,7 @@ class DTStatistics(Base_Cog):
   @activity_stats_commands.sub_command(name="users", description=Strings.public_interface_stats_activity_users_description)
   async def active_user_statistics(self, inter: disnake.CommandInteraction,
                                    days_back: int = commands.Param(default=365, min_value=10, max_value=730)):
-    statistics_data = await dt_statistics_repo.get_active_user_statistics(datetime.datetime.utcnow() - datetime.timedelta(days=days_back))
+    statistics_data = await dt_statistics_repo.get_active_user_statistics((datetime.datetime.utcnow() - datetime.timedelta(days=days_back)).date())
     if not statistics_data:
       return await message_utils.generate_error_message(inter, Strings.public_interface_stats_no_data_found)
 
@@ -143,7 +143,7 @@ class DTStatistics(Base_Cog):
   @activity_stats_commands.sub_command(name="guilds", description=Strings.public_interface_stats_activity_guilds_description)
   async def active_guild_statistics(self, inter: disnake.CommandInteraction,
                                     days_back: int = commands.Param(default=365, min_value=10, max_value=730)):
-    statistics_data = await dt_statistics_repo.get_active_guild_statistics(datetime.datetime.utcnow() - datetime.timedelta(days=days_back))
+    statistics_data = await dt_statistics_repo.get_active_guild_statistics((datetime.datetime.utcnow() - datetime.timedelta(days=days_back)).date())
     if not statistics_data:
       return await message_utils.generate_error_message(inter, Strings.public_interface_stats_no_data_found)
 
@@ -153,8 +153,8 @@ class DTStatistics(Base_Cog):
   async def active_both_statistics(self, inter: disnake.CommandInteraction,
                                    days_back: int = commands.Param(default=365, min_value=10, max_value=730)):
 
-    statistics_guild_data = await dt_statistics_repo.get_active_guild_statistics(datetime.datetime.utcnow() - datetime.timedelta(days=days_back))
-    statistics_user_data = await dt_statistics_repo.get_active_user_statistics(datetime.datetime.utcnow() - datetime.timedelta(days=days_back))
+    statistics_guild_data = await dt_statistics_repo.get_active_guild_statistics((datetime.datetime.utcnow() - datetime.timedelta(days=days_back)).date())
+    statistics_user_data = await dt_statistics_repo.get_active_user_statistics((datetime.datetime.utcnow() - datetime.timedelta(days=days_back)).date())
 
     if not statistics_guild_data or not statistics_user_data:
       return await message_utils.generate_error_message(inter, Strings.public_interface_stats_no_data_found)

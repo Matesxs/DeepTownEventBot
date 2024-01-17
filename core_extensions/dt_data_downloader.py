@@ -31,8 +31,8 @@ class DTDataDownloader(Base_Cog):
       if not self.data_update_task.is_running():
         self.data_update_task.start()
 
-    if not self.generate_statistics_task.is_running():
-      self.generate_statistics_task.start()
+      if not self.generate_statistics_task.is_running():
+        self.generate_statistics_task.start()
 
   def cog_unload(self):
     if self.cleanup_task.is_running():
@@ -339,7 +339,7 @@ class DTDataDownloader(Base_Cog):
     if not self.inactive_guild_data_update_task.is_running() and config.data_manager.inactive_guild_data_pull_rate_hours > 0:
       self.inactive_guild_data_update_task.start()
 
-  @tasks.loop(time=datetime.time(hour=23, minute=59, second=0))
+  @tasks.loop(time=[datetime.time(hour=12, minute=0, second=0), datetime.time(hour=23, minute=59, second=0)])
   async def generate_statistics_task(self):
     logger.info("Saving DT activity statistics data")
     await dt_statistics_repo.generate_or_update_active_statistics()

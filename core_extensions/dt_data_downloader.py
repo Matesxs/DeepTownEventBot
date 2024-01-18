@@ -31,9 +31,6 @@ class DTDataDownloader(Base_Cog):
       if not self.data_update_task.is_running():
         self.data_update_task.start()
 
-      if not self.generate_statistics_task.is_running():
-        self.generate_statistics_task.start()
-
   def cog_unload(self):
     if self.cleanup_task.is_running():
       self.cleanup_task.cancel()
@@ -43,9 +40,6 @@ class DTDataDownloader(Base_Cog):
 
     if self.inactive_guild_data_update_task.is_running():
       self.inactive_guild_data_update_task.cancel()
-
-    if self.generate_statistics_task.is_running():
-      self.generate_statistics_task.cancel()
 
   @command_utils.master_only_slash_command(name="data_update")
   async def data_update_commands(self, inter: disnake.CommandInteraction):
@@ -262,6 +256,7 @@ class DTDataDownloader(Base_Cog):
       logger.info(f"Pulled data of {pulled_data} inactive DT guilds")
       logger.info(f"New count of active guilds: {await dt_guild_repo.get_number_of_active_guilds()}")
 
+      await dt_statistics_repo.generate_or_update_active_statistics()
     logger.info("Inactive DT Guild data pull finished")
 
   @tasks.loop(hours=max(config.data_manager.data_pull_rate_hours, 1))
@@ -331,6 +326,7 @@ class DTDataDownloader(Base_Cog):
 
       logger.info(f"Pulled data of {pulled_data} DT guilds\n{not_updated} guilds not updated")
 
+      await dt_statistics_repo.generate_or_update_active_statistics()
     logger.info("DT Guild data pull finished")
 
     await asyncio.sleep(30)
@@ -338,16 +334,6 @@ class DTDataDownloader(Base_Cog):
 
     if not self.inactive_guild_data_update_task.is_running() and config.data_manager.inactive_guild_data_pull_rate_hours > 0:
       self.inactive_guild_data_update_task.start()
-
-  @tasks.loop(time=[datetime.time(hour=12, minute=0, second=0), datetime.time(hour=23, minute=59, second=0)])
-  async def generate_statistics_task(self):
-    logger.info("Saving DT activity statistics data")
-    await dt_statistics_repo.generate_or_update_active_statistics()
-
-  @generate_statistics_task.before_loop
-  async def before_loop_generate_statistics_task(self):
-    logger.info("Saving DT activity statistics data at startup")
-    await dt_statistics_repo.generate_or_update_active_statistics()
 
 def setup(bot):
   bot.add_cog(DTDataDownloader(bot))

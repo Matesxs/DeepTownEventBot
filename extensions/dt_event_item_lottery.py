@@ -484,7 +484,7 @@ class DTEventItemLottery(Base_Cog):
   async def notify_lottery_closed_task(self):
     current_datetime = datetime.datetime.utcnow()
 
-    if current_datetime.day == config.event_tracker.event_start_day:
+    if current_datetime.weekday() == config.event_tracker.event_start_day:
       year, week = dt_helpers.get_event_index(current_datetime)
       lotteries_to_notify = await dt_event_item_lottery_repo.get_active_lotteries(year, week)
 

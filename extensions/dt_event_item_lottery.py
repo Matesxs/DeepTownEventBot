@@ -434,7 +434,7 @@ class DTEventItemLottery(Base_Cog):
           author = await lottery.get_author(self.bot)
           if author is not None:
             await items_lottery.handle_closing_lottery_message(self.bot, message, lottery, True)
-            lottery = await lottery.repeat()
+            await lottery.repeat()
             await items_lottery.create_lottery(author, message, lottery, False)
           else:
             await message_utils.generate_error_message(inter, Strings.lottery_failed_to_get_author)
@@ -464,6 +464,12 @@ class DTEventItemLottery(Base_Cog):
         await run_commit()
 
         await inter.edit_original_response(components=items_lottery.get_lottery_buttons(lottery))
+      else:
+        await message_utils.generate_error_message(inter, Strings.lottery_button_listener_not_author)
+    elif command == "refresh":
+      if is_author or (await permissions.has_guild_administrator_role(inter)):
+        embed = items_lottery.create_lottery_embed(await lottery.get_author(self.bot), lottery)
+        await inter.edit_original_response(embed=embed, components=items_lottery.get_lottery_buttons(lottery))
       else:
         await message_utils.generate_error_message(inter, Strings.lottery_button_listener_not_author)
     else:

@@ -25,7 +25,7 @@ def create_lottery_embed(author: Optional[disnake.Member | disnake.User], lotter
   start_date = start_date.replace(tzinfo=tz.tzutc()).astimezone(tz.tzlocal())
 
   description_parts = [f"```\n{lottery_table}\n```"]
-  if lottery.closed_at is None or not closed:
+  if lottery.closed_at is None and not closed:
     description_parts.append(f"\nThis Event Starts <t:{int(start_date.timestamp())}>\nLottery Closing <t:{int(start_date.timestamp())}:R>\n")
   description_parts.append("Use `/lottery guess create` to participate in lotteries")
   description_string = "\n".join(description_parts)
@@ -139,7 +139,7 @@ async def process_lottery_result(bot: BaseAutoshardedBot, lottery: dt_event_item
     table_lines = [f"Event items lottery result for `{lottery.event_specification.event_year} {lottery.event_specification.event_week}` by {lottery.member.name}",
                    f"Participants: {result[0]}",
                    *(f"```\n{event_items_table}\n```".split("\n")),
-                   *("```\n" + table2ascii(["Guessed", "Reward each", "Winners"], table_data, alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.LEFT], first_col_heading=True) + "\n```").split("\n")]
+                   *(("```\n" + table2ascii(["Guessed", "Reward each", "Winners"], table_data, alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.LEFT], first_col_heading=True) + "\n```").split("\n"))]
 
     while table_lines:
       final_string, table_lines = string_manipulation.add_string_until_length(table_lines, 1900, "\n")
@@ -160,7 +160,7 @@ async def process_lottery_result(bot: BaseAutoshardedBot, lottery: dt_event_item
   if lottery_message is not None and isinstance(destination, disnake.Message):
     await destination.edit(components=disnake.ui.Button(label="Jump to lottery", url=lottery_message.jump_url, style=disnake.ButtonStyle.primary))
 
-  if lottery.autoshow_guesses:
+  if lottery.autoshow_guesses and len(lottery.guesses) > 0:
     for table in (await generate_guesses_tables(lottery)):
       await destination.reply(f"```\n{table}\n```")
       await asyncio.sleep(0.05)
@@ -175,7 +175,7 @@ async def process_lottery_result(bot: BaseAutoshardedBot, lottery: dt_event_item
         if lottery_message is not None:
           await handle_closing_lottery_message(bot, lottery_message, lottery, True)
 
-        lottery = await lottery.repeat()
+        await lottery.repeat()
         await create_lottery(author, lottery_message or destination, lottery, False)
       else:
         if lottery_message is not None:

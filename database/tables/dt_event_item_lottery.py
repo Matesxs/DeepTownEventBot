@@ -117,5 +117,4 @@ class DTEventItemLottery(database.base):
 
     await database.run_commit()
 
-    # After change of specification id reference to that event is invalid so pulling new item
-    return (await database.run_query(select(DTEventItemLottery).filter(DTEventItemLottery.id == self.id))).scalar_one()
+    self.event_specification = event_specification

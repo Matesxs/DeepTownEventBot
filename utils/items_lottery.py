@@ -126,44 +126,48 @@ async def process_lottery_result(bot: BaseAutoshardedBot, lottery: dt_event_item
     reward = (reward_item_amount / len(winner_names)) if lottery.split_rewards else reward_item_amount
     table_data.append((position, f"{string_manipulation.format_number(reward)} {reward_item_name}", ",\n".join(winner_names)))
 
-  destination = lottery_message or lottery_channel
+  result_message_lines = [f"Event items lottery result for `{lottery.event_specification.event_year} {lottery.event_specification.event_week}` by {lottery.member.name}",
+                          f"Participants: {result[0]}"]
 
-  event_items_table = dt_report_generators.get_event_items_table(lottery.event_specification, only_names=True)
-  if not winner_ids:
-    message = f"Event items lottery result for `{lottery.event_specification.event_year} {lottery.event_specification.event_week}` by {lottery.member.name}\nParticipants: {result[0]}\n```\n{event_items_table}\n```\n**There are no winners**"
-    if isinstance(destination, disnake.Message):
-      destination = await destination.reply(message)
-    else:
-      destination = await destination.send(message)
-  else:
-    table_lines = [f"Event items lottery result for `{lottery.event_specification.event_year} {lottery.event_specification.event_week}` by {lottery.member.name}",
-                   f"Participants: {result[0]}",
-                   *(f"```\n{event_items_table}\n```".split("\n")),
-                   *(("```\n" + table2ascii(["Guessed", "Reward each", "Winners"], table_data, alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.LEFT], first_col_heading=True) + "\n```").split("\n"))]
-
-    while table_lines:
-      final_string, table_lines = string_manipulation.add_string_until_length(table_lines, 1900, "\n")
-      if isinstance(destination, disnake.Message):
-        destination = await destination.reply(final_string)
-      else:
-        destination = await destination.send(final_string)
-      await asyncio.sleep(0.005)
-
-    if winner_ids and lottery.autoping_winners:
-      mention_strings = [f"<@{uid}>" for uid in winner_ids]
-
-      while mention_strings:
-        final_string, mention_strings = string_manipulation.add_string_until_length(mention_strings, 1800, " ")
-        await destination.reply(final_string)
-        await asyncio.sleep(0.05)
-
-  if lottery_message is not None and isinstance(destination, disnake.Message):
-    await destination.edit(components=disnake.ui.Button(label="Jump to lottery", url=lottery_message.jump_url, style=disnake.ButtonStyle.primary))
+  event_items_table_lines = dt_report_generators.get_event_items_table(lottery.event_specification, only_names=True).split("\n")
+  while event_items_table_lines:
+    final_string, event_items_table_lines = string_manipulation.add_string_until_length(event_items_table_lines, 1850, "\n")
+    result_message_lines.append(f"```\n{final_string}\n```")
 
   if lottery.autoshow_guesses and len(lottery.guesses) > 0:
     for table in (await generate_guesses_tables(lottery)):
-      await destination.reply(f"```\n{table}\n```")
-      await asyncio.sleep(0.05)
+      result_message_lines.append(f"```\n{table}\n```")
+
+  if winner_ids:
+    rewards_table_lines = table2ascii(["Guessed", "Reward each", "Winners"], table_data, alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.LEFT], first_col_heading=True).split("\n")
+    while rewards_table_lines:
+      final_string, rewards_table_lines = string_manipulation.add_string_until_length(rewards_table_lines, 1850, "\n")
+      result_message_lines.append(f"```\n{final_string}\n```")
+
+    if lottery.autoping_winners:
+      mention_strings = [f"<@{uid}>" for uid in winner_ids]
+
+      while mention_strings:
+        final_string, mention_strings = string_manipulation.add_string_until_length(mention_strings, 1850, " ")
+        result_message_lines.append(final_string)
+
+    result_message_lines.append("Congratulations to all winners! 🎉")
+    result_message_lines.append("Don't forget to get get your rewards 😉")
+  else:
+    result_message_lines.append("**There are no winners**")
+    result_message_lines.append("Better luck next time")
+
+  destination = lottery_message or lottery_channel
+  while result_message_lines:
+    final_string, result_message_lines = string_manipulation.add_string_until_length(result_message_lines, 1900, "\n")
+    if isinstance(destination, disnake.Message):
+      destination = await destination.reply(final_string)
+    else:
+      destination = await destination.send(final_string)
+    await asyncio.sleep(0.005)
+
+  if lottery_message is not None and isinstance(destination, disnake.Message):
+    await destination.edit(components=disnake.ui.Button(label="Jump to lottery", url=lottery_message.jump_url, style=disnake.ButtonStyle.primary))
 
   # Close or repeat lottery
   if lottery.auto_repeat:
@@ -229,7 +233,7 @@ async def create_lottery(author: disnake.Member | disnake.User, source_message: 
 
   await source_message.edit(components=get_lottery_buttons(lottery))
 
-async def generate_guesses_tables(lottery: dt_event_item_lottery_repo.DTEventItemLottery):
+async def generate_guesses_tables(lottery: dt_event_item_lottery_repo.DTEventItemLottery) -> list[str]:
   data = []
 
   for guess in lottery.guesses:

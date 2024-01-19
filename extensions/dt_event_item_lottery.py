@@ -60,6 +60,16 @@ async def make_guess(inter: disnake.CommandInteraction | commands.Context | disn
 
 
 async def handle_guess_message(message: disnake.Message):
+  async def already_guessed():
+    already_existing_guess = await dt_event_item_lottery_repo.get_guess(message.guild.id, message.author.id, event_spec.event_id)
+
+    if already_existing_guess is not None:
+      already_existing_guessed_names = [guessed_item.item_name for guessed_item in already_existing_guess.guessed_lotery_items]
+      if all([now_guessed_item_name in already_existing_guessed_names for now_guessed_item_name in item_names]) and len(already_existing_guessed_names) == len(item_names):
+        return True
+
+    return False
+
   if message.guild is None: return
   if message.author.bot or message.author.system: return
   if message.content == "" or message.content.startswith(config.base.command_prefix): return
@@ -110,12 +120,9 @@ async def handle_guess_message(message: disnake.Message):
 
     year, week = dt_helpers.get_event_index(datetime.datetime.utcnow() + datetime.timedelta(days=7))
     event_spec = await event_participation_repo.get_or_create_event_specification(year, week)
-    already_existing_guess = await dt_event_item_lottery_repo.get_guess(message.guild.id, message.author.id, event_spec.event_id)
 
-    if already_existing_guess is not None:
-      already_existing_guessed_names = [guessed_item.item_name for guessed_item in already_existing_guess.guessed_lotery_items]
-      if all([now_guessed_item_name in already_existing_guessed_names for now_guessed_item_name in item_names]) and len(already_existing_guessed_names) == len(item_names):
-        return
+    if await already_guessed():
+      return
 
     if len(item_names) and all_sure:
       await make_guess(message, message.author, *item_names)
@@ -128,6 +135,9 @@ async def handle_guess_message(message: disnake.Message):
         await confirmation_view.wait()
 
         if confirmation_view.get_result():
+          if await already_guessed():
+            return
+
           await make_guess(message, message.author, *item_names)
 
 class DTEventItemLottery(Base_Cog):

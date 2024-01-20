@@ -1,12 +1,12 @@
 import asyncio
 import disnake
-from typing import Optional, List, Dict, Tuple
+from typing import Optional
 from table2ascii import table2ascii, Alignment
 from dateutil import tz
 
 import database
 from features.base_bot import BaseAutoshardedBot
-from database import dt_event_item_lottery_repo, discord_objects_repo, run_commit
+from database import dt_event_item_lottery_repo, run_commit
 from database.tables import discord_objects
 from utils.logger import setup_custom_logger
 from utils import string_manipulation, message_utils, dt_report_generators, dt_helpers
@@ -69,8 +69,9 @@ async def handle_closing_lottery_message(bot: BaseAutoshardedBot, message: disna
 
     await message.edit(embed=embed, components=None)
 
-async def process_lottery_result(bot: BaseAutoshardedBot, lottery: dt_event_item_lottery_repo.DTEventItemLottery, result: Tuple[int, Optional[Dict[int, List[discord_objects_repo.DiscordUser]]]]):
-  if result[1] is None: return
+async def process_lottery_result(bot: BaseAutoshardedBot, lottery: dt_event_item_lottery_repo.DTEventItemLottery):
+  result = await dt_event_item_lottery_repo.get_results(lottery)
+  if result is None: return
 
   guild = await lottery.guild.to_object(bot)
 
@@ -200,15 +201,13 @@ async def process_loterries(bot: BaseAutoshardedBot, year: Optional[int] = None,
     await dt_event_item_lottery_repo.clear_old_guesses()
     return None
 
-  results = [(lottery, await dt_event_item_lottery_repo.get_results(lottery)) for lottery in not_closed_lotteries]
-  for lottery, result in results:
-    if result[1] is None: continue
-    await process_lottery_result(bot, lottery, result)
+  for lottery in not_closed_lotteries:
+    await process_lottery_result(bot, lottery)
     await asyncio.sleep(0.005)
 
   guesses_cleared = await dt_event_item_lottery_repo.clear_old_guesses()
 
-  return len(results), guesses_cleared
+  return len(not_closed_lotteries), guesses_cleared
 
 def get_lottery_buttons(lottery):
   buttons = [disnake.ui.ActionRow(

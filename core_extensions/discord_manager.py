@@ -16,11 +16,6 @@ class DiscordManager(Base_Cog):
   def __init__(self, bot):
     super(DiscordManager, self).__init__(bot, __file__)
 
-  @commands.Cog.listener()
-  async def on_ready(self):
-    if config.base.sync_discord:
-      await self.pull_data_seq()
-
   def cog_load(self) -> None:
     if config.base.sync_discord:
       if self.bot.is_ready():
@@ -28,6 +23,8 @@ class DiscordManager(Base_Cog):
         loop.create_task(self.pull_data_seq())
 
   async def pull_data_seq(self):
+    await self.bot.wait_until_ready()
+
     logger.info("Starting discord data pull")
 
     discord_guild_object_ids = []

@@ -70,21 +70,24 @@ class PresenceHandler:
 
     return string
 
+  async def update_message(self):
+    message = self.messages.get()
+    message = await self.handle_buildin_data_replacement(message)
+    # logger.info(f"New status: {message}")
+
+    if message is not None and (self.last_message is None or message != self.last_message):
+      await self.bot.change_presence(activity=disnake.Game(name=message, type=0), status=disnake.Status.online)
+      self.last_message = message
+
   async def runner(self):
     while True:
-      if self.bot.is_ready():
-        message = self.messages.get()
-        message = await self.handle_buildin_data_replacement(message)
-        # logger.info(f"New status: {message}")
-
-        if message is not None and (self.last_message is None or message != self.last_message):
-          try:
-            await self.bot.change_presence(activity=disnake.Game(name=message, type=0), status=disnake.Status.online)
-            self.last_message = message
-          except asyncio.CancelledError:
-            break
-          except:
-            pass
+      if self.bot.is_ready() and not self.bot.is_closed():
+        try:
+          await self.update_message()
+        except asyncio.CancelledError:
+          break
+        except:
+          pass
 
         await asyncio.sleep(self.cycle_interval)
       else:

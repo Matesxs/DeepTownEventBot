@@ -59,11 +59,11 @@ class BaseAutoshardedBot(commands.AutoShardedBot):
         logger.warning(f"Failed to load {cog} module\n{output}")
     logger.info("Defaul modules loaded")
 
+    self.presence_handler.start()
+
   async def on_ready(self):
     if self.initialized: return
     self.initialized = True
-
-    self.presence_handler.start()
 
     logger.info(f"Logged in as: {self.user} (ID: {self.user.id}) on {self.shard_count} shards in {len(self.guilds)} guilds serving {len(self.users)} users")
     logger.info(f"Invite link: https://discord.com/oauth2/authorize?client_id={self.user.id}&scope=bot&permissions={config.base.required_permissions}")
@@ -71,6 +71,11 @@ class BaseAutoshardedBot(commands.AutoShardedBot):
     if log_channel is not None:
       await message_utils.generate_success_message(log_channel, "Bot is ready!")
     logger.info("Ready!")
+
+  async def on_connect(self):
+    logger.info("Bot connected to discord")
+    if self.initialized:
+      await self.presence_handler.update_message()
 
   async def on_error(self, event, *args, **kwargs):
     return await self.error_logger.default_error_handling(event, args, kwargs)

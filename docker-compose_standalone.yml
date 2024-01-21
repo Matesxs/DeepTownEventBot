@@ -1,15 +1,6 @@
 version: '3.8'
 
 services:
-  db:
-    image: postgres:latest
-    container_name: deep-town-event-bot-db
-    environment:
-      POSTGRES_HOST_AUTH_METHOD: "trust"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data/
-    restart: on-failure
-
   bot:
     build:
       context: .
@@ -25,13 +16,8 @@ services:
             - requirements.txt
         - action: rebuild
           path: requirements.txt
-    depends_on:
-      - db
     deploy:
       restart_policy:
         condition: on-failure
         delay: 5s
         window: 30s
-
-volumes:
-  postgres_data:

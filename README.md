@@ -50,6 +50,16 @@ Folders:
    1) Run bot with mounting local code `docker run -d --name <name of container> -v .:/bot <image name>` for example `docker run -d --name deeptowneventbot -v .:/bot deeptownbot:latest`
    2) Run bot without mounting local code `docker run -d --name <name of container> <image name>` for example `docker run -d --name deeptowneventbot deeptownbot:latest`
 
+### Docker (with separated database) alternative
+1) Create config file `config.toml` in `config` folder from `config.template.toml` file and fill needed settings
+2) Start standalone bot stack `docker compose -f docker-compose_standalone.yml up --build`
+
 ### Docker compose **(recomended)**
 1) Create config file `config.toml` in `config` folder from `config.template.toml` file and fill needed settings (by default database string is set for this method)
-2) Start a bot stack (bot + database) `docker-compose up --build`
+2) Start a bot stack (bot + database) `docker compose up --build`
+
+### Development in docker
+1) Create config file `config.toml` in `config` folder from `config.template.toml` file and fill needed settings
+2) Start bot development stack
+   1) With buildin database `docker compose watch`
+   2) With external database `docker compose -f docker-compose_standalone.yml watch`

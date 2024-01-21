@@ -11,9 +11,6 @@ ENV PYTHONUNBUFFERED 1
 WORKDIR /bot
 VOLUME /bot
 
-# Copy the source code into the container.
-COPY . .
-
 # Update packages
 RUN apt-get update && apt-get upgrade -y
 
@@ -22,6 +19,9 @@ RUN apt-get install build-essential libffi-dev libpq-dev git -y
 
 # Install pip
 RUN /usr/local/bin/python -m pip install --upgrade pip
+
+# Copy the source code into the container.
+COPY . .
 
 # Install bot python dependencies
 RUN pip install --no-cache-dir -r requirements.txt --user

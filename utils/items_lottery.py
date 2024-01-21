@@ -91,7 +91,7 @@ async def process_lottery_result(bot: BaseAutoshardedBot, lottery: dt_event_item
   positions = list(result[1].keys())
   positions.sort(reverse=True)
 
-  table_data = []
+  winners_table_data = []
   winner_ids = []
   for position in positions:
     if position == 1:
@@ -125,27 +125,31 @@ async def process_lottery_result(bot: BaseAutoshardedBot, lottery: dt_event_item
       winner_names.append(string_manipulation.truncate_string(user_object.name, 15))
 
     reward = (reward_item_amount / len(winner_names)) if lottery.split_rewards else reward_item_amount
-    table_data.append((position, f"{string_manipulation.format_number(reward)} {reward_item_name}", ",\n".join(winner_names)))
+    winners_table_data.append((position, f"{string_manipulation.format_number(reward)} {reward_item_name}", ",\n".join(winner_names)))
 
   result_message_lines = [f"Event items lottery result for `{lottery.event_specification.event_year} {lottery.event_specification.event_week}` by {lottery.member.name}",
                           f"Participants: {result[0]}"]
 
+  # Generate table with items in current event
   event_items_table_lines = dt_report_generators.get_event_items_table(lottery.event_specification, only_names=True).split("\n")
   while event_items_table_lines:
     final_string, event_items_table_lines = string_manipulation.add_string_until_length(event_items_table_lines, 1850, "\n")
     result_message_lines.append(f"```\n{final_string}\n```")
 
   if lottery.autoshow_guesses and len(lottery.guesses) > 0:
+    # Generate all guesses table
     for table in (await generate_guesses_tables(lottery)):
       result_message_lines.append(f"```\n{table}\n```")
 
   if winner_ids:
-    rewards_table_lines = table2ascii(["Guessed", "Reward each", "Winners"], table_data, alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.LEFT], first_col_heading=True).split("\n")
+    # Generate table with all winners and their rewards
+    rewards_table_lines = table2ascii(["Guessed", "Reward each", "Winners"], winners_table_data, alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.LEFT], first_col_heading=True).split("\n")
     while rewards_table_lines:
       final_string, rewards_table_lines = string_manipulation.add_string_until_length(rewards_table_lines, 1850, "\n")
       result_message_lines.append(f"```\n{final_string}\n```")
 
     if lottery.autoping_winners:
+      # Generate pings of winners
       mention_strings = [f"<@{uid}>" for uid in winner_ids]
 
       while mention_strings:
@@ -158,6 +162,7 @@ async def process_lottery_result(bot: BaseAutoshardedBot, lottery: dt_event_item
     result_message_lines.append("**There are no winners**")
     result_message_lines.append("Better luck next time")
 
+  # Generate and send final messages
   destination = lottery_message or lottery_channel
   while result_message_lines:
     final_string, result_message_lines = string_manipulation.add_string_until_length(result_message_lines, 1900, "\n")

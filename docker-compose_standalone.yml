@@ -6,6 +6,8 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: deep-town-event-bot
+    volumes:
+      - bot_data:/bot
     develop:
       watch:
         - action: sync+restart
@@ -21,3 +23,6 @@ services:
         condition: on-failure
         delay: 5s
         window: 30s
+
+volumes:
+  bot_data:

@@ -487,6 +487,7 @@ class DTEventItemLottery(Base_Cog):
 
   @tasks.loop(hours=24 * config.lotteries.clean_old_lotteries_period_days)
   async def delete_long_closed_lotteries_task(self):
+    await self.bot.wait_until_ready()
     lotteries_to_delete = await dt_event_item_lottery_repo.get_lotteries_closed_before_date(datetime.datetime.utcnow() - datetime.timedelta(days=config.lotteries.clean_lotteries_closed_for_more_than_days))
 
     if lotteries_to_delete:
@@ -498,6 +499,7 @@ class DTEventItemLottery(Base_Cog):
 
   @tasks.loop(time=datetime.time(hour=config.event_tracker.event_start_hour, minute=config.event_tracker.event_start_minute, second=1), count=None)
   async def notify_lottery_closed_task(self):
+    await self.bot.wait_until_ready()
     current_datetime = datetime.datetime.utcnow()
 
     if current_datetime.weekday() == config.event_tracker.event_start_day:

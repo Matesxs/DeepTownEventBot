@@ -24,7 +24,7 @@ class Listeners(Base_Cog):
 
     if button_custom_id == "dtep_msg_delete":
       if inter.message.author.id == self.bot.user.id:
-        can_alway_delete = (await permissions.is_bot_developer(self.bot, inter.author)) | (await permissions.has_guild_administrator_role(inter))
+        can_alway_delete = await permissions.has_guild_administrator_role(inter)
         if not can_alway_delete and (inter.message.interaction.author.id != inter.author.id if inter.message.interaction is not None else False):
           return await message_utils.generate_error_message(inter, "You are not allowed to delete this message")
 

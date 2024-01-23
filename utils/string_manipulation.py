@@ -42,9 +42,11 @@ def split_to_parts(item: str, length: int) -> List[str]:
 
   return result
 
-def format_number(number: Union[int, float], precision: int=2) -> str:
+def format_number(number: Union[int, float], precision: int=3) -> str:
   if isinstance(number, int):
     number = float(number)
+
+  precision = max(precision, 0)
 
   units = ""
   if number / 1_000_000_000_000_000 >= 1:

@@ -4,11 +4,11 @@ from config import config
 from database.discord_objects_repo import get_or_create_discord_guild
 from features import exceptions
 
-async def is_bot_developer(bot, user):
-  if await bot.is_owner(user):
+async def is_bot_developer(ctx):
+  if await ctx.bot.is_owner(ctx.author):
     return True
 
-  if user.id in config.base.developer_ids:
+  if ctx.author.id in config.base.developer_ids:
     return True
 
   return False
@@ -23,7 +23,7 @@ def is_guild_administrator(ctx):
   return False
 
 async def has_guild_administrator_role(ctx):
-  if await is_bot_developer(ctx.bot, ctx.author):
+  if await is_bot_developer(ctx):
     return True
 
   if hasattr(ctx, "guild") and ctx.guild is not None:
@@ -41,13 +41,13 @@ async def has_guild_administrator_role(ctx):
   return False
 
 async def __predicate_bot_developer(ctx):
-  if await is_bot_developer(ctx.bot, ctx.author):
+  if await is_bot_developer(ctx):
     return True
 
   raise exceptions.NotBotDeveloper()
 
 async def __predicate_is_guild_owner(ctx):
-  if await is_bot_developer(ctx.bot, ctx.author):
+  if await is_bot_developer(ctx):
     return True
 
   if is_guild_administrator(ctx):
@@ -56,7 +56,7 @@ async def __predicate_is_guild_owner(ctx):
   raise exceptions.NotGuildAdministrator()
 
 async def __predicate_guild_administrator_role(ctx):
-  if await is_bot_developer(ctx.bot, ctx.author):
+  if await is_bot_developer(ctx):
     return True
 
   if not hasattr(ctx, "guild") or ctx.guild is None:

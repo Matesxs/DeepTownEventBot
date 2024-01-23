@@ -107,7 +107,7 @@ class EmbedView(disnake.ui.View):
 
   async def interaction_check(self, interaction: disnake.MessageInteraction) -> None:
     if interaction.data.custom_id == "embed:lock":
-      if interaction.author.id == self.author.id or (await permissions.is_bot_developer(interaction.bot, interaction.author)):
+      if interaction.author.id == self.author.id or (await permissions.is_bot_developer(interaction)):
         self.locked = not self.locked
         if self.locked:
           self.lock_button.style = disnake.ButtonStyle.danger
@@ -121,14 +121,14 @@ class EmbedView(disnake.ui.View):
       return
 
     if interaction.data.custom_id == "embed:trash":
-      if interaction.author.id == self.author.id or (await permissions.is_bot_developer(interaction.bot, interaction.author)):
+      if interaction.author.id == self.author.id or (await permissions.has_guild_administrator_role(interaction)):
         self.delete_on_timeout = True
         await self.on_timeout()
       else:
         await message_utils.generate_error_message(interaction, "You are not author of this embed")
       return
 
-    if (self.perma_lock or self.locked) and interaction.author.id != self.author.id and (not await permissions.is_bot_developer(interaction.bot, interaction.author)):
+    if (self.perma_lock or self.locked) and interaction.author.id != self.author.id and (not await permissions.has_guild_administrator_role(interaction)):
       await message_utils.generate_error_message(interaction, "You are not author of this embed")
       return
 

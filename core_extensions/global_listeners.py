@@ -28,7 +28,7 @@ class Listeners(Base_Cog):
 
       if command == "msg_delete":
         if inter.message.author.id == self.bot.user.id:
-          if not (len(splits) >= 2 and int(splits[1]) == inter.author.id) or (await permissions.has_guild_administrator_role(inter)):
+          if not ((len(splits) >= 2 and int(splits[1]) == inter.author.id) or (await permissions.has_guild_administrator_role(inter))):
             return await message_utils.generate_error_message(inter, "You are not allowed to delete this message")
 
           messages = [inter.message]

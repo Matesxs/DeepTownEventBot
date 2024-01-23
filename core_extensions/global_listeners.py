@@ -22,28 +22,28 @@ class Listeners(Base_Cog):
 
     button_custom_id = inter.component.custom_id
 
-    if button_custom_id == "dtep_msg_delete":
-      if inter.message.author.id == self.bot.user.id:
-        can_alway_delete = await permissions.has_guild_administrator_role(inter)
-        if not can_alway_delete and (inter.message.interaction.author.id != inter.author.id if inter.message.interaction is not None else False):
-          return await message_utils.generate_error_message(inter, "You are not allowed to delete this message")
+    if button_custom_id is not None:
+      splits = button_custom_id.split(":")
+      command = splits[0]
 
-        messages = [inter.message]
-        message_reference = inter.message.reference
-        while message_reference is not None:
-          message = await object_getters.get_or_fetch_message(self.bot, inter.message.channel, message_reference.message_id)
-          if messages is not None:
-            if message.author.id == self.bot.user.id:
-              if not can_alway_delete and (message.interaction.author.id != inter.author.id if message.interaction is not None else False):
-                return await message_utils.generate_error_message(inter, "You are not allowed to delete this message")
+      if command == "msg_delete":
+        if inter.message.author.id == self.bot.user.id:
+          if not (len(splits) >= 2 and int(splits[1]) == inter.author.id) or (await permissions.has_guild_administrator_role(inter)):
+            return await message_utils.generate_error_message(inter, "You are not allowed to delete this message")
 
-              messages.append(message)
+          messages = [inter.message]
+          message_reference = inter.message.reference
+          while message_reference is not None:
+            message = await object_getters.get_or_fetch_message(self.bot, inter.message.channel, message_reference.message_id)
+            if messages is not None:
+              if message.author.id == self.bot.user.id:
+                messages.append(message)
 
-        for message in messages:
-          await message_utils.delete_message(self.bot, message)
-          await asyncio.sleep(0.05)
+          for message in messages:
+            await message_utils.delete_message(self.bot, message)
+            await asyncio.sleep(0.05)
 
-        await message_utils.generate_success_message(inter, f"`{len(messages)}` messages deleted")
+          await message_utils.generate_success_message(inter, f"`{len(messages)}` messages deleted")
 
   @commands.Cog.listener()
   async def on_raw_message_edit(self, payload: disnake.RawMessageUpdateEvent):

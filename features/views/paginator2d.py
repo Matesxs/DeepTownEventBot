@@ -180,7 +180,7 @@ class EmbedView2D(disnake.ui.View):
         if self.delete_on_timeout:
           await self.message.delete()
         else:
-          self.add_item(message_utils.get_delete_button())
+          self.add_item(message_utils.get_delete_button(self.author))
           await self.message.edit(view=self)
     except:
       pass

@@ -1,6 +1,6 @@
 import disnake
 from disnake.ext import commands
-from typing import Union, Iterable, Any
+from typing import Union, Iterable, Any, Optional
 import datetime
 
 from config import config
@@ -57,5 +57,8 @@ async def delete_message(bot: commands.AutoShardedBot, cnt: Any):
   except:
     pass
 
-def get_delete_button():
-  return disnake.ui.Button(emoji="🗑️", style=disnake.ButtonStyle.red, custom_id="dtep_msg_delete")
+def get_delete_button(author: Optional[disnake.User | disnake.Member] = None):
+  if author is None:
+    return disnake.ui.Button(emoji="🗑️", style=disnake.ButtonStyle.red, custom_id="msg_delete")
+  else:
+    return disnake.ui.Button(emoji="🗑️", style=disnake.ButtonStyle.red, custom_id=f"msg_delete:{author.id}")

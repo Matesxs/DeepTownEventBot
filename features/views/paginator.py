@@ -91,6 +91,8 @@ class EmbedView(disnake.ui.View):
         )
         self.add_item(self.lock_button)
 
+    self.add_item(disnake.ui.Button(emoji="🗑️", style=disnake.ButtonStyle.red, custom_id="embed:trash"))
+
   def embed(self):
     page = self.embeds[self.page - 1]
     page.set_author(name=f"{self.page}/{self.max_page}")
@@ -118,10 +120,19 @@ class EmbedView(disnake.ui.View):
         await message_utils.generate_error_message(interaction, "You are not author of this embed")
       return
 
-    if interaction.data.custom_id not in reaction_ids or self.max_page <= 1:
+    if interaction.data.custom_id == "embed:trash":
+      if interaction.author.id == self.author.id or (await permissions.is_bot_developer(interaction.bot, interaction.author)):
+        self.delete_on_timeout = True
+        await self.on_timeout()
+      else:
+        await message_utils.generate_error_message(interaction, "You are not author of this embed")
       return
+
     if (self.perma_lock or self.locked) and interaction.author.id != self.author.id and (not await permissions.is_bot_developer(interaction.bot, interaction.author)):
       await message_utils.generate_error_message(interaction, "You are not author of this embed")
+      return
+
+    if interaction.data.custom_id not in reaction_ids:
       return
 
     self.page = pagination_next(

@@ -4,6 +4,7 @@
 import disnake
 from typing import List, Optional, Union
 
+from config import permissions
 from utils import message_utils
 
 def pagination_next(bid: str, hor_page: int, vert_page: int, max_hor_page: int, max_vert_page: int, roll_around: bool = True):
@@ -118,6 +119,8 @@ class EmbedView2D(disnake.ui.View):
           )
           self.add_item(self.lock_button)
 
+    self.add_item(disnake.ui.Button(emoji="🗑️", style=disnake.ButtonStyle.red, custom_id="embed:trash"))
+
   def embed(self):
     page = self.embeds[self.vert_page - 1][self.hor_page - 1]
     page.set_author(name=f"Page: {self.vert_page}/{self.max_vert_page} List: {self.hor_page}/{len(self.embeds[self.vert_page - 1])}")
@@ -132,7 +135,7 @@ class EmbedView2D(disnake.ui.View):
 
   async def interaction_check(self, interaction: disnake.MessageInteraction) -> None:
     if interaction.data.custom_id == "embed:lock":
-      if interaction.author.id == self.author.id:
+      if interaction.author.id == self.author.id or (await permissions.is_bot_developer(interaction.bot, interaction.author)):
         self.locked = not self.locked
         if self.locked:
           self.lock_button.style = disnake.ButtonStyle.danger
@@ -145,8 +148,19 @@ class EmbedView2D(disnake.ui.View):
         await message_utils.generate_error_message(interaction, "You are not author of this embed")
       return
 
-    if (self.perma_lock or self.locked) and interaction.author.id != self.author.id:
+    if interaction.data.custom_id == "embed:trash":
+      if interaction.author.id == self.author.id or (await permissions.is_bot_developer(interaction.bot, interaction.author)):
+        self.delete_on_timeout = True
+        await self.on_timeout()
+      else:
+        await message_utils.generate_error_message(interaction, "You are not author of this embed")
+      return
+
+    if (self.perma_lock or self.locked) and interaction.author.id != self.author.id and (not await permissions.is_bot_developer(interaction.bot, interaction.author)):
       await message_utils.generate_error_message(interaction, "You are not author of this embed")
+      return
+
+    if interaction.data.custom_id not in reaction_ids:
       return
 
     self.vert_page, self.hor_page = pagination_next(

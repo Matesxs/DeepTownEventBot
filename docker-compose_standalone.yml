@@ -16,8 +16,14 @@ services:
           ignore:
             - venv/
             - requirements.txt
+            - Dockerfile
+            - docker-compose_standalone.yml
         - action: rebuild
           path: requirements.txt
+        - action: rebuild
+          path: Dockerfile
+        - action: rebuild
+          path: docker-compose_standalone.yml
     deploy:
       restart_policy:
         condition: on-failure

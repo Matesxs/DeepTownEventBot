@@ -25,8 +25,14 @@ services:
           ignore:
             - venv/
             - requirements.txt
+            - Dockerfile
+            - docker-compose.yml
         - action: rebuild
           path: requirements.txt
+        - action: rebuild
+          path: Dockerfile
+        - action: rebuild
+          path: docker-compose.yml
     depends_on:
       - db
     deploy:

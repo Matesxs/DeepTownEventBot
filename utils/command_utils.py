@@ -89,6 +89,7 @@ def master_only_message_command(
 
 class CommandTypes(enum.Enum):
   SLASH_COMMAND = enum.auto()
+  SLASH_COMMAND_GROUP = enum.auto()
   USER_COMMAND = enum.auto()
   MESSAGE_COMMAND = enum.auto()
   TEXT_COMMAND = enum.auto()
@@ -101,6 +102,8 @@ def get_command_type(command: commands.InvokableApplicationCommand):
     return CommandTypes.MESSAGE_COMMAND
   elif isinstance(command, commands.InvokableSlashCommand) or isinstance(command, commands.slash_core.SubCommand):
     return CommandTypes.SLASH_COMMAND
+  elif isinstance(command, commands.SubCommandGroup):
+    return CommandTypes.SLASH_COMMAND_GROUP
   else:
     return CommandTypes.UNKNOWN_COMMAND
 

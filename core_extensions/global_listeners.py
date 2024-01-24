@@ -43,7 +43,7 @@ class Listeners(Base_Cog):
             await message_utils.delete_message(self.bot, message)
             await asyncio.sleep(0.05)
 
-          await message_utils.generate_success_message(inter, f"`{len(messages)}` messages deleted")
+          # await message_utils.generate_success_message(inter, f"`{len(messages)}` messages deleted")
 
   @commands.Cog.listener()
   async def on_raw_message_edit(self, payload: disnake.RawMessageUpdateEvent):

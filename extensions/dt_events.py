@@ -1,6 +1,7 @@
 import disnake
 from disnake.ext import commands
 import datetime
+from dateutil import tz
 from table2ascii import table2ascii, Alignment
 from typing import Optional
 
@@ -27,9 +28,19 @@ class DTEvents(Base_Cog):
     await inter.response.defer(with_message=True)
 
     year, week = dt_helpers.get_event_index(datetime.datetime.utcnow())
-    start_date, end_date = dt_helpers.event_index_to_date_range(year, week)
+    start_date, end_date = dt_helpers.event_index_to_date_range(year, week, with_timezone=True)
 
-    embed = disnake.Embed(title="Current event", color=disnake.Color.dark_blue(), description=f"`{year} {week}`\n{start_date.day}.{start_date.month}.{start_date.year} - {end_date.day}.{end_date.month}.{end_date.year}")
+    embed_description = f"`{year} {week}`\n<t:{int(start_date.timestamp())}> - <t:{int(end_date.timestamp())}>"
+    if datetime.datetime.now(tz.tzlocal()) < start_date:
+      embed_description += f"\nThis Event Starts <t:{int(start_date.timestamp())}:R>"
+    elif datetime.datetime.now(tz.tzlocal()) < end_date:
+      embed_description += f"\nThis Event Ends <t:{int(end_date.timestamp())}:R>"
+    else:
+      nyear, nweek = dt_helpers.get_event_index(datetime.datetime.utcnow() + datetime.timedelta(days=7))
+      next_start_date, _ = dt_helpers.event_index_to_date_range(nyear, nweek, with_timezone=True)
+      embed_description += f"\n*This Event Ended*\nNext Event Starts <t:{int(next_start_date.timestamp())}:R>"
+
+    embed = disnake.Embed(title="Current event", color=disnake.Color.dark_blue(), description=embed_description)
     message_utils.add_author_footer(embed, inter.author)
 
     await inter.send(embed=embed)
@@ -56,8 +67,8 @@ class DTEvents(Base_Cog):
     if item_table is None:
       return await message_utils.generate_error_message(inter, Strings.public_interface_event_help_no_items)
 
-    start_date, end_date = dt_helpers.event_index_to_date_range(int(event_identifier[0]), int(event_identifier[1]))
-    help_string = f"Year: {event_identifier[0]} Week: {event_identifier[1]}\n{start_date.day}.{start_date.month}.{start_date.year} - {end_date.day}.{end_date.month}.{end_date.year}\n{item_table}"
+    start_date, end_date = dt_helpers.event_index_to_date_range(int(event_identifier[0]), int(event_identifier[1]), with_timezone=True)
+    help_string = f"Year: {event_identifier[0]} Week: {event_identifier[1]}\n<t:{int(start_date.timestamp())}> - <t:{int(end_date.timestamp())}>\n{item_table}"
 
     if item_scaling_levels != 0:
       event_items_scaling_table = dt_report_generators.get_event_items_scaling_table(event_specification, levels=item_scaling_levels)
@@ -140,8 +151,8 @@ class DTEvents(Base_Cog):
       return await message_utils.generate_error_message(inter, Strings.dt_event_data_not_found(year=event_identifier[0], week=event_identifier[1]))
 
     participant_data = [(idx + 1, string_manipulation.truncate_string(username, 20), string_manipulation.truncate_string(guild_name, 20), string_manipulation.format_number(total_contribution)) for idx, (username, guild_name, total_contribution) in enumerate(global_best_participants)]
-    start_date, end_date = dt_helpers.event_index_to_date_range(int(event_identifier[0]), int(event_identifier[1]))
-    participant_data_table_strings = (f"Year: {event_identifier[0]} Week: {event_identifier[1]}\n{start_date.day}.{start_date.month}.{start_date.year} - {end_date.day}.{end_date.month}.{end_date.year}\n" +
+    start_date, end_date = dt_helpers.event_index_to_date_range(int(event_identifier[0]), int(event_identifier[1]), with_timezone=True)
+    participant_data_table_strings = (f"Year: {event_identifier[0]} Week: {event_identifier[1]}\n<t:{int(start_date.timestamp())}> - <t:{int(end_date.timestamp())}>\n" +
                                       table2ascii(header=["No°", "Username", "Guild", "Donate"], body=participant_data, first_col_heading=True, alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.LEFT, Alignment.RIGHT])
                                       ).split("\n")
 
@@ -168,8 +179,8 @@ class DTEvents(Base_Cog):
       return await message_utils.generate_error_message(inter, Strings.dt_event_data_not_found(year=event_identifier[0], week=event_identifier[1]))
 
     participant_data = [(idx + 1, string_manipulation.truncate_string(guild_name, 20), string_manipulation.format_number(total_contribution), string_manipulation.format_number(max_contribution)) for idx, (guild_name, total_contribution, max_contribution) in enumerate(best_guilds)]
-    start_date, end_date = dt_helpers.event_index_to_date_range(int(event_identifier[0]), int(event_identifier[1]))
-    participant_data_table_strings = (f"Year: {event_identifier[0]} Week: {event_identifier[1]}\n{start_date.day}.{start_date.month}.{start_date.year} - {end_date.day}.{end_date.month}.{end_date.year}\n" +
+    start_date, end_date = dt_helpers.event_index_to_date_range(int(event_identifier[0]), int(event_identifier[1]), with_timezone=True)
+    participant_data_table_strings = (f"Year: {event_identifier[0]} Week: {event_identifier[1]}\n<t:{int(start_date.timestamp())}> - <t:{int(end_date.timestamp())}>\n" +
                                       table2ascii(header=["No°", "Guild", "Donate", "Top Donate"], body=participant_data, first_col_heading=True, alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.RIGHT, Alignment.RIGHT])
                                       ).split("\n")
 

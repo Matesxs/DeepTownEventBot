@@ -21,12 +21,12 @@ def create_lottery_embed(author: Optional[disnake.Member | disnake.User], lotter
   lottery_table = table2ascii(["Guessed", "Reward"], table_data, alignments=[Alignment.RIGHT, Alignment.LEFT], first_col_heading=True)
 
   year, week = lottery.event_specification.event_year, lottery.event_specification.event_week
-  start_date, _ = dt_helpers.event_index_to_date_range(year, week)
-  start_date = start_date.replace(tzinfo=tz.tzutc()).astimezone(tz.tzlocal())
+  start_date, _ = dt_helpers.event_index_to_date_range(year, week, with_timezone=True)
+  start_date_unix_timestamp = int(start_date.timestamp())
 
   description_parts = [f"```\n{lottery_table}\n```"]
   if lottery.closed_at is None and not closed:
-    description_parts.append(f"\nThis Event Starts <t:{int(start_date.timestamp())}>\nLottery Closing <t:{int(start_date.timestamp())}:R>\n")
+    description_parts.append(f"\nThis Event Starts <t:{start_date_unix_timestamp}>\nLottery Closing <t:{start_date_unix_timestamp}:R>\n")
   description_parts.append("Use `/lottery guess create` to participate in lotteries")
   description_string = "\n".join(description_parts)
 

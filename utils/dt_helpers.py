@@ -3,6 +3,7 @@ import datetime
 import dataclasses
 from typing import List, Optional, Tuple
 import traceback
+from dateutil import tz
 from aiohttp import ClientSession, ClientTimeout
 
 from config import config
@@ -79,9 +80,13 @@ def get_event_index(date:datetime.datetime):
 
   return event_year, week_number
 
-def event_index_to_date_range(year: int, week: int) -> Tuple[datetime.datetime, datetime.datetime]:
-  date_string = f"{year}-{week}-4"
+def event_index_to_date_range(year: int, week: int, with_timezone: bool=False) -> Tuple[datetime.datetime, datetime.datetime]:
+  date_string = f"{year}-{week}-{(config.event_tracker.event_start_day + 1) % 7}"
   start_date = datetime.datetime.strptime(date_string, "%Y-%W-%w").replace(hour=config.event_tracker.event_start_hour, minute=config.event_tracker.event_start_minute)
+
+  if with_timezone:
+    start_date = start_date.replace(tzinfo=tz.tzutc()).astimezone(tz.tzlocal())
+
   return start_date, start_date + datetime.timedelta(days=config.event_tracker.event_length_days, hours=config.event_tracker.event_length_hours, minutes=config.event_tracker.event_length_minutes)
 
 async def get_dt_guild_data(guild_id:int, update: bool=False) -> Optional[DTGuildData]:

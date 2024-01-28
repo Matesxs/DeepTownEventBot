@@ -49,9 +49,11 @@ event_start_hour = 8
 event_start_minute = 0
 
 # Dont change if you dont know what you are doing
-announce_day_index = 0 # 0 - monday, 6 - sunday
-announce_time_hours = 8
-announce_time_minutes = 30
+event_length_days = 4 # 0 - monday, 6 - sunday
+event_length_hours = 0
+event_length_minutes = 0
+
+event_announce_offset_minutes = 15
 
 [lotteries]
 clean_old_lotteries_period_days = 10

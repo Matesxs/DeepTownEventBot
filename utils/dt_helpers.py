@@ -82,7 +82,7 @@ def get_event_index(date:datetime.datetime):
 def event_index_to_date_range(year: int, week: int) -> Tuple[datetime.datetime, datetime.datetime]:
   date_string = f"{year}-{week}-4"
   start_date = datetime.datetime.strptime(date_string, "%Y-%W-%w").replace(hour=config.event_tracker.event_start_hour, minute=config.event_tracker.event_start_minute)
-  return start_date, start_date + datetime.timedelta(days=4)
+  return start_date, start_date + datetime.timedelta(days=config.event_tracker.event_length_days, hours=config.event_tracker.event_length_hours, minutes=config.event_tracker.event_length_minutes)
 
 async def get_dt_guild_data(guild_id:int, update: bool=False) -> Optional[DTGuildData]:
   async with ClientSession(timeout=ClientTimeout(total=60)) as session:

@@ -3,7 +3,6 @@ from disnake.ext import commands, tasks
 import math
 import datetime
 import asyncio
-import humanize
 
 from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
@@ -13,6 +12,10 @@ from config import Strings, cooldowns, config, permissions
 from features.views.paginator import EmbedView
 
 logger = setup_custom_logger(__name__)
+
+def get_announce_time() -> datetime.time:
+  return datetime.time(hour=config.event_tracker.event_start_hour + config.event_tracker.event_length_hours + ((config.event_tracker.event_start_minute + config.event_tracker.event_length_minutes + config.event_tracker.event_announce_offset_minutes) // 60),
+                       minute=(config.event_tracker.event_start_minute + config.event_tracker.event_length_minutes + config.event_tracker.event_announce_offset_minutes) % 60, second=0)
 
 class DTEventReportAnnouncer(Base_Cog):
   def __init__(self, bot):
@@ -133,62 +136,56 @@ class DTEventReportAnnouncer(Base_Cog):
     embed_view = EmbedView(inter.author, pages, invisible=True)
     await embed_view.run(inter)
 
-  @tasks.loop(seconds=1)
+  @tasks.loop(time=get_announce_time())
   async def result_announce_task(self):
     await self.bot.wait_until_ready()
-    logger.info(f"Current date: {datetime.datetime.utcnow()}")
 
-    today = datetime.datetime.utcnow()
-    today_announce_time = datetime.datetime.utcnow().replace(hour=config.event_tracker.announce_time_hours, minute=config.event_tracker.announce_time_minutes, second=0, microsecond=0)
-    next_monday = today_announce_time + datetime.timedelta(days=(7 - config.event_tracker.announce_day_index) - (today.weekday() % 7))
-    if today.weekday() == 0 and (today.hour < config.event_tracker.announce_time_hours or (today.hour == config.event_tracker.announce_time_hours and today.minute < config.event_tracker.announce_time_minutes)):
-      next_monday -= datetime.timedelta(days=7)
-    delta_to_next_monday = next_monday - datetime.datetime.utcnow()
+    current_datetime = datetime.datetime.utcnow()
+    previous_week_date = current_datetime - datetime.timedelta(days=7)
+    prev_year, prev_week = dt_helpers.get_event_index(previous_week_date)
+    _, prev_event_end = dt_helpers.event_index_to_date_range(prev_year, prev_week)
 
-    logger.info(f"Next announce date: {next_monday}")
-    logger.info(f"Next announcement in {humanize.naturaldelta(delta_to_next_monday)}")
-    await asyncio.sleep(delta_to_next_monday.total_seconds())
+    if prev_event_end.weekday() == current_datetime.weekday():
+      logger.info("Update before announcement starting")
 
-    logger.info("Update before announcement starting")
+      guild_ids = await tracking_settings_repo.get_tracked_guild_ids()
 
-    guild_ids = await tracking_settings_repo.get_tracked_guild_ids()
-
-    if guild_ids is not None:
-      for guild_id in guild_ids:
-        data = await dt_helpers.get_dt_guild_data(guild_id, True)
-
-        if data is None:
-          await asyncio.sleep(20)
+      if guild_ids is not None:
+        for guild_id in guild_ids:
           data = await dt_helpers.get_dt_guild_data(guild_id, True)
 
-        await asyncio.sleep(1)
-        if data is None:
-          continue
+          if data is None:
+            await asyncio.sleep(20)
+            data = await dt_helpers.get_dt_guild_data(guild_id, True)
 
-        await event_participation_repo.generate_or_update_event_participations(data)
-    logger.info("Update before announcement finished")
+          await asyncio.sleep(0.5)
+          if data is None:
+            continue
 
-    year, week = dt_helpers.get_event_index(datetime.datetime.utcnow())
+          await event_participation_repo.generate_or_update_event_participations(data)
+      logger.info("Update before announcement finished")
 
-    logger.info("Starting Announcement")
-    trackers = tracking_settings_repo.get_all_trackers()
-    async for tracker in trackers:
-      text_announce_channel = await tracker.get_text_announce_channel(self.bot)
-      csv_announce_channel = await tracker.get_csv_announce_channel(self.bot)
-      if text_announce_channel is None and csv_announce_channel is None: continue
+      year, week = dt_helpers.get_event_index(datetime.datetime.utcnow())
 
-      participations = await event_participation_repo.get_event_participations(guild_id=int(tracker.dt_guild_id), year=year, week=week, order_by=[event_participation_repo.EventParticipation.amount.desc()])
-      if not participations: continue
+      logger.info("Starting Announcement")
+      trackers = tracking_settings_repo.get_all_trackers()
+      async for tracker in trackers:
+        text_announce_channel = await tracker.get_text_announce_channel(self.bot)
+        csv_announce_channel = await tracker.get_csv_announce_channel(self.bot)
+        if text_announce_channel is None and csv_announce_channel is None: continue
 
-      if text_announce_channel is not None and text_announce_channel.permissions_for(text_announce_channel.guild.me).send_messages:
-        await dt_report_generators.send_text_guild_event_participation_report(text_announce_channel, tracker.dt_guild, participations, colm_padding=0)
-        await asyncio.sleep(0.1)
+        participations = await event_participation_repo.get_event_participations(guild_id=int(tracker.dt_guild_id), year=year, week=week, order_by=[event_participation_repo.EventParticipation.amount.desc()])
+        if not participations: continue
 
-      if csv_announce_channel is not None and csv_announce_channel.permissions_for(csv_announce_channel.guild.me).send_messages and csv_announce_channel.permissions_for(csv_announce_channel.guild.me).attach_files:
-        await dt_report_generators.send_csv_guild_event_participation_report(csv_announce_channel, tracker.dt_guild, participations)
-        await asyncio.sleep(0.1)
+        if text_announce_channel is not None and text_announce_channel.permissions_for(text_announce_channel.guild.me).send_messages:
+          await dt_report_generators.send_text_guild_event_participation_report(text_announce_channel, tracker.dt_guild, participations, colm_padding=0)
+          await asyncio.sleep(0.1)
 
-    logger.info("Announcements send")
+        if csv_announce_channel is not None and csv_announce_channel.permissions_for(csv_announce_channel.guild.me).send_messages and csv_announce_channel.permissions_for(csv_announce_channel.guild.me).attach_files:
+          await dt_report_generators.send_csv_guild_event_participation_report(csv_announce_channel, tracker.dt_guild, participations)
+          await asyncio.sleep(0.1)
+
+      logger.info("Announcements send")
 
 def setup(bot):
   bot.add_cog(DTEventReportAnnouncer(bot))

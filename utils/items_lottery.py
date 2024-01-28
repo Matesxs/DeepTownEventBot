@@ -2,7 +2,6 @@ import asyncio
 import disnake
 from typing import Optional
 from table2ascii import table2ascii, Alignment
-from dateutil import tz
 
 import database
 from features.base_bot import BaseAutoshardedBot

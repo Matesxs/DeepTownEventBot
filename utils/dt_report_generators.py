@@ -106,9 +106,9 @@ async def send_text_guild_event_participation_report(output: Union[disnake.TextC
   if not non_zero_participation_amounts: non_zero_participation_amounts = [0]
 
   event_items_table = get_event_items_table(participations[0].event_specification, colm_padding=colm_padding)
-  start_date, end_date = dt_helpers.event_index_to_date_range(participations[0].event_specification.event_year, participations[0].event_specification.event_week, with_timezone=True)
+  start_date, end_date = dt_helpers.event_index_to_date_range(participations[0].event_specification.event_year, participations[0].event_specification.event_week)
 
-  description_strings = (f"{guild.name} - ID: {guild.id} - Level: {guild.level}\nYear: {participations[0].event_specification.event_year} Week: {participations[0].event_specification.event_week}\n<t:{int(start_date.timestamp())}> - <t:{int(end_date.timestamp())}>\n" +
+  description_strings = (f"{guild.name} - ID: {guild.id} - Level: {guild.level}\nYear: {participations[0].event_specification.event_year} Week: {participations[0].event_specification.event_week}\n{start_date.day}.{start_date.month}.{start_date.year} - {end_date.day}.{end_date.month}.{end_date.year}\n" +
                          (("\nEvent items:\n" + event_items_table + "\n\n") if show_event_items and event_items_table is not None else "") +
                          f"Donate - Median: {string_manipulation.format_number(statistics.median(non_zero_participation_amounts), 3)} Average: {string_manipulation.format_number(statistics.mean(participation_amounts), 3)}, Total: {string_manipulation.format_number(sum(participation_amounts), 3)}\nActivity: {active_players}/{all_players}\n").split("\n")
 

@@ -186,6 +186,7 @@ class Strings(metaclass=Formatable):
 
   # Public interface
   public_interface_guild_report_description = "Generate report for specific Deep Town guild"
+  public_interface_guild_report_modify_fields_param_description = "Enable select of displayed values in report (default: False), default columns No°, Name and Donate"
   public_interface_guild_report_tight_format_param_description = "Tight format of table (default: False)"
 
   public_interface_csv_guild_report_description = "Generate CSV report for specific Deep Town guild"

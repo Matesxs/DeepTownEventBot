@@ -1,7 +1,7 @@
 import disnake
 from typing import List, Optional
 
-from utils import message_utils
+from utils import message_utils, string_manipulation
 
 class DataSelectorDropdown(disnake.ui.Select):
   def __init__(self, author: disnake.User, not_selected: List[str], selected: List[str], min_selected: int=1, max_selected: Optional[int]=None):
@@ -59,16 +59,17 @@ class DataSelector(disnake.ui.View):
     return [colm for colm in self.available_colms if colm in self.selected] # Only to keep order
 
   @disnake.ui.button(style=disnake.ButtonStyle.green, label="Select")
-  async def select_button(self, button: disnake.ui.Button, inter: disnake.MessageInteraction):
+  async def select_button(self, _, inter: disnake.MessageInteraction):
     if self.selector.values is not None and self.selector.values:
       self.selected = self.selector.values
 
     if self.delete_after:
       await self.on_timeout()
     else:
-      button.disabled = True
-      self.selector.disabled = True
-      await inter.response.edit_message(view=self)
+      self.clear_items()
+      await inter.response.edit_message(embed=disnake.Embed(color=disnake.Color.green(),
+                                                            title=":white_check_mark: | Success", description=string_manipulation.truncate_string(f"Data selected\n{', '.join(self.selected)}", 4000)),
+                                        view=self)
 
     self.stop()
 

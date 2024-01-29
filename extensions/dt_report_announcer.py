@@ -178,7 +178,7 @@ class DTEventReportAnnouncer(Base_Cog):
         if not participations: continue
 
         if text_announce_channel is not None and text_announce_channel.permissions_for(text_announce_channel.guild.me).send_messages:
-          await dt_report_generators.send_text_guild_event_participation_report(text_announce_channel, tracker.dt_guild, participations, colm_padding=0)
+          await dt_report_generators.send_text_guild_event_participation_report(text_announce_channel, participations, colm_padding=0)
           await asyncio.sleep(0.1)
 
         if csv_announce_channel is not None and csv_announce_channel.permissions_for(csv_announce_channel.guild.me).send_messages and csv_announce_channel.permissions_for(csv_announce_channel.guild.me).attach_files:

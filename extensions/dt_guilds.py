@@ -28,6 +28,7 @@ class DTGuilds(Base_Cog):
   @guild_commands.sub_command(name="report", description=Strings.public_interface_guild_report_description)
   @cooldowns.default_cooldown
   async def guild_report(self, inter: disnake.CommandInteraction,
+                         modify_fields: bool = commands.Param(default=False, description=Strings.public_interface_guild_report_modify_fields_param_description),
                          identifier=commands.Param(description=Strings.dt_guild_identifier_param_description, autocomp=dt_autocomplete.autocomplete_identifier_guild, converter=dt_autocomplete.guild_user_identifier_converter),
                          event_identifier=commands.Param(default=None, description=Strings.dt_event_identifier_param_description, autocomplete=dt_autocomplete.autocomplete_event_identifier, converter=dt_autocomplete.event_identifier_converter, convert_defaults=True),
                          tight_format: bool = commands.Param(default=False, description=Strings.public_interface_guild_report_tight_format_param_description)):
@@ -48,14 +49,17 @@ class DTGuilds(Base_Cog):
     if not guild_data:
       return await message_utils.generate_error_message(inter, Strings.dt_event_data_not_found(year=event_identifier[0], week=event_identifier[1]))
 
-    send_report_function = partial(dt_report_generators.send_text_guild_event_participation_report, guild=guild_data[0].dt_guild, participations=guild_data, colm_padding=0 if tight_format else 1)
+    if modify_fields:
+      send_report_function = partial(dt_report_generators.send_text_guild_event_participation_report, participations=guild_data, colm_padding=0 if tight_format else 1)
 
-    reporter_settings = DataSelector(inter.author, ["No°", "Name", "Donate"], ["No°", "ID", "Name", "Level", "Depth", "Online", "Donate", "Standing"])
-    await reporter_settings.run(inter)
-    ret = await reporter_settings.wait()
+      reporter_settings = DataSelector(inter.author, ["No°", "Name", "Donate"], ["No°", "ID", "Name", "Level", "Depth", "Online", "Donate", "Standing"])
+      await reporter_settings.run(inter)
+      ret = await reporter_settings.wait()
 
-    if not ret:
-      await send_report_function(output=reporter_settings.message, colms=reporter_settings.get_results())
+      if not ret:
+        await send_report_function(output=reporter_settings.message, colms=reporter_settings.get_results())
+    else:
+      await dt_report_generators.send_text_guild_event_participation_report(inter, guild_data, ["No°", "Name", "Donate"], colm_padding=0 if tight_format else 1)
 
   @guild_commands.sub_command(name="csv_report", description=Strings.public_interface_csv_guild_report_description)
   @cooldowns.default_cooldown

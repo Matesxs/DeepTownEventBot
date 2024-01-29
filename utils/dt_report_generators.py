@@ -92,7 +92,7 @@ def generate_participation_strings(participations: List[EventParticipation], col
 
   return table2ascii(body=data_list, header=sorted_colms, alignments=alligments, cell_padding=colm_padding, first_col_heading="No°" in colms).split("\n")
 
-async def send_text_guild_event_participation_report(output: Union[disnake.TextChannel, disnake.Thread, disnake.VoiceChannel, disnake.PartialMessageable, disnake.ApplicationCommandInteraction, commands.Context, disnake.Message], guild: DTGuild, participations: List[EventParticipation], colms: Optional[List[str]]=None, colm_padding: int=1, show_event_items: bool=True):
+async def send_text_guild_event_participation_report(output: Union[disnake.TextChannel, disnake.Thread, disnake.VoiceChannel, disnake.PartialMessageable, disnake.ApplicationCommandInteraction, commands.Context, disnake.Message], participations: List[EventParticipation], colms: Optional[List[str]]=None, colm_padding: int=1, show_event_items: bool=True):
   if not participations: return
   if colms is None:
     colms = ["No°", "Name", "Level", "Donate"]
@@ -108,9 +108,10 @@ async def send_text_guild_event_participation_report(output: Union[disnake.TextC
   event_items_table = get_event_items_table(participations[0].event_specification, colm_padding=colm_padding)
   start_date, end_date = dt_helpers.event_index_to_date_range(participations[0].event_specification.event_year, participations[0].event_specification.event_week)
 
-  description_strings = (f"{guild.name} - ID: {guild.id} - Level: {guild.level}\nYear: {participations[0].event_specification.event_year} Week: {participations[0].event_specification.event_week}\n{start_date.day}.{start_date.month}.{start_date.year} - {end_date.day}.{end_date.month}.{end_date.year}\n" +
-                         (("\nEvent items:\n" + event_items_table + "\n\n") if show_event_items and event_items_table is not None else "") +
-                         f"Donate - Median: {string_manipulation.format_number(statistics.median(non_zero_participation_amounts), 3)} Average: {string_manipulation.format_number(statistics.mean(participation_amounts), 3)}, Total: {string_manipulation.format_number(sum(participation_amounts), 3)}\nActivity: {active_players}/{all_players}\n").split("\n")
+  guild = participations[0].dt_guild
+  description_strings = (f"{guild.name}\nID: {guild.id}\nLevel: {guild.level}\n\nYear: {participations[0].event_specification.event_year} Week: {participations[0].event_specification.event_week}\n{start_date.day}.{start_date.month}.{start_date.year} - {end_date.day}.{end_date.month}.{end_date.year}\n" +
+                         (("\nEvent items:\n" + event_items_table + "\n") if show_event_items and event_items_table is not None else "") +
+                         f"\nMedian: {string_manipulation.format_number(statistics.median(non_zero_participation_amounts), 3)}\nAverage: {string_manipulation.format_number(statistics.mean(participation_amounts), 3)}\nTotal: {string_manipulation.format_number(sum(participation_amounts), 3)}\n\nActivity: {active_players}/{all_players}\n").split("\n")
 
   strings = [*description_strings]
   strings.extend(generate_participation_strings(participations, colms, colm_padding))

@@ -143,7 +143,7 @@ async def get_event_item_stats(year: Optional[int]=None) -> List[Tuple[str, int,
       last_ocurance = (await run_query(select(event_participation_repo.EventSpecification.event_week)
                                        .join(EventItem)
                                        .filter(EventItem.item_name == item_name, event_participation_repo.EventSpecification.event_year == year)
-                                       .order_by(event_participation_repo.EventSpecification.event_year.desc(), event_participation_repo.EventSpecification.event_week.desc()))).scalars().first()
+                                       .order_by(event_participation_repo.EventSpecification.event_week.desc()))).scalars().first()
       final_stats.append((item_name, count, str(last_ocurance)))
 
   return final_stats

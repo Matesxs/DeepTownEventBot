@@ -108,10 +108,11 @@ class DTEvents(Base_Cog):
   @event_commands.sub_command(name="stats", description=Strings.public_interface_event_stats_description)
   @cooldowns.long_cooldown
   async def event_stat(self, inter: disnake.CommandInteraction,
-                       year: Optional[int] = commands.Param(default=None, description=Strings.public_interface_event_stats_year_param_description, autocomplete=dt_autocomplete.autocomplete_event_year)):
+                       start_year: Optional[int] = commands.Param(default=None, description=Strings.public_interface_event_stats_start_year_param_description, autocomplete=dt_autocomplete.autocomplete_event_year),
+                       end_year: Optional[int] = commands.Param(default=None, description=Strings.public_interface_event_stats_end_year_param_description, autocomplete=dt_autocomplete.autocomplete_event_year)):
     await inter.response.defer(with_message=True)
 
-    data = await dt_items_repo.get_event_item_stats(year)
+    data = await dt_items_repo.get_event_item_stats(start_year, end_year)
     if not data:
       return await message_utils.generate_error_message(inter, Strings.public_interface_event_stats_no_stats)
 
@@ -119,9 +120,21 @@ class DTEvents(Base_Cog):
 
     pages = []
     while table_lines:
-      final_string, table_lines = string_manipulation.add_string_until_length(table_lines, 4000, "\n", 42)
+      final_string, table_lines = string_manipulation.add_string_until_length(table_lines, 3900, "\n", 42)
 
-      embed = disnake.Embed(title="Event item statistics" if year is None else f"Event statistics for `{year}`", color=disnake.Color.dark_blue(), description=f"```\n{final_string}\n```")
+      if start_year is not None and end_year is None:
+        title_string = f"Event item statistics for years `{start_year} - Now`"
+      elif start_year is None and end_year is not None:
+        title_string = f"Event item statistics for years `Beginning - {end_year}`"
+      elif start_year is not None and end_year is not None:
+        if start_year == end_year:
+          title_string = f"Event item statistics for year `{start_year}`"
+        else:
+          title_string = f"Event item statistics for years `{start_year} - {end_year}`"
+      else:
+        title_string = f"Event item statistics"
+
+      embed = disnake.Embed(title=title_string, color=disnake.Color.dark_blue(), description=f"```\n{final_string}\n```")
       message_utils.add_author_footer(embed, inter.author)
       pages.append(embed)
 

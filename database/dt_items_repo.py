@@ -120,30 +120,29 @@ async def get_event_items_history(limit: int=500) -> List[Tuple[int, int, Option
                            .limit(limit))
   return result.all()
 
-async def get_event_item_stats(year: Optional[int]=None) -> List[Tuple[str, int, str]]:
+async def get_event_item_stats(start_year: Optional[int]=None, end_year: Optional[int]=None) -> List[Tuple[str, int, str]]:
   final_stats = []
 
-  if year is None:
-    counts_data = (await run_query(select(EventItem.item_name, func.count(EventItem.item_name))
-                                   .group_by(EventItem.item_name)
-                                   .order_by(func.count(EventItem.item_name).desc(), EventItem.item_name))).all()
-    for item_name, count in counts_data:
-      last_ocurance = (await run_query(select(event_participation_repo.EventSpecification.event_year, event_participation_repo.EventSpecification.event_week)
-                                       .join(EventItem)
-                                       .filter(EventItem.item_name == item_name)
-                                       .order_by(event_participation_repo.EventSpecification.event_year.desc(), event_participation_repo.EventSpecification.event_week.desc()))).first()
+  filters = []
+  if start_year is not None:
+    filters.append(event_participation_repo.EventSpecification.event_year >= start_year)
+  if end_year is not None:
+    filters.append(event_participation_repo.EventSpecification.event_year <= end_year)
+
+  counts_data = (await run_query(select(EventItem.item_name, func.count(EventItem.item_name))
+                                 .join(event_participation_repo.EventSpecification)
+                                 .filter(*filters)
+                                 .group_by(EventItem.item_name)
+                                 .order_by(func.count(EventItem.item_name).desc(), EventItem.item_name))).all()
+  for item_name, count in counts_data:
+    last_ocurance = (await run_query(select(event_participation_repo.EventSpecification.event_year, event_participation_repo.EventSpecification.event_week)
+                                     .join(EventItem)
+                                     .filter(EventItem.item_name == item_name, *filters)
+                                     .order_by(event_participation_repo.EventSpecification.event_year.desc(), event_participation_repo.EventSpecification.event_week.desc()))).first()
+
+    if start_year is not None and end_year is not None and start_year == end_year:
+      final_stats.append((item_name, count, f"{last_ocurance[1]}"))
+    else:
       final_stats.append((item_name, count, f"{last_ocurance[0]} {last_ocurance[1]}"))
-  else:
-    counts_data = (await run_query(select(EventItem.item_name, func.count(EventItem.item_name))
-                                   .join(event_participation_repo.EventSpecification)
-                                   .filter(event_participation_repo.EventSpecification.event_year == year)
-                                   .group_by(EventItem.item_name)
-                                   .order_by(func.count(EventItem.item_name).desc(), EventItem.item_name))).all()
-    for item_name, count in counts_data:
-      last_ocurance = (await run_query(select(event_participation_repo.EventSpecification.event_week)
-                                       .join(EventItem)
-                                       .filter(EventItem.item_name == item_name, event_participation_repo.EventSpecification.event_year == year)
-                                       .order_by(event_participation_repo.EventSpecification.event_week.desc()))).scalars().first()
-      final_stats.append((item_name, count, str(last_ocurance)))
 
   return final_stats

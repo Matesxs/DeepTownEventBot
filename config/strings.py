@@ -214,7 +214,8 @@ class Strings(metaclass=Formatable):
   public_interface_event_history_no_events = "No events in database"
 
   public_interface_event_stats_description = "Show statistics about ocurences of items in events"
-  public_interface_event_stats_year_param_description = "Specific year, without it show statistics for whole lifespan"
+  public_interface_event_stats_start_year_param_description = "Start year from which to get statistics about event items"
+  public_interface_event_stats_end_year_param_description = "End year from which to get statistics about event items"
   public_interface_event_stats_no_stats = "No statistics available"
 
   public_interface_event_leaderboard_users_description = "Show leaderboard of participants in specific event"

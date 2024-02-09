@@ -1,6 +1,12 @@
 *.db
 *.db-journal
-.idea/
 *.log
-tmp/
-__pycache__/
+**/tmp
+**/.DS_Store
+**/__pycache__
+**/.venv
+**/.env
+**/.vs
+**/.vscode
+**/venv
+**/.idea

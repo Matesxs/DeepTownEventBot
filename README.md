@@ -19,6 +19,12 @@ use command to generate it on demand. Many other command are providet for tracki
         * Current and historic guild memberships
         * History and stats about event contribution
 * Event help (with manual input of event items) and calculated efficiency for them
+* Automatic Q&A
+* Automatic event result announcement
+* Event participation leaderboards
+* Event item history and stats
+* Guild level leaderboards
+* Game activity graphs
 * Manual blacklisting of users and guilds to keep out cheaters
 * Cheater reporting system
 * Upgraded discord message links

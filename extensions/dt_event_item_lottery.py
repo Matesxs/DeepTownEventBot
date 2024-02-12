@@ -59,7 +59,7 @@ async def make_guess(inter: disnake.CommandInteraction | commands.Context | disn
   await message_utils.generate_success_message(inter, Strings.lottery_guess_registered(event_year=guess.event_specification.event_year, event_week=guess.event_specification.event_week, items=guessed_item_names_string))
 
 
-async def handle_guess_message(message: disnake.Message):
+async def handle_guess_message(message: disnake.Message) -> bool:
   async def already_guessed():
     already_existing_guess = await dt_event_item_lottery_repo.get_guess(message.guild.id, message.author.id, event_spec.event_id)
 
@@ -70,16 +70,13 @@ async def handle_guess_message(message: disnake.Message):
 
     return False
 
-  if message.guild is None: return
-  if message.author.bot or message.author.system: return
-  if message.content == "" or message.content.startswith(config.base.command_prefix): return
-  if not message.channel.permissions_for(message.guild.me).send_messages: return
+  if message.guild is None: return False
+  if message.author.bot or message.author.system: return False
+  if message.content == "" or message.content.startswith(config.base.command_prefix): return False
+  if not message.channel.permissions_for(message.guild.me).send_messages: return False
 
   message_lines = message.content.split("\n")
-  if len(message_lines) > 4: return
-
-  if not await automatic_lottery_guesses_whitelist_repo.is_on_whitelist(message.guild.id, message.channel.id):
-    return
+  if len(message_lines) > 4: return False
 
   all_item_names = await dt_items_repo.get_all_item_names()
   all_item_names = [(name, name.lower()) for name in all_item_names]
@@ -122,10 +119,11 @@ async def handle_guess_message(message: disnake.Message):
     event_spec = await event_participation_repo.get_or_create_event_specification(year, week)
 
     if await already_guessed():
-      return
+      return True
 
     if len(item_names) and all_sure:
       await make_guess(message, message.author, *item_names)
+      return True
     else:
       items_list_string = "\n".join([f"`{item_name}` - {confidence:.1f}% confidence" for item_name, confidence in deduplicated_data])
       prompt_string = f"Detected lottery guess\nAre these items correct and do you want to add them as a guess to lottery?\n\n**Guessed items:**\n{items_list_string}"
@@ -135,10 +133,9 @@ async def handle_guess_message(message: disnake.Message):
         await confirmation_view.wait()
 
         if confirmation_view.get_result():
-          if await already_guessed():
-            return
-
-          await make_guess(message, message.author, *item_names)
+          if not (await already_guessed()):
+            await make_guess(message, message.author, *item_names)
+          return True
 
 class DTEventItemLottery(Base_Cog):
   def __init__(self, bot):
@@ -338,6 +335,17 @@ class DTEventItemLottery(Base_Cog):
     else:
       await message_utils.generate_error_message(inter, Strings.lottery_guess_no_guess_to_remove)
 
+  @commands.message_command(name="Guess create")
+  @cooldowns.long_cooldown
+  async def create_guess_from_message(self, inter: disnake.MessageCommandInteraction):
+    target_message = inter.target
+
+    if not (await permissions.has_guild_administrator_role(inter)) and target_message.author != inter.author:
+      return await message_utils.generate_error_message(inter, "You are not author of that message")
+
+    if not (await handle_guess_message(target_message)):
+      await message_utils.generate_error_message(inter, "Failed to create lottery guess")
+
   @lottery_command.sub_command_group(name="auto_guess_whitelist")
   @commands.guild_only()
   @permissions.guild_administrator_role()
@@ -387,10 +395,26 @@ class DTEventItemLottery(Base_Cog):
     await message_utils.generate_error_message(inter, Strings.lottery_auto_guess_whitelist_remove_failed(channel=channel.name))
 
   async def handle_message_edited(self, _, message: disnake.Message):
+    if message.guild is None: return
+    if message.author.bot or message.author.system: return
+    if message.content == "" or message.content.startswith(config.base.command_prefix): return
+    if not message.channel.permissions_for(message.guild.me).send_messages: return
+
+    if not await automatic_lottery_guesses_whitelist_repo.is_on_whitelist(message.guild.id, message.channel.id):
+      return
+
     await handle_guess_message(message)
 
   @commands.Cog.listener()
   async def on_message(self, message: disnake.Message):
+    if message.guild is None: return
+    if message.author.bot or message.author.system: return
+    if message.content == "" or message.content.startswith(config.base.command_prefix): return
+    if not message.channel.permissions_for(message.guild.me).send_messages: return
+
+    if not await automatic_lottery_guesses_whitelist_repo.is_on_whitelist(message.guild.id, message.channel.id):
+      return
+
     await handle_guess_message(message)
 
   @commands.Cog.listener()

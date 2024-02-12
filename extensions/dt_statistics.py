@@ -1,12 +1,14 @@
 import disnake
 from disnake.ext import commands
 import io
+from typing import Optional
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import matplotlib.ticker as mticker
 import mplcyberpunk
 import datetime
+import math
 
 from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
@@ -19,12 +21,18 @@ logger = setup_custom_logger(__name__)
 plt.style.use("cyberpunk")
 plt.rc('font', size=14)
 
-async def send_stats(inter: disnake.CommandInteraction, user_data = None, guild_data = None):
+async def send_stats(inter: disnake.CommandInteraction, user_data = None, guild_data = None, maximum_data_days_length: Optional[int] = None):
   def process_data_to_dataframe(data):
     dataframe = pd.DataFrame(data, columns=["date", "active", "all"], index=None)
 
     dataframe = dataframe.set_index(pd.DatetimeIndex(dataframe["date"], name="date")).drop("date", axis=1)
     dataframe = dataframe.resample("D").max().interpolate(limit_direction="backward")
+    if maximum_data_days_length is not None:
+      total_days = len(dataframe)
+      if total_days > maximum_data_days_length:
+        new_resample_days_interval = math.ceil(total_days / maximum_data_days_length)
+        dataframe = dataframe.resample(f"{new_resample_days_interval}D").mean()
+
     dataframe["active"] = dataframe["active"].round().astype(int)
     dataframe["all"] = dataframe["all"].round().astype(int)
     dataframe["active_percent"] = dataframe["active"] / dataframe["all"] * 100

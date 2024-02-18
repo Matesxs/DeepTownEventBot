@@ -18,9 +18,9 @@ class DiscordManager(Base_Cog):
 
   def cog_load(self) -> None:
     if config.base.sync_discord:
-      if self.bot.is_ready():
-        loop = asyncio.get_event_loop()
-        loop.create_task(self.pull_data_seq())
+      loop = asyncio.get_event_loop()
+      loop.create_task(self.pull_data_seq())
+
 
   async def pull_data_seq(self):
     await self.bot.wait_until_ready()

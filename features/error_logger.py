@@ -57,9 +57,7 @@ def create_embed(command: str, cmd_type: command_utils.CommandTypes, error: Exce
   return embed
 
 async def common_error_handling(ctx, error):
-  if isinstance(error, disnake.errors.DiscordServerError):
-    return True
-  elif isinstance(error, disnake.Forbidden):
+  if isinstance(error, disnake.Forbidden):
     if error.code == 50013:
       res = await message_utils.generate_error_message(ctx, Strings.error_bot_missing_permission)
       if res is None:

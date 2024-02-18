@@ -34,7 +34,7 @@ class DiscordManager(Base_Cog):
 
       discord_member_object_ids = []
       async for member in guild.fetch_members(limit=None):
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(1)
         if member.bot or member.system: continue
 
         member_object = await discord_objects_repo.get_or_create_discord_member(member, comit=False)

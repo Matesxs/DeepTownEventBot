@@ -68,7 +68,6 @@ class Strings(metaclass=Formatable):
   error_interaction_timeout = "Interaction took more than 3 seconds to be responded to. Try again later."
   error_forbiden = "Bot can't do this action"
   error_blocked_dms = "You have blocked DMs"
-  error_not_found = "Not found\n{code} - {text}"
   error_unknown_error = "Unknown error when processing command, report this to bot administrator"
 
   # Discord manager

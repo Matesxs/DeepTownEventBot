@@ -68,8 +68,6 @@ async def common_error_handling(ctx, error):
         await message_utils.generate_error_message(ctx.author, Strings.error_forbiden)
   elif isinstance(error, disnake.HTTPException) and error.code == 50007:
     await message_utils.generate_error_message(ctx, Strings.error_blocked_dms)
-  elif isinstance(error, disnake.NotFound):
-    await message_utils.generate_error_message(ctx, Strings.error_not_found(code=error.code, text=error.text))
   elif isinstance(error, commands.CommandNotFound):
     await message_utils.generate_error_message(ctx, Strings.error_unknown_command)
   elif isinstance(error, commands.CommandOnCooldown):

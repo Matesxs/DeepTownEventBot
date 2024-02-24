@@ -68,7 +68,7 @@ class DTEvents(Base_Cog):
       return await message_utils.generate_error_message(inter, Strings.public_interface_event_help_no_items)
 
     start_date, end_date = dt_helpers.event_index_to_date_range(int(event_identifier[0]), int(event_identifier[1]), with_timezone=True)
-    help_string = f"Year: {event_identifier[0]} Week: {event_identifier[1]}\n<t:{int(start_date.timestamp())}> - <t:{int(end_date.timestamp())}>\n{item_table}"
+    help_string = f"Year: {event_identifier[0]} Week: {event_identifier[1]}\n{start_date.day}.{start_date.month}.{start_date.year} - {end_date.day}.{end_date.month}.{end_date.year}\n{item_table}"
 
     if item_scaling_levels != 0:
       event_items_scaling_table = dt_report_generators.get_event_items_scaling_table(event_specification, levels=item_scaling_levels)
@@ -165,7 +165,7 @@ class DTEvents(Base_Cog):
 
     participant_data = [(idx + 1, string_manipulation.truncate_string(username, 20), string_manipulation.truncate_string(guild_name, 20), string_manipulation.format_number(total_contribution)) for idx, (username, guild_name, total_contribution) in enumerate(global_best_participants)]
     start_date, end_date = dt_helpers.event_index_to_date_range(int(event_identifier[0]), int(event_identifier[1]), with_timezone=True)
-    participant_data_table_strings = (f"Year: {event_identifier[0]} Week: {event_identifier[1]}\n<t:{int(start_date.timestamp())}> - <t:{int(end_date.timestamp())}>\n" +
+    participant_data_table_strings = (f"Year: {event_identifier[0]} Week: {event_identifier[1]}\n{start_date.day}.{start_date.month}.{start_date.year} - {end_date.day}.{end_date.month}.{end_date.year}\n" +
                                       table2ascii(header=["No°", "Username", "Guild", "Donate"], body=participant_data, first_col_heading=True, alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.LEFT, Alignment.RIGHT])
                                       ).split("\n")
 
@@ -193,7 +193,7 @@ class DTEvents(Base_Cog):
 
     participant_data = [(idx + 1, string_manipulation.truncate_string(guild_name, 20), string_manipulation.format_number(total_contribution), string_manipulation.format_number(max_contribution)) for idx, (guild_name, total_contribution, max_contribution) in enumerate(best_guilds)]
     start_date, end_date = dt_helpers.event_index_to_date_range(int(event_identifier[0]), int(event_identifier[1]), with_timezone=True)
-    participant_data_table_strings = (f"Year: {event_identifier[0]} Week: {event_identifier[1]}\n<t:{int(start_date.timestamp())}> - <t:{int(end_date.timestamp())}>\n" +
+    participant_data_table_strings = (f"Year: {event_identifier[0]} Week: {event_identifier[1]}\n{start_date.day}.{start_date.month}.{start_date.year} - {end_date.day}.{end_date.month}.{end_date.year}\n" +
                                       table2ascii(header=["No°", "Guild", "Donate", "Top Donate"], body=participant_data, first_col_heading=True, alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.RIGHT, Alignment.RIGHT])
                                       ).split("\n")
 

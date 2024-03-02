@@ -135,7 +135,7 @@ async def process_lottery_result(bot: BaseAutoshardedBot, lottery: dt_event_item
     final_string, event_items_table_lines = string_manipulation.add_string_until_length(event_items_table_lines, 1850, "\n")
     result_message_lines.append(f"```\n{final_string}\n```")
 
-  if lottery.autoshow_guesses and len(lottery.guesses) > 0:
+  if lottery.autoshow_guesses and result[0] > 0:
     # Generate all guesses table
     for table in (await generate_guesses_tables(lottery)):
       result_message_lines.append(f"```\n{table}\n```")
@@ -159,7 +159,10 @@ async def process_lottery_result(bot: BaseAutoshardedBot, lottery: dt_event_item
     result_message_lines.append("Don't forget to get get your rewards 😉")
   else:
     result_message_lines.append("**There are no winners**")
-    result_message_lines.append("Better luck next time")
+    if result[0] > 0:
+      result_message_lines.append("Better luck next time")
+    else:
+      result_message_lines.append("Nobody attended this lottery")
 
   # Generate and send final messages
   destination = lottery_message or lottery_channel

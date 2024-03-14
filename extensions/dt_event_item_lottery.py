@@ -22,10 +22,10 @@ logger = setup_custom_logger(__name__)
 
 async def make_guess(inter: disnake.CommandInteraction | commands.Context | disnake.Message,
                      author: disnake.Member,
-                     guess_item_1: Optional[str],
-                     guess_item_2: Optional[str],
-                     guess_item_3: Optional[str],
-                     guess_item_4: Optional[str]):
+                     guess_item_1: Optional[str] = None,
+                     guess_item_2: Optional[str] = None,
+                     guess_item_3: Optional[str] = None,
+                     guess_item_4: Optional[str] = None):
   items = []
   if guess_item_1 is not None:
     guess_item_1_ = await dt_items_repo.get_dt_item(guess_item_1)
@@ -121,7 +121,7 @@ async def handle_guess_message(message: disnake.Message) -> bool:
     if await already_guessed():
       return True
 
-    if len(item_names) and all_sure:
+    if len(item_names) == 4 and all_sure:
       await make_guess(message, message.author, *item_names)
       return True
     else:

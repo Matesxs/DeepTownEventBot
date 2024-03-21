@@ -57,7 +57,8 @@ class DTItem(database.base):
       crafting_time = self.crafting_time / self.crafting_batch_size
 
       for component_data in self.components_data:
-        crafting_time += (component_data.component.cumulative_crafting_time_per_item * component_data.amount)
+        if component_data.component.item_type == ItemType.CRAFTABLE:
+          crafting_time += (component_data.component.cumulative_crafting_time_per_item * component_data.amount)
 
       return crafting_time
     return 0

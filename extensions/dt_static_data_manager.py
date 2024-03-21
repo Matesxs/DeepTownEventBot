@@ -25,7 +25,7 @@ class DTStaticDataManager(Base_Cog):
   @item_configuration_commands.sub_command(name="add", description=Strings.static_data_manager_add_dt_item_description)
   @cooldowns.short_cooldown
   async def add_dt_item(self, inter: disnake.CommandInteraction,
-                        name: str = commands.Param(description=Strings.static_data_manager_add_remove_dt_item_name_param_description, max_length=25),
+                        name: str = commands.Param(description=Strings.dt_item_name_parameter_description, max_length=25),
                         item_type: dt_items_repo.ItemType = commands.Param(description=Strings.static_data_manager_add_dt_item_type_param_description),
                         item_source: dt_items_repo.ItemSource = commands.Param(description=Strings.static_data_manager_add_dt_item_source_param_description),
                         value: float = commands.Param(default=0.0, min_value=0.0, description=Strings.static_data_manager_add_dt_item_value_param_description),
@@ -46,7 +46,7 @@ class DTStaticDataManager(Base_Cog):
   @item_configuration_commands.sub_command(name="remove", description=Strings.static_data_manager_remove_dt_item_description)
   @cooldowns.short_cooldown
   async def remove_dt_item(self, inter: disnake.CommandInteraction,
-                           name: str = commands.Param(description=Strings.static_data_manager_add_remove_dt_item_name_param_description, autocomplete=dt_autocomplete.autocomplete_item)):
+                           name: str = commands.Param(description=Strings.dt_item_name_parameter_description, autocomplete=dt_autocomplete.autocomplete_item)):
     await inter.response.defer(with_message=True, ephemeral=True)
     if await dt_items_repo.remove_dt_item(name):
       await message_utils.generate_success_message(inter, Strings.static_data_manager_remove_dt_item_success(name=name))
@@ -63,7 +63,7 @@ class DTStaticDataManager(Base_Cog):
 
     target_item_ = await dt_items_repo.get_dt_item(target_item)
     if target_item_ is None:
-      return await message_utils.generate_error_message(inter, Strings.static_data_manager_target_item_not_found)
+      return await message_utils.generate_error_message(inter, Strings.dt_item_not_found)
 
     if target_item_.item_type != dt_items_repo.ItemType.CRAFTABLE:
       return await message_utils.generate_error_message(inter, Strings.static_data_manager_modify_dt_item_component_target_not_craftable)
@@ -88,7 +88,7 @@ class DTStaticDataManager(Base_Cog):
 
     target_item_ = await dt_items_repo.get_dt_item(target_item)
     if target_item_ is None:
-      return await message_utils.generate_error_message(inter, Strings.static_data_manager_target_item_not_found)
+      return await message_utils.generate_error_message(inter, Strings.dt_item_not_found)
 
     if await dt_items_repo.remove_all_component_mappings(target_item):
       await message_utils.generate_success_message(inter, Strings.static_data_manager_remove_dt_item_components_removed(target_item=target_item))

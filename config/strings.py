@@ -92,6 +92,8 @@ class Strings(metaclass=Formatable):
   dt_user_not_found = "Deep Town user with identifier `{identifier}` not found in database"
   dt_event_data_not_found = "Not found event data for event `{year}` `{week}`"
   dt_event_identifier_param_description = "Event identificator in format 'Event_year Event_week'"
+  dt_item_name_parameter_description = "Deep Town item name"
+  dt_item_not_found = "Item not found in database"
 
   # Static data manager
   static_data_manager_add_dt_item_description = "Create Deep Town item"
@@ -106,10 +108,6 @@ class Strings(metaclass=Formatable):
   static_data_manager_remove_dt_item_description = "Remove Deep Town item"
   static_data_manager_remove_dt_item_success = "Item `{name}` removed from database"
   static_data_manager_remove_dt_item_failed = "Item `{name}` not found in database"
-
-  static_data_manager_add_remove_dt_item_name_param_description = "Deep Town item name"
-
-  static_data_manager_target_item_not_found = "Target item not found in database"
 
   static_data_manager_modify_dt_item_component_description = "Modify component of item"
   static_data_manager_modify_dt_item_component_target_item_param_description = "Item for which modify component"
@@ -166,8 +164,10 @@ class Strings(metaclass=Formatable):
   data_manager_dump_guild_participation_data_success = "Dump created"
 
   # DT Items
-  dt_items_list_dt_items_description = "List all Deep Town items"
+  dt_items_list_description = "List all Deep Town items"
   dt_items_list_dt_items_no_items = "No Deep Town items in database"
+
+  dt_items_search_description = "Search item in database"
 
   # Event Tracker
   event_report_announcer_add_or_modify_tracker_description = "Add guild for tracking or modify existing announcement channel"

@@ -28,6 +28,8 @@ status_messages = ["Serving {guilds} discord servers with {users} users", "Monit
 cycle_interval_s = 120
 
 [data_manager]
+automatic_set_event_items_channel_ids = []
+
 ignore_empty_guilds = true
 
 clean_none_existing_guilds = true

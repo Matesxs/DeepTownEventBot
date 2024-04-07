@@ -1,16 +1,78 @@
 import disnake
 from disnake.ext import commands
-from typing import Optional
+from typing import Optional, Tuple
 import asyncio
 import math
+from Levenshtein import ratio
+import datetime
 
 from features.base_cog import Base_Cog
-from utils import message_utils, dt_autocomplete, items_lottery, command_utils
+from utils import message_utils, dt_autocomplete, items_lottery, command_utils, dt_helpers
 from utils.logger import setup_custom_logger
-from config import cooldowns, Strings, permissions
+from config import cooldowns, Strings, permissions, config
 from database import dt_items_repo
+from features.views import confirm_view
 
 logger = setup_custom_logger(__name__)
+
+async def update_event_items(inter, bot,
+                             item1: str, item2: str, item3: str, item4: str,
+                             base_amount1: Optional[int], base_amount2: Optional[int], base_amount3: Optional[int], base_amount4: Optional[int],
+                             event_identifier: Optional[Tuple[int, int]],
+                             current_level: int = 0,
+                             update_loterries: bool = True):
+  if event_identifier is None:
+    event_identifier = dt_helpers.get_event_index(datetime.datetime.utcnow())
+
+  if (await dt_items_repo.get_dt_item(item1)) is None:
+    return await message_utils.generate_error_message(inter, Strings.data_manager_set_event_items_item_not_in_database(item=item1))
+
+  if (await dt_items_repo.get_dt_item(item2)) is None:
+    return await message_utils.generate_error_message(inter, Strings.data_manager_set_event_items_item_not_in_database(item=item2))
+
+  if (await dt_items_repo.get_dt_item(item3)) is None:
+    return await message_utils.generate_error_message(inter, Strings.data_manager_set_event_items_item_not_in_database(item=item3))
+
+  if (await dt_items_repo.get_dt_item(item4)) is None:
+    return await message_utils.generate_error_message(inter, Strings.data_manager_set_event_items_item_not_in_database(item=item4))
+
+  if len(list(set(list([item1, item2, item3, item4])))) != 4:
+    return await message_utils.generate_error_message(inter, Strings.data_manager_set_event_items_repeated_items)
+
+  await dt_items_repo.remove_event_participation_items(event_identifier[0], event_identifier[1])
+  await asyncio.sleep(0.01)
+
+  if current_level != 0:
+    base_amount1 = math.ceil(base_amount1 / (0.9202166811 * math.exp((current_level + 1) / 8))) if base_amount1 is not None else None
+    base_amount2 = math.ceil(base_amount2 / (0.9202166811 * math.exp((current_level + 1) / 8))) if base_amount2 is not None else None
+    base_amount3 = math.ceil(base_amount3 / (0.9202166811 * math.exp((current_level + 1) / 8))) if base_amount3 is not None else None
+    base_amount4 = math.ceil(base_amount4 / (0.9202166811 * math.exp((current_level + 1) / 8))) if base_amount4 is not None else None
+
+  futures = [dt_items_repo.set_event_item(event_identifier[0], event_identifier[1], item1, base_amount1, commit=False),
+             dt_items_repo.set_event_item(event_identifier[0], event_identifier[1], item2, base_amount2, commit=False),
+             dt_items_repo.set_event_item(event_identifier[0], event_identifier[1], item3, base_amount3, commit=False),
+             dt_items_repo.set_event_item(event_identifier[0], event_identifier[1], item4, base_amount4, commit=False)]
+  await asyncio.gather(*futures)
+  await dt_items_repo.run_commit()
+
+  await message_utils.generate_success_message(inter, Strings.data_manager_set_event_items_success(event_year=event_identifier[0],
+                                                                                                   event_week=event_identifier[1],
+                                                                                                   item1=item1,
+                                                                                                   item2=item2,
+                                                                                                   item3=item3,
+                                                                                                   item4=item4,
+                                                                                                   base_amount1=base_amount1,
+                                                                                                   base_amount2=base_amount2,
+                                                                                                   base_amount3=base_amount3,
+                                                                                                   base_amount4=base_amount4))
+
+  if update_loterries:
+    result = await items_lottery.process_loterries(bot)
+    if result is None:
+      return await message_utils.generate_success_message(inter, Strings.lottery_update_no_active_lotteries)
+
+    results, guesses_cleared = result
+    await message_utils.generate_success_message(inter, Strings.lottery_update_success(results=results, guesses_cleared=guesses_cleared))
 
 class DTDynamicDataManager(Base_Cog):
   def __init__(self, bot):
@@ -37,55 +99,81 @@ class DTDynamicDataManager(Base_Cog):
                             event_identifier=commands.Param(default=None, description=Strings.dt_event_identifier_param_description, autocomplete=dt_autocomplete.autocomplete_event_identifier, converter=dt_autocomplete.event_identifier_converter, convert_defaults=True)):
     await inter.response.defer(with_message=True, ephemeral=True)
 
-    if (await dt_items_repo.get_dt_item(item1)) is None:
-      return await message_utils.generate_error_message(inter, Strings.data_manager_set_event_items_item_not_in_database(item=item1))
+    await update_event_items(inter, self.bot,
+                             item1, item2, item3, item4,
+                             base_amount1, base_amount2, base_amount3, base_amount4,
+                             event_identifier,
+                             current_level,
+                             update_items_lotteries)
 
-    if (await dt_items_repo.get_dt_item(item2)) is None:
-      return await message_utils.generate_error_message(inter, Strings.data_manager_set_event_items_item_not_in_database(item=item2))
+  @commands.Cog.listener()
+  async def on_message(self, message: disnake.Message):
+    if message.author.bot or message.author.system: return
+    if message.content == "" or message.content.startswith(config.base.command_prefix): return
+    if message.guild is not None:
+      if message.channel.id not in config.data_manager.automatic_set_event_items_channel_ids: return
+      if not message.channel.permissions_for(message.guild.me).send_messages: return
+    if not ((await self.bot.is_owner(message.author)) or message.author.id in config.base.developer_ids): return
+    if not message.content.lower().startswith("event items"): return
 
-    if (await dt_items_repo.get_dt_item(item3)) is None:
-      return await message_utils.generate_error_message(inter, Strings.data_manager_set_event_items_item_not_in_database(item=item3))
+    message_lines = message.content.strip().split("\n")[1:]
+    number_of_lines = len(message_lines)
+    if number_of_lines < 5 or number_of_lines > 6: return False
 
-    if (await dt_items_repo.get_dt_item(item4)) is None:
-      return await message_utils.generate_error_message(inter, Strings.data_manager_set_event_items_item_not_in_database(item=item4))
+    all_item_names = await dt_items_repo.get_all_item_names()
+    all_item_names = [(name, name.lower()) for name in all_item_names]
 
-    if len(list(set(list([item1, item2, item3, item4])))) != 4:
-      return await message_utils.generate_error_message(inter, Strings.data_manager_set_event_items_repeated_items)
+    identifier = None
+    level = 0
+    item_data = []
+    for line in message_lines:
+      splits = line.strip().split(" ")
+      if splits[0].lower() == "event" and len(splits) == 3 and splits[1].isdecimal() and splits[2].isdecimal():
+        identifier = (int(splits[1]), int(splits[2]))
+      elif splits[0].lower() == "level" and len(splits) == 2 and splits[1].isdecimal():
+        level = int(splits[1])
+      else:
+        amount = None
+        if splits[-1].isdecimal():
+          item_name = " ".join(splits[:-1])
+          amount = int(splits[-1])
+        else:
+          item_name = line
 
-    await dt_items_repo.remove_event_participation_items(event_identifier[0], event_identifier[1])
-    await asyncio.sleep(0.01)
+        item_name = item_name.lower()
 
-    if current_level != 0:
-      base_amount1 = math.ceil(base_amount1 / (0.9202166811 * math.exp((current_level + 1) / 8)))
-      base_amount2 = math.ceil(base_amount2 / (0.9202166811 * math.exp((current_level + 1) / 8)))
-      base_amount3 = math.ceil(base_amount3 / (0.9202166811 * math.exp((current_level + 1) / 8)))
-      base_amount4 = math.ceil(base_amount4 / (0.9202166811 * math.exp((current_level + 1) / 8)))
+        max_score = 0
+        guessed_item_name = None
+        for true_item_name, true_item_name_lower in all_item_names:
+          score = ratio(item_name, true_item_name_lower)
+          if score <= 0.1: continue
 
-    futures = [dt_items_repo.set_event_item(event_identifier[0], event_identifier[1], item1, base_amount1, commit=False),
-               dt_items_repo.set_event_item(event_identifier[0], event_identifier[1], item2, base_amount2, commit=False),
-               dt_items_repo.set_event_item(event_identifier[0], event_identifier[1], item3, base_amount3, commit=False),
-               dt_items_repo.set_event_item(event_identifier[0], event_identifier[1], item4, base_amount4, commit=False)]
-    await asyncio.gather(*futures)
-    await dt_items_repo.run_commit()
+          if score > max_score:
+            max_score = score
+            guessed_item_name = true_item_name
 
-    await message_utils.generate_success_message(inter, Strings.data_manager_set_event_items_success(event_year=event_identifier[0],
-                                                                                                     event_week=event_identifier[1],
-                                                                                                     item1=item1,
-                                                                                                     item2=item2,
-                                                                                                     item3=item3,
-                                                                                                     item4=item4,
-                                                                                                     base_amount1=base_amount1,
-                                                                                                     base_amount2=base_amount2,
-                                                                                                     base_amount3=base_amount3,
-                                                                                                     base_amount4=base_amount4))
+          if max_score > 0.9:
+            break
 
-    if update_items_lotteries:
-      result = await items_lottery.process_loterries(self.bot)
-      if result is None:
-        return await message_utils.generate_success_message(inter, Strings.lottery_update_no_active_lotteries)
+        if max_score > 0.5:
+          item_data.append((guessed_item_name, amount))
 
-      results, guesses_cleared = result
-      await message_utils.generate_success_message(inter, Strings.lottery_update_success(results=results, guesses_cleared=guesses_cleared))
+    if len(item_data) != 4:
+      return
+
+    items_list_string = "\n".join([f"`{item_name}` - {amount}" for item_name, amount in item_data])
+    prompt_string = f"Event items\nAre these items correct?\n\n**Event identifier:** {identifier if identifier is not None else 'Current'}\n**Event level:** {level}\n**Event items:**\n{items_list_string}"
+    confirmation_view = confirm_view.ConfirmView(message, prompt_string)
+    if await confirmation_view.run():
+      await confirmation_view.wait()
+
+      if confirmation_view.get_result():
+        await update_event_items(message, self.bot,
+                                 item_data[0][0], item_data[1][0], item_data[2][0], item_data[3][0],
+                                 item_data[0][1], item_data[1][1], item_data[2][1], item_data[3][1],
+                                 identifier,
+                                 level,
+                                 True)
 
   @dynamic_data_manager_commands.sub_command(description=Strings.data_manager_remove_event_items_description)
   @cooldowns.short_cooldown

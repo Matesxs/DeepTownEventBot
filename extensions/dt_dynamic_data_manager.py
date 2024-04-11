@@ -156,10 +156,17 @@ class DTDynamicDataManager(Base_Cog):
             break
 
         if max_score > 0.5:
-          item_data.append((guessed_item_name, amount))
+          item_data.append([guessed_item_name, amount])
 
     if len(item_data) != 4:
-      return
+      return await message_utils.generate_error_message(message, Strings.data_manager_set_event_items_prompt_not_enough_items)
+
+    if level < 0:
+      return await message_utils.generate_error_message(message, Strings.data_manager_set_event_items_prompt_invalid_level)
+
+    if level != 0:
+      for i in range(4):
+        item_data[i][1] = math.ceil(item_data[i][1] / (0.9202166811 * math.exp((level + 1) / 8)))
 
     items_list_string = "\n".join([f"`{item_name}` - {amount}" for item_name, amount in item_data])
     prompt_string = f"Event items\nAre these items correct?\n\n**Event identifier:** {identifier if identifier is not None else 'Current'}\n**Event level:** {level}\n**Event items:**\n{items_list_string}"
@@ -172,7 +179,7 @@ class DTDynamicDataManager(Base_Cog):
                                  item_data[0][0], item_data[1][0], item_data[2][0], item_data[3][0],
                                  item_data[0][1], item_data[1][1], item_data[2][1], item_data[3][1],
                                  identifier,
-                                 level,
+                                 0,
                                  True)
 
   @dynamic_data_manager_commands.sub_command(description=Strings.data_manager_remove_event_items_description)

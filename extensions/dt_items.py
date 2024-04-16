@@ -30,7 +30,7 @@ class DTItems(Base_Cog):
     if not items:
       return await message_utils.generate_error_message(inter, Strings.dt_items_list_dt_items_no_items)
 
-    item_data = [(string_manipulation.truncate_string(item.name, 20), item.item_source, f"{string_manipulation.format_number(item.value, 2)}") for item in items]
+    item_data = [(string_manipulation.truncate_string(item.name, 16), item.item_source, f"{string_manipulation.format_number(item.value, 1)}") for item in items]
     item_table_strings = table2ascii(["Name", "Source", "Value"], item_data, alignments=[Alignment.LEFT, Alignment.LEFT, Alignment.RIGHT]).split("\n")
 
     pages = []

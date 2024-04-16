@@ -109,7 +109,7 @@ class DTGuilds(Base_Cog):
     # Members list
     member_data = []
     for member in guild.members:
-      member_data.append((member.user.id, string_manipulation.truncate_string(member.user.username, 18), member.user.level, hum_naturaltime(current_time - member.user.last_online, only_first=True) if member.user.last_online is not None else "Never"))
+      member_data.append((member.user.id, string_manipulation.truncate_string(member.user.username, 14), member.user.level, hum_naturaltime(current_time - member.user.last_online, only_first=True) if member.user.last_online is not None else "Never"))
 
     member_data.sort(key=lambda x: x[0])
 
@@ -142,8 +142,8 @@ class DTGuilds(Base_Cog):
 
     # Event best contributors
     top_event_contributors = await event_participation_repo.get_event_participants_data(guild.id, limit=10, ignore_zero_participation_median=True, only_current_members=True, order_by=[sqlalchemy.func.avg(event_participation_repo.EventParticipation.amount).desc()])
-    top_event_contributors_data = [(idx + 1, string_manipulation.truncate_string(contributor[1], 14), string_manipulation.format_number(contributor[4]), string_manipulation.format_number(contributor[5]), string_manipulation.format_number(contributor[6])) for idx, contributor in enumerate(top_event_contributors)]
-    event_best_contributors_table_strings = table2ascii(body=top_event_contributors_data, header=["No°", "Name", "Total", "Average", "Median"], alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.RIGHT, Alignment.RIGHT, Alignment.RIGHT], first_col_heading=True).split("\n")
+    top_event_contributors_data = [(string_manipulation.truncate_string(contributor[1], 14), string_manipulation.format_number(contributor[4]), string_manipulation.format_number(contributor[5])) for idx, contributor in enumerate(top_event_contributors)]
+    event_best_contributors_table_strings = table2ascii(body=top_event_contributors_data, header=["Name", "Total", "Average"], alignments=[Alignment.LEFT, Alignment.RIGHT, Alignment.RIGHT]).split("\n")
 
     while event_best_contributors_table_strings:
       data_string, event_best_contributors_table_strings = string_manipulation.add_string_until_length(event_best_contributors_table_strings, 4000, "\n", 42)
@@ -155,8 +155,8 @@ class DTGuilds(Base_Cog):
 
     # Worst event contributors
     worst_event_contributors = await event_participation_repo.get_event_participants_data(guild.id, limit=10, ignore_zero_participation_median=True, only_current_members=True, order_by=[sqlalchemy.func.avg(event_participation_repo.EventParticipation.amount)])
-    worst_event_contributors_data = [(idx + 1, string_manipulation.truncate_string(contributor[1], 14), string_manipulation.format_number(contributor[4]), string_manipulation.format_number(contributor[5]), string_manipulation.format_number(contributor[6])) for idx, contributor in enumerate(worst_event_contributors)]
-    event_worst_contributors_table_strings = table2ascii(body=worst_event_contributors_data, header=["No°", "Name", "Total", "Average", "Median"], alignments=[Alignment.RIGHT, Alignment.LEFT, Alignment.RIGHT, Alignment.RIGHT, Alignment.RIGHT], first_col_heading=True).split("\n")
+    worst_event_contributors_data = [(string_manipulation.truncate_string(contributor[1], 14), string_manipulation.format_number(contributor[4]), string_manipulation.format_number(contributor[5])) for idx, contributor in enumerate(worst_event_contributors)]
+    event_worst_contributors_table_strings = table2ascii(body=worst_event_contributors_data, header=["Name", "Total", "Average"], alignments=[Alignment.LEFT, Alignment.RIGHT, Alignment.RIGHT]).split("\n")
 
     while event_worst_contributors_table_strings:
       data_string, event_worst_contributors_table_strings = string_manipulation.add_string_until_length(event_worst_contributors_table_strings, 4000, "\n", 42)
@@ -167,19 +167,7 @@ class DTGuilds(Base_Cog):
     await asyncio.sleep(0.1)
 
     # Event participations
-    raw_event_participation_data = await event_participation_repo.get_guild_event_participations_data(guild.id)
-
-    event_participations_data = []
-    for year, week, total, average in raw_event_participation_data:
-      best_participants = await event_participation_repo.get_event_participants_data(guild.id, year, week, limit=1) if total != 0 else None
-      event_participations_data.append((year, week, (string_manipulation.truncate_string(best_participants[0][1], 10) if best_participants is not None else "N/A"), string_manipulation.format_number(best_participants[0][4]) if best_participants else "0", string_manipulation.format_number(average)))
-
-    event_participations_strings = table2ascii(body=event_participations_data, header=["Year", "Week", "Top Member", "Top Donate", "Average"], alignments=[Alignment.RIGHT, Alignment.RIGHT, Alignment.LEFT, Alignment.RIGHT, Alignment.RIGHT]).split("\n")
-    while event_participations_strings:
-      data_string, event_participations_strings = string_manipulation.add_string_until_length(event_participations_strings, 4000, "\n", 42)
-      event_participation_page = disnake.Embed(title=f"{string_manipulation.truncate_string(guild.name, 200)} event participations", color=disnake.Color.dark_blue(), description=f"```\n{data_string}\n```")
-      message_utils.add_author_footer(event_participation_page, inter.author)
-      guild_profile_lists.append(event_participation_page)
+    guild_profile_lists.extend(await dt_report_generators.generate_guild_event_participation_pages(inter.author, guild))
 
     embed_view = EmbedView(inter.author, guild_profile_lists)
     await embed_view.run(inter)
@@ -197,24 +185,7 @@ class DTGuilds(Base_Cog):
     if not guild:
       return await message_utils.generate_error_message(inter, Strings.dt_guild_not_found(identifier=identifier[1]))
 
-    all_guild_participations = await event_participation_repo.get_guild_event_participations_data(guild.id)
-
-    event_participations_data = []
-    for year, week, total, average in all_guild_participations:
-      best_participants = await event_participation_repo.get_event_participants_data(guild.id, year, week, limit=1) if total != 0 else None
-      event_participations_data.append((year, week, (string_manipulation.truncate_string(best_participants[0][1], 10) if best_participants is not None else "N/A"), string_manipulation.format_number(best_participants[0][4]) if best_participants else "0", string_manipulation.format_number(average)))
-
-    event_participations_strings = table2ascii(body=event_participations_data, header=["Year", "Week", "Top Member", "Top Donate", "Average"], alignments=[Alignment.RIGHT, Alignment.RIGHT, Alignment.LEFT, Alignment.RIGHT, Alignment.RIGHT]).split("\n")
-    event_participations_page_strings = []
-    while event_participations_strings:
-      data_string, event_participations_strings = string_manipulation.add_string_until_length(event_participations_strings, 4000, "\n", 42)
-      event_participations_page_strings.append(data_string)
-
-    guild_participation_pages = []
-    for event_participations_page_string in event_participations_page_strings:
-      event_participation_page = disnake.Embed(title=f"{string_manipulation.truncate_string(guild.name, 200)} event participations", color=disnake.Color.dark_blue(), description=f"```\n{event_participations_page_string}\n```")
-      message_utils.add_author_footer(event_participation_page, inter.author)
-      guild_participation_pages.append(event_participation_page)
+    guild_participation_pages = await dt_report_generators.generate_guild_event_participation_pages(inter.author, guild)
 
     embed_view = EmbedView(inter.author, guild_participation_pages)
     await embed_view.run(inter)

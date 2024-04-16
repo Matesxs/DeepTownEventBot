@@ -8,9 +8,10 @@ import statistics
 import pandas as pd
 import io
 
-from utils import string_manipulation, dt_helpers
+from utils import string_manipulation, dt_helpers, message_utils
 from database.tables.event_participation import EventParticipation, EventSpecification
 from database.tables.dt_guild import DTGuild
+from database import event_participation_repo
 
 def generate_participation_strings(participations: List[EventParticipation], colms: List[str], colm_padding: int=0) -> List[str]:
   current_time = datetime.datetime.utcnow()
@@ -179,3 +180,22 @@ def get_event_items_scaling_table(event_specification: EventSpecification, level
   scaling_data = [(idx + 1, *scalings) for idx, scalings in enumerate(zip(*[ei.get_event_amount_scaling(levels=levels) for ei in event_items]))]
 
   return table2ascii(colm_names, scaling_data, alignments=[Alignment.RIGHT] * len(colm_names), cell_padding=colm_padding, first_col_heading=True, footer=["Sum", *[ei.get_event_amount_sum(levels=levels) for ei in event_items]])
+
+async def generate_guild_event_participation_pages(author: disnake.Member | disnake.User, guild: DTGuild):
+  event_participations_data = []
+  pages = []
+
+  raw_event_participation_data = await event_participation_repo.get_guild_event_participations_data(guild.id)
+
+  for year, week, total, average in raw_event_participation_data:
+    best_participants = await event_participation_repo.get_event_participants_data(guild.id, year, week, limit=1) if total != 0 else None
+    event_participations_data.append((year, week, (f"{string_manipulation.truncate_string(best_participants[0][1], 10)} - {string_manipulation.format_number(best_participants[0][4])}" if best_participants is not None else "N/A"), string_manipulation.format_number(average)))
+
+  event_participations_strings = table2ascii(body=event_participations_data, header=["Year", "Week", "Top Donate", "Average"], alignments=[Alignment.RIGHT, Alignment.RIGHT, Alignment.LEFT, Alignment.RIGHT]).split("\n")
+  while event_participations_strings:
+    data_string, event_participations_strings = string_manipulation.add_string_until_length(event_participations_strings, 4000, "\n", 42)
+    event_participation_page = disnake.Embed(title=f"{string_manipulation.truncate_string(guild.name, 200)} event participations", color=disnake.Color.dark_blue(), description=f"```\n{data_string}\n```")
+    message_utils.add_author_footer(event_participation_page, author)
+    pages.append(event_participation_page)
+
+  return pages

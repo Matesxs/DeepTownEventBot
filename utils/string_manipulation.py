@@ -42,7 +42,7 @@ def split_to_parts(item: str, length: int) -> List[str]:
 
   return result
 
-def format_number(number: Union[int, float], precision: int=3) -> str:
+def format_number(number: Union[int, float], precision: int=2) -> str:
   if isinstance(number, int):
     number = float(number)
 

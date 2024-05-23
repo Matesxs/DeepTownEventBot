@@ -75,7 +75,6 @@ async def process_lottery_result(bot: BaseAutoshardedBot, lottery: dt_event_item
   guild = await lottery.guild.to_object(bot)
 
   lottery_message = await lottery.get_lotery_message(bot)
-  if lottery_message.author.id != bot.user.id: lottery_message = None
 
   if lottery_message is None:
     lottery_channel = await lottery.get_lotery_channel(bot)

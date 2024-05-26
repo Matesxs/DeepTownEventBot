@@ -34,7 +34,7 @@ class DiscordManager(Base_Cog):
 
       discord_member_object_ids = []
       async for member in guild.fetch_members(limit=None):
-        await asyncio.sleep(1)
+        await asyncio.sleep(0.05)
         if member.bot or member.system: continue
 
         member_object = await discord_objects_repo.get_or_create_discord_member(member, comit=False)
@@ -42,6 +42,7 @@ class DiscordManager(Base_Cog):
 
       await discord_objects_repo.run_commit()
       await discord_objects_repo.discord_member_cleanup(guild.id, discord_member_object_ids)
+      await asyncio.sleep(1)
 
     await discord_objects_repo.discord_guild_cleanup(discord_guild_object_ids)
     await discord_objects_repo.discord_user_cleanup()

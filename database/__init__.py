@@ -1,6 +1,6 @@
 import asyncio
 from typing import Any
-from sqlalchemy import BigInteger, create_engine
+from sqlalchemy import BigInteger, create_engine, event
 from sqlalchemy.engine import Result
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.ext.declarative import declarative_base
@@ -72,6 +72,10 @@ async def add_items(items):
 BigIntegerType = BigInteger()
 BigIntegerType = BigIntegerType.with_variant(postgresql.BIGINT(), 'postgresql')
 BigIntegerType = BigIntegerType.with_variant(sqlite.INTEGER(), 'sqlite')
+
+@event.listens_for(engine, 'close')
+def receive_close(dbapi_connection, connection_record):
+  logger.warning("Database connection closed")
 
 def load_sub_modules(module):
   package = importlib.import_module(module)

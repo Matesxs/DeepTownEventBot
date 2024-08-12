@@ -20,7 +20,7 @@ if config.base.database_connect_string is None or config.base.database_connect_s
 
 try:
   base = declarative_base()
-  engine = create_engine(config.base.database_connect_string)
+  engine = create_engine(config.base.database_connect_string, pool_pre_ping=True)
 except Exception:
   logger.error(f"Failed to create database connection\n{traceback.format_exc()}")
   exit(-1)

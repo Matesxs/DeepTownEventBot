@@ -185,6 +185,9 @@ class Strings(metaclass=Formatable):
   event_report_announcer_list_trackers_description = "List all active trackers for this discord guild"
   event_report_announcer_list_trackers_no_trackers = "No trackers found"
 
+  event_report_announcer_manual_announcement_description = "Make announcement for all guild manually"
+  event_report_announcer_manual_announcement_success = "Announcements send"
+
   event_report_announcer_guild_report_description = "Generate Deep Town guild report"
 
   # Public interface

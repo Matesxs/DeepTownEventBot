@@ -4,9 +4,8 @@ from disnake.ext import commands
 from Levenshtein import ratio
 import math
 
-import database
-from utils import message_utils, string_manipulation, command_utils
-from database import questions_and_answers_repo
+from utils import message_utils, string_manipulation, command_utils, dt_autocomplete
+from database import questions_and_answers_repo, session_maker
 from config import config, cooldowns, permissions
 from utils.logger import setup_custom_logger
 from features.base_cog import Base_Cog
@@ -21,21 +20,23 @@ async def getApproximateAnswer(q):
   answer_id = None
   ref_question = None
 
-  all_questions = questions_and_answers_repo.all_questions_iterator()
+  with session_maker() as session:
+    all_questions = questions_and_answers_repo.all_questions_iterator(session)
 
-  async for ans_id, question in all_questions:
-    score = ratio(question, q)
-    if score <= 0.1:
-      continue
-    elif score >= 0.9:
-      return question, await questions_and_answers_repo.get_answer_by_id(ans_id), score
-    elif score > max_score:
-      max_score = score
-      answer_id = ans_id
-      ref_question = question
+    async for ans_id, question in all_questions:
+      score = ratio(question, q)
+      if score <= 0.1:
+        continue
+      elif score >= 0.9:
+        return question, await questions_and_answers_repo.get_answer_by_id(session, ans_id), score
+      elif score > max_score:
+        max_score = score
+        answer_id = ans_id
+        ref_question = question
 
-  if answer_id is not None and (max_score * 100) > config.questions_and_answers.score_limit:
-    return ref_question, await questions_and_answers_repo.get_answer_by_id(answer_id), max_score
+    if answer_id is not None and (max_score * 100) > config.questions_and_answers.score_limit:
+      return ref_question, await questions_and_answers_repo.get_answer_by_id(session, answer_id), max_score
+
   return None
 
 class AutoHelp(Base_Cog):
@@ -49,7 +50,9 @@ class AutoHelp(Base_Cog):
     if message.content == "" or message.content.startswith(config.base.command_prefix): return
     if not message.channel.permissions_for(message.guild.me).send_messages: return
     if not "?" in message.content: return
-    if not (await questions_and_answers_repo.is_on_whitelist(message.guild.id, message.channel.id)): return
+
+    with session_maker() as session:
+      if not (await questions_and_answers_repo.is_on_whitelist(session, message.guild.id, message.channel.id)): return
 
     answer_object = await getApproximateAnswer(message.content)
     if answer_object is None: return
@@ -76,29 +79,24 @@ class AutoHelp(Base_Cog):
   @question_and_answer_database.sub_command(name="modify", description=Strings.questions_and_answers_modify_description)
   @permissions.bot_developer()
   async def modify_question_and_answer(self, inter: disnake.CommandInteraction,
-                                       question_id: int=commands.Param(description=Strings.questions_and_answers_id_param_description)):
-    question_and_answer = await questions_and_answers_repo.get_question_and_answer(question_id)
-    if question_and_answer is None:
-      return await message_utils.generate_error_message(inter, Strings.questions_and_answers_not_found)
-    await inter.response.send_modal(modal=CreateQuestionAndAnswer(question_and_answer.question, question_and_answer.answer))
+                                       question_id: int=commands.Param(description=Strings.questions_and_answers_id_param_description, autocomp=dt_autocomplete.question_and_answer_question_id_autocomplete)):
+    with session_maker() as session:
+      question_and_answer = await questions_and_answers_repo.get_question_and_answer(session, question_id)
+      if question_and_answer is None:
+        return await message_utils.generate_error_message(inter, Strings.questions_and_answers_not_found)
+      await inter.response.send_modal(modal=CreateQuestionAndAnswer(question_and_answer.question, question_and_answer.answer))
 
   @question_and_answer_database.sub_command(name="remove", description=Strings.questions_and_answers_remove_description)
   @permissions.bot_developer()
   async def remove_question_and_answer(self, inter: disnake.CommandInteraction,
-                                       question_id: int=commands.Param(description=Strings.questions_and_answers_id_param_description)):
+                                       question_id: int=commands.Param(description=Strings.questions_and_answers_id_param_description, autocomp=dt_autocomplete.question_and_answer_question_id_autocomplete)):
     await inter.response.defer(with_message=True, ephemeral=True)
-    if await questions_and_answers_repo.remove_question(question_id):
-      await message_utils.generate_success_message(inter, Strings.questions_and_answers_remove_removed)
-    else:
-      await message_utils.generate_error_message(inter, Strings.questions_and_answers_not_found)
 
-  @remove_question_and_answer.autocomplete("question_id")
-  @modify_question_and_answer.autocomplete("question_id")
-  async def question_and_answer_question_id_autocomplete(self, _, string: str):
-    question_ids = await questions_and_answers_repo.get_all_ids()
-    if string is None or not string:
-      return question_ids[:25]
-    return [id_ for id_ in question_ids if string.lower() in str(id_)][:25]
+    with session_maker() as session:
+      if await questions_and_answers_repo.remove_question(session, question_id):
+        await message_utils.generate_success_message(inter, Strings.questions_and_answers_remove_removed)
+      else:
+        await message_utils.generate_error_message(inter, Strings.questions_and_answers_not_found)
 
   @commands.slash_command(name="question_and_answer")
   async def question_and_answer(self, inter: disnake.CommandInteraction):
@@ -108,9 +106,10 @@ class AutoHelp(Base_Cog):
   @cooldowns.default_cooldown
   async def question_and_answer_list(self, inter: disnake.CommandInteraction):
     await inter.response.defer(with_message=True)
-    question_objects = await questions_and_answers_repo.get_all()
 
-    question_answer_pairs = [f"**ID:** {question_object.id}\n**Question:** {question_object.question}\n**Answer:** {question_object.answer}\n" for question_object in question_objects]
+    with session_maker() as session:
+      question_objects = await questions_and_answers_repo.get_all(session)
+      question_answer_pairs = [f"**ID:** {question_object.id}\n**Question:** {question_object.question}\n**Answer:** {question_object.answer}\n" for question_object in question_objects]
 
     pages = []
     while question_answer_pairs:
@@ -137,22 +136,25 @@ class AutoHelp(Base_Cog):
                           channel: disnake.TextChannel=commands.Param(description=Strings.discord_text_channel_param_description)):
     await inter.response.defer(with_message=True, ephemeral=True)
 
-    if await questions_and_answers_repo.add_to_whitelist(inter.guild, channel.id):
-      return await message_utils.generate_success_message(inter, Strings.questions_and_answers_whitelist_add_success(channel=channel.name))
+    with session_maker() as session:
+      if await questions_and_answers_repo.add_to_whitelist(session, inter.guild, channel.id):
+        return await message_utils.generate_success_message(inter, Strings.questions_and_answers_whitelist_add_success(channel=channel.name))
     await message_utils.generate_error_message(inter, Strings.questions_and_answers_whitelist_add_failed(channel=channel.name))
 
   @question_and_answer_whitelist.sub_command(name="list", description=Strings.questions_and_answers_whitelist_list_description)
   async def whitelist_list(self, inter: disnake.CommandInteraction):
     await inter.response.defer(with_message=True, ephemeral=True)
 
-    whitelisted_channel_objects = await questions_and_answers_repo.get_whitelist_channels(inter.guild.id)
     whitelisted_channels = []
-    for wcho in whitelisted_channel_objects:
-      channel = await wcho.get_channel(self.bot)
-      if channel is not None:
-        whitelisted_channels.append(channel)
-      else:
-        await database.remove_item(wcho)
+
+    with session_maker() as session:
+      whitelisted_channel_objects = await questions_and_answers_repo.get_whitelist_channels(session, inter.guild.id)
+      for wcho in whitelisted_channel_objects:
+        channel = await wcho.get_channel(self.bot)
+        if channel is not None:
+          whitelisted_channels.append(channel)
+        else:
+          session.delete(wcho)
 
     if not whitelisted_channels:
       return await message_utils.generate_error_message(inter, Strings.questions_and_answers_whitelist_list_no_channels)
@@ -175,8 +177,9 @@ class AutoHelp(Base_Cog):
                              channel: disnake.TextChannel=commands.Param(description=Strings.discord_text_channel_param_description)):
     await inter.response.defer(with_message=True, ephemeral=True)
 
-    if await questions_and_answers_repo.remove_from_whitelist(inter.guild_id, channel.id):
-      return await message_utils.generate_success_message(inter, Strings.questions_and_answers_whitelist_remove_success(channel=channel.name))
+    with session_maker() as session:
+      if await questions_and_answers_repo.remove_from_whitelist(session, inter.guild_id, channel.id):
+        return await message_utils.generate_success_message(inter, Strings.questions_and_answers_whitelist_remove_success(channel=channel.name))
     await message_utils.generate_error_message(inter, Strings.questions_and_answers_whitelist_remove_failed(channel=channel.name))
 
 def setup(bot):

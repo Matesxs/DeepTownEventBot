@@ -1,4 +1,4 @@
-from sqlalchemy import Column, ForeignKey, Boolean
+from sqlalchemy import Column, ForeignKey
 from sqlalchemy.orm import relationship
 
 import database

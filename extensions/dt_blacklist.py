@@ -6,7 +6,7 @@ from typing import Optional
 from config import cooldowns, Strings, config, permissions
 from features.base_cog import Base_Cog
 from features.views.paginator import EmbedView
-from database import dt_blacklist_repo, dt_user_repo, dt_guild_repo
+from database import dt_blacklist_repo, dt_user_repo, dt_guild_repo, session_maker
 from utils import message_utils, string_manipulation, object_getters, dt_autocomplete, command_utils
 from table2ascii import table2ascii, Alignment
 
@@ -16,28 +16,29 @@ class DTBlacklist(Base_Cog):
 
   @staticmethod
   async def add_to_blacklist(inter, block_type: dt_blacklist_repo.BlacklistType, entity_id: int) -> bool:
-    if await dt_blacklist_repo.is_on_blacklist(block_type, entity_id):
-      await message_utils.generate_error_message(inter, Strings.blacklist_add_already_on_blacklist)
-      return False
+    with session_maker() as session:
+      if await dt_blacklist_repo.is_on_blacklist(session, block_type, entity_id):
+        await message_utils.generate_error_message(inter, Strings.blacklist_add_already_on_blacklist)
+        return False
 
-    if block_type == dt_blacklist_repo.BlacklistType.USER:
-      subject = await dt_user_repo.get_dt_user(entity_id)
-      subject_name = subject.username if subject is not None else None
-    else:
-      subject = await dt_guild_repo.get_dt_guild(entity_id)
-      subject_name = subject.name if subject is not None else None
+      if block_type == dt_blacklist_repo.BlacklistType.USER:
+        subject = await dt_user_repo.get_dt_user(session, entity_id)
+        subject_name = subject.username if subject is not None else None
+      else:
+        subject = await dt_guild_repo.get_dt_guild(session, entity_id)
+        subject_name = subject.name if subject is not None else None
 
-    if subject is None:
-      await message_utils.generate_error_message(inter, Strings.blacklist_add_subject_not_found)
-      return False
+      if subject is None:
+        await message_utils.generate_error_message(inter, Strings.blacklist_add_subject_not_found)
+        return False
 
-    await dt_blacklist_repo.create_blacklist_item(block_type, entity_id, subject_name)
-    await asyncio.sleep(1.0)
+      await dt_blacklist_repo.create_blacklist_item(session, block_type, entity_id, subject_name)
+      await asyncio.sleep(0.5)
 
-    if block_type == dt_blacklist_repo.BlacklistType.USER:
-      await dt_user_repo.remove_user(entity_id)
-    elif block_type == dt_blacklist_repo.BlacklistType.GUILD:
-      await dt_guild_repo.remove_guild(entity_id)
+      if block_type == dt_blacklist_repo.BlacklistType.USER:
+        await dt_user_repo.remove_user(session, entity_id)
+      elif block_type == dt_blacklist_repo.BlacklistType.GUILD:
+        await dt_guild_repo.remove_guild(session, entity_id)
 
     await message_utils.generate_success_message(inter, Strings.blacklist_add_success(subject_name=subject_name, type=block_type))
     return True
@@ -72,10 +73,11 @@ class DTBlacklist(Base_Cog):
     await inter.response.defer(with_message=True, ephemeral=True)
     type_ = dt_blacklist_repo.BlacklistType(type_)
 
-    if await dt_blacklist_repo.remove_blacklist_item(type_, identifier):
-      await message_utils.generate_success_message(inter, Strings.blacklist_remove_success(identifier=identifier, type=type_))
-    else:
-      await message_utils.generate_error_message(inter, Strings.blacklist_remove_failed(identifier=identifier, type=type_))
+    with session_maker() as session:
+      if await dt_blacklist_repo.remove_blacklist_item(session, type_, identifier):
+        await message_utils.generate_success_message(inter, Strings.blacklist_remove_success(identifier=identifier, type=type_))
+      else:
+        await message_utils.generate_error_message(inter, Strings.blacklist_remove_failed(identifier=identifier, type=type_))
 
   @command_utils.master_only_message_command(name="Add to Blacklist")
   @permissions.bot_developer()
@@ -123,9 +125,10 @@ class DTBlacklist(Base_Cog):
     if type_ is not None:
       type_ = dt_blacklist_repo.BlacklistType(type_)
 
-    blacklist_items = await dt_blacklist_repo.get_blacklist_items(type_)
+    with session_maker() as session:
+      blacklist_items = await dt_blacklist_repo.get_blacklist_items(session, type_)
+      blacklist_data = [(bitem.identifier, bitem.bl_type, string_manipulation.truncate_string(bitem.additional_data, 20)) for bitem in blacklist_items]
 
-    blacklist_data = [(bitem.identifier, bitem.bl_type, string_manipulation.truncate_string(bitem.additional_data, 20)) for bitem in blacklist_items]
     blacklist_table_lines = table2ascii(["Identifier", "Type", "Specific Data"], blacklist_data, alignments=[Alignment.LEFT, Alignment.LEFT, Alignment.LEFT]).split("\n")
 
     blacklist_pages = []
@@ -155,18 +158,20 @@ class DTBlacklist(Base_Cog):
     report_type, entity_id = identifier
 
     if report_type == "USER":
-      user = await dt_user_repo.get_dt_user(entity_id)
-      if user is None:
-        return await message_utils.generate_error_message(inter, Strings.blacklist_report_user_cheater_user_not_found)
+      with session_maker() as session:
+        user = await dt_user_repo.get_dt_user(session, entity_id)
+        if user is None:
+          return await message_utils.generate_error_message(inter, Strings.blacklist_report_user_cheater_user_not_found)
 
       embed = disnake.Embed(title="User cheater report", color=disnake.Color.orange(), description=f"```\n{reason}\n```" if reason is not None else None)
       message_utils.add_author_footer(embed, inter.author)
       embed.add_field(name="Username", value=user.username)
       embed.add_field(name="ID", value=str(user.id))
     elif report_type == "GUILD":
-      guild = await dt_guild_repo.get_dt_guild(entity_id)
-      if guild is None:
-        return await message_utils.generate_error_message(inter, Strings.blacklist_report_guild_cheater_guild_not_found)
+      with session_maker() as session:
+        guild = await dt_guild_repo.get_dt_guild(session, entity_id)
+        if guild is None:
+          return await message_utils.generate_error_message(inter, Strings.blacklist_report_guild_cheater_guild_not_found)
 
       embed = disnake.Embed(title="Guild cheater report", color=disnake.Color.orange(), description=f"```\n{reason}\n```" if reason is not None else None)
       message_utils.add_author_footer(embed, inter.author)

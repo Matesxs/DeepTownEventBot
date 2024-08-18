@@ -1,8 +1,13 @@
+import disnake
 from disnake.ext import commands
 
 from config import config
+from database import session_maker
 from database.discord_objects_repo import get_or_create_discord_guild
 from features import exceptions
+from utils.logger import setup_custom_logger
+
+logger = setup_custom_logger(__name__)
 
 async def is_bot_developer(ctx):
   if await ctx.bot.is_owner(ctx.author):
@@ -30,9 +35,12 @@ async def has_guild_administrator_role(ctx):
     if is_guild_administrator(ctx):
       return True
 
-    guild_admin_role_id = (await get_or_create_discord_guild(ctx.guild)).admin_role_id
-    if guild_admin_role_id is None:
-      return False
+    with session_maker() as session:
+      guild_item = await get_or_create_discord_guild(session, ctx.guild)
+
+      guild_admin_role_id = guild_item.admin_role_id
+      if guild_admin_role_id is None:
+        return False
 
     author_role_ids = [role.id for role in ctx.author.roles]
     if int(guild_admin_role_id) in author_role_ids:
@@ -65,9 +73,12 @@ async def __predicate_guild_administrator_role(ctx):
   if is_guild_administrator(ctx):
     return True
 
-  guild_admin_role_id = (await get_or_create_discord_guild(ctx.guild)).admin_role_id
-  if guild_admin_role_id is None:
-    raise exceptions.NoGuildAdministratorRoleAndNotSet()
+  with session_maker() as session:
+    guild_item = await get_or_create_discord_guild(session, ctx.guild)
+
+    guild_admin_role_id = guild_item.admin_role_id
+    if guild_admin_role_id is None:
+      raise exceptions.NoGuildAdministratorRoleAndNotSet()
 
   author_role_ids = [role.id for role in ctx.author.roles]
   if int(guild_admin_role_id) in author_role_ids:

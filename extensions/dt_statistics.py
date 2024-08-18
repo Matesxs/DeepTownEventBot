@@ -14,7 +14,7 @@ from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
 from config import cooldowns, Strings
 from utils import message_utils
-from database import dt_statistics_repo
+from database import dt_statistics_repo, session_maker
 
 logger = setup_custom_logger(__name__)
 
@@ -158,30 +158,32 @@ class DTStatistics(Base_Cog):
   @activity_stats_commands.sub_command(name="users", description=Strings.public_interface_stats_activity_users_description)
   async def active_user_statistics(self, inter: disnake.CommandInteraction,
                                    days_back: int = commands.Param(default=365, min_value=10, max_value=730)):
-    statistics_data = await dt_statistics_repo.get_active_user_statistics((datetime.datetime.utcnow() - datetime.timedelta(days=days_back)).date())
-    if not statistics_data:
-      return await message_utils.generate_error_message(inter, Strings.public_interface_stats_no_data_found)
+    with session_maker() as session:
+      statistics_data = await dt_statistics_repo.get_active_user_statistics(session, (datetime.datetime.utcnow() - datetime.timedelta(days=days_back)).date())
+      if not statistics_data:
+        return await message_utils.generate_error_message(inter, Strings.public_interface_stats_no_data_found)
 
     await send_stats(inter, user_data=statistics_data)
 
   @activity_stats_commands.sub_command(name="guilds", description=Strings.public_interface_stats_activity_guilds_description)
   async def active_guild_statistics(self, inter: disnake.CommandInteraction,
                                     days_back: int = commands.Param(default=365, min_value=10, max_value=730)):
-    statistics_data = await dt_statistics_repo.get_active_guild_statistics((datetime.datetime.utcnow() - datetime.timedelta(days=days_back)).date())
-    if not statistics_data:
-      return await message_utils.generate_error_message(inter, Strings.public_interface_stats_no_data_found)
+    with session_maker() as session:
+      statistics_data = await dt_statistics_repo.get_active_guild_statistics(session, (datetime.datetime.utcnow() - datetime.timedelta(days=days_back)).date())
+      if not statistics_data:
+        return await message_utils.generate_error_message(inter, Strings.public_interface_stats_no_data_found)
 
     await send_stats(inter, guild_data=statistics_data)
 
   @activity_stats_commands.sub_command(name="both", description=Strings.public_interface_stats_activity_both_description)
   async def active_both_statistics(self, inter: disnake.CommandInteraction,
                                    days_back: int = commands.Param(default=365, min_value=10, max_value=730)):
+    with session_maker() as session:
+      statistics_guild_data = await dt_statistics_repo.get_active_guild_statistics(session, (datetime.datetime.utcnow() - datetime.timedelta(days=days_back)).date())
+      statistics_user_data = await dt_statistics_repo.get_active_user_statistics(session, (datetime.datetime.utcnow() - datetime.timedelta(days=days_back)).date())
 
-    statistics_guild_data = await dt_statistics_repo.get_active_guild_statistics((datetime.datetime.utcnow() - datetime.timedelta(days=days_back)).date())
-    statistics_user_data = await dt_statistics_repo.get_active_user_statistics((datetime.datetime.utcnow() - datetime.timedelta(days=days_back)).date())
-
-    if not statistics_guild_data or not statistics_user_data:
-      return await message_utils.generate_error_message(inter, Strings.public_interface_stats_no_data_found)
+      if not statistics_guild_data or not statistics_user_data:
+        return await message_utils.generate_error_message(inter, Strings.public_interface_stats_no_data_found)
 
     await send_stats(inter, user_data=statistics_user_data, guild_data=statistics_guild_data)
 

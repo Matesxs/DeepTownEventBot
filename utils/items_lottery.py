@@ -3,9 +3,8 @@ import disnake
 from typing import Optional
 from table2ascii import table2ascii, Alignment
 
-import database
 from features.base_bot import BaseAutoshardedBot
-from database import dt_event_item_lottery_repo, run_commit
+from database import dt_event_item_lottery_repo, run_commit_in_thread
 from database.tables import discord_objects
 from utils.logger import setup_custom_logger
 from utils import string_manipulation, message_utils, dt_report_generators, dt_helpers
@@ -34,12 +33,13 @@ def create_lottery_embed(author: Optional[disnake.Member | disnake.User], lotter
     message_utils.add_author_footer(lottery_embed, author)
   return lottery_embed
 
-async def delete_lottery(bot: BaseAutoshardedBot, lottery: dt_event_item_lottery_repo.DTEventItemLottery):
+async def handle_delete_lottery(session, bot: BaseAutoshardedBot, lottery: dt_event_item_lottery_repo.DTEventItemLottery):
   lottery_message = await lottery.get_lotery_message(bot)
   if lottery_message is not None and lottery_message.author.id == bot.user.id:
     await lottery_message.edit(components=None)
 
-  await database.remove_item(lottery)
+  session.delete(lottery)
+  await run_commit_in_thread(session)
 
 async def lottery_notify_closed_and_waiting(bot: BaseAutoshardedBot, lottery: dt_event_item_lottery_repo.DTEventItemLottery):
   lottery_message = await lottery.get_lotery_message(bot)
@@ -68,8 +68,8 @@ async def handle_closing_lottery_message(bot: BaseAutoshardedBot, message: disna
 
     await message.edit(embed=embed, components=None)
 
-async def process_lottery_result(bot: BaseAutoshardedBot, lottery: dt_event_item_lottery_repo.DTEventItemLottery):
-  result = await dt_event_item_lottery_repo.get_results(lottery)
+async def process_lottery_result(session, bot: BaseAutoshardedBot, lottery: dt_event_item_lottery_repo.DTEventItemLottery):
+  result = await dt_event_item_lottery_repo.get_results(session, lottery)
   if result is None: return
 
   guild = await lottery.guild.to_object(bot)
@@ -83,7 +83,7 @@ async def process_lottery_result(bot: BaseAutoshardedBot, lottery: dt_event_item
 
   if lottery_message is None and lottery_channel is None:
     logger.warning(f"Failed to get any destination for guild `{guild.name if guild is not None else lottery.guild_id}` and lottery `{lottery.id}`")
-    await delete_lottery(bot, lottery)
+    await handle_delete_lottery(session, bot, lottery)
     return
 
   positions = list(result[1].keys())
@@ -181,37 +181,37 @@ async def process_lottery_result(bot: BaseAutoshardedBot, lottery: dt_event_item
     author = await lottery.get_author(bot)
 
     if author is not None:
-      next_event_lottery = await dt_event_item_lottery_repo.get_next_event_item_lottery_by_constrained(int(lottery.author_id), int(lottery.guild_id))
+      next_event_lottery = await dt_event_item_lottery_repo.get_next_event_item_lottery_by_constrained(session, int(lottery.author_id), int(lottery.guild_id))
       if next_event_lottery is None:
         if lottery_message is not None:
           await handle_closing_lottery_message(bot, lottery_message, lottery, True)
 
-        await lottery.repeat()
-        await create_lottery(author, lottery_message or destination, lottery, False)
+        await lottery.repeat(session)
+        await create_lottery(session, author, lottery_message or destination, lottery, False)
       else:
         if lottery_message is not None:
           await handle_closing_lottery_message(bot, lottery_message, lottery, False)
-        await lottery.close()
+        await lottery.close(session)
     else:
       if lottery_message is not None:
         await handle_closing_lottery_message(bot, lottery_message, lottery, False)
-      await lottery.close()
+      await lottery.close(session)
   else:
     if lottery_message is not None:
       await handle_closing_lottery_message(bot, lottery_message, lottery, False)
-    await lottery.close()
+    await lottery.close(session)
 
-async def process_loterries(bot: BaseAutoshardedBot, year: Optional[int] = None, week: Optional[int] = None):
-  not_closed_lotteries = await dt_event_item_lottery_repo.get_active_lotteries(year, week)
+async def process_loterries(session, bot: BaseAutoshardedBot, year: Optional[int] = None, week: Optional[int] = None):
+  not_closed_lotteries = await dt_event_item_lottery_repo.get_active_lotteries(session, year, week)
   if not not_closed_lotteries:
-    await dt_event_item_lottery_repo.clear_old_guesses()
+    await dt_event_item_lottery_repo.clear_old_guesses(session)
     return None
 
   for lottery in not_closed_lotteries:
-    await process_lottery_result(bot, lottery)
+    await process_lottery_result(session, bot, lottery)
     await asyncio.sleep(0.005)
 
-  guesses_cleared = await dt_event_item_lottery_repo.clear_old_guesses()
+  guesses_cleared = await dt_event_item_lottery_repo.clear_old_guesses(session)
 
   return len(not_closed_lotteries), guesses_cleared
 
@@ -225,7 +225,7 @@ def get_lottery_buttons(lottery):
              disnake.ui.Button(label="Show participants", emoji="🧾", custom_id=f"event_item_lottery:show:{lottery.id}", style=disnake.ButtonStyle.blurple)]
   return buttons
 
-async def create_lottery(author: disnake.Member | disnake.User, source_message: disnake.Message, lottery: dt_event_item_lottery_repo.DTEventItemLottery, replace_message: bool=False):
+async def create_lottery(session, author: disnake.Member | disnake.User, source_message: disnake.Message, lottery: dt_event_item_lottery_repo.DTEventItemLottery, replace_message: bool=False):
   lottery_embed = create_lottery_embed(author, lottery)
 
   if not replace_message:
@@ -234,7 +234,7 @@ async def create_lottery(author: disnake.Member | disnake.User, source_message: 
     await source_message.edit(embed=lottery_embed)
 
   lottery.lottery_message_id = str(source_message.id)
-  await run_commit()
+  await run_commit_in_thread(session)
 
   await source_message.edit(components=get_lottery_buttons(lottery))
 

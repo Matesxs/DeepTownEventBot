@@ -3,7 +3,7 @@ import asyncio
 from typing import Optional, List
 
 from utils.logger import setup_custom_logger
-from database import dt_guild_repo, dt_user_repo
+from database import dt_guild_repo, dt_user_repo, session_maker
 
 logger = setup_custom_logger(__name__)
 
@@ -50,23 +50,24 @@ class PresenceHandler:
     self.messages = InfiniteLooper(messages)
 
   async def handle_buildin_data_replacement(self, string: str):
-    if "{guilds}" in string:
-      string = string.format_map(MissingHandler(guilds=len(self.bot.guilds)))
+    with session_maker() as session:
+      if "{guilds}" in string:
+        string = string.format_map(MissingHandler(guilds=len(self.bot.guilds)))
 
-    if "{users}" in string:
-      string = string.format_map(MissingHandler(users=len(self.bot.users)))
+      if "{users}" in string:
+        string = string.format_map(MissingHandler(users=len(self.bot.users)))
 
-    if "{dt_guilds}" in string:
-      string = string.format_map(MissingHandler(dt_guilds=(await dt_guild_repo.get_number_of_active_guilds())))
+      if "{dt_guilds}" in string:
+        string = string.format_map(MissingHandler(dt_guilds=(await dt_guild_repo.get_number_of_active_guilds(session))))
 
-    if "{dt_users}" in string:
-      string = string.format_map(MissingHandler(dt_users=(await dt_user_repo.get_number_of_active_users())))
+      if "{dt_users}" in string:
+        string = string.format_map(MissingHandler(dt_users=(await dt_user_repo.get_number_of_active_users(session))))
 
-    if "{total_dt_guilds}" in string:
-      string = string.format_map(MissingHandler(total_dt_guilds=(await dt_guild_repo.get_number_of_all_guilds())))
+      if "{total_dt_guilds}" in string:
+        string = string.format_map(MissingHandler(total_dt_guilds=(await dt_guild_repo.get_number_of_all_guilds(session))))
 
-    if "{total_dt_users}" in string:
-      string = string.format_map(MissingHandler(total_dt_users=(await dt_user_repo.get_number_of_all_users())))
+      if "{total_dt_users}" in string:
+        string = string.format_map(MissingHandler(total_dt_users=(await dt_user_repo.get_number_of_all_users(session))))
 
     return string
 

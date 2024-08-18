@@ -4,7 +4,7 @@ from disnake.ext import commands
 from config import permissions, cooldowns
 from config.strings import Strings
 from features.base_cog import Base_Cog
-from database import discord_objects_repo
+from database import discord_objects_repo, session_maker
 from utils import message_utils
 
 class Settings(Base_Cog):
@@ -25,21 +25,21 @@ class Settings(Base_Cog):
   async def admin_role_set(self, inter: disnake.CommandInteraction,
                            admin_role: disnake.Role=commands.Param(description=Strings.settings_admin_role_set_admin_role_param_description)):
     if admin_role is not None and hasattr(admin_role, "id"):
-      guild = await discord_objects_repo.get_or_create_discord_guild(inter.guild)
-      guild.admin_role_id = str(admin_role.id)
-      await discord_objects_repo.run_commit()
+      with session_maker() as session:
+        guild = await discord_objects_repo.get_or_create_discord_guild(session, inter.guild)
+        guild.admin_role_id = str(admin_role.id)
 
       return await message_utils.generate_success_message(inter, Strings.settings_admin_role_set_success(admin_role=admin_role.mention))
     await message_utils.generate_error_message(inter, Strings.settings_admin_role_set_failed)
 
   @admin_role_commands.sub_command(name="remove", description=Strings.settings_admin_role_remove_description)
   async def admin_role_remove(self, inter: disnake.CommandInteraction):
-    guild = await discord_objects_repo.get_or_create_discord_guild(inter.guild)
-    if guild.admin_role_id is not None:
-      guild.admin_role_id = None
-      await discord_objects_repo.run_commit()
+    with session_maker() as session:
+      guild = await discord_objects_repo.get_or_create_discord_guild(session, inter.guild)
+      if guild.admin_role_id is not None:
+        guild.admin_role_id = None
 
-      return await message_utils.generate_success_message(inter, Strings.settings_admin_role_remove_success)
+        return await message_utils.generate_success_message(inter, Strings.settings_admin_role_remove_success)
     await message_utils.generate_error_message(inter, Strings.settings_admin_role_remove_failed)
 
 def setup(bot):

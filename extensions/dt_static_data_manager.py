@@ -4,7 +4,7 @@ from disnake.ext import commands
 from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
 from config import cooldowns, Strings
-from database import dt_items_repo
+from database import dt_items_repo, session_maker
 from utils import message_utils, dt_autocomplete, command_utils
 
 logger = setup_custom_logger(__name__)
@@ -36,7 +36,8 @@ class DTStaticDataManager(Base_Cog):
     item_type = dt_items_repo.ItemType(item_type)
     item_source = dt_items_repo.ItemSource(item_source)
 
-    await dt_items_repo.set_dt_item(name, item_type, item_source, value, crafting_time, crafting_batch_size)
+    with session_maker() as session:
+      await dt_items_repo.set_dt_item(session, name, item_type, item_source, value, crafting_time, crafting_batch_size)
 
     if item_type == dt_items_repo.ItemType.CRAFTABLE:
       await message_utils.generate_success_message(inter, Strings.static_data_manager_add_dt_item_success_craftable(name=name, item_type=item_type, value=value, crafting_time=crafting_time))
@@ -48,10 +49,12 @@ class DTStaticDataManager(Base_Cog):
   async def remove_dt_item(self, inter: disnake.CommandInteraction,
                            name: str = commands.Param(description=Strings.dt_item_name_parameter_description, autocomplete=dt_autocomplete.autocomplete_item)):
     await inter.response.defer(with_message=True, ephemeral=True)
-    if await dt_items_repo.remove_dt_item(name):
-      await message_utils.generate_success_message(inter, Strings.static_data_manager_remove_dt_item_success(name=name))
-    else:
-      await message_utils.generate_error_message(inter, Strings.static_data_manager_remove_dt_item_failed(name=name))
+
+    with session_maker() as session:
+      if await dt_items_repo.remove_dt_item(session, name):
+        await message_utils.generate_success_message(inter, Strings.static_data_manager_remove_dt_item_success(name=name))
+      else:
+        await message_utils.generate_error_message(inter, Strings.static_data_manager_remove_dt_item_failed(name=name))
 
   @item_configuration_commands.sub_command(name="modify_component", description=Strings.static_data_manager_modify_dt_item_component_description)
   @cooldowns.short_cooldown
@@ -61,24 +64,25 @@ class DTStaticDataManager(Base_Cog):
                                      amount: float = commands.Param(default=1.0, min_value=0.0, description=Strings.static_data_manager_modify_dt_item_component_amount_param_description)):
     await inter.response.defer(with_message=True, ephemeral=True)
 
-    target_item_ = await dt_items_repo.get_dt_item(target_item)
-    if target_item_ is None:
-      return await message_utils.generate_error_message(inter, Strings.dt_item_not_found)
+    with session_maker() as session:
+      target_item_ = await dt_items_repo.get_dt_item(session, target_item)
+      if target_item_ is None:
+        return await message_utils.generate_error_message(inter, Strings.dt_item_not_found)
 
-    if target_item_.item_type != dt_items_repo.ItemType.CRAFTABLE:
-      return await message_utils.generate_error_message(inter, Strings.static_data_manager_modify_dt_item_component_target_not_craftable)
+      if target_item_.item_type != dt_items_repo.ItemType.CRAFTABLE:
+        return await message_utils.generate_error_message(inter, Strings.static_data_manager_modify_dt_item_component_target_not_craftable)
 
-    if (await dt_items_repo.get_dt_item(component_item)) is None:
-      return await message_utils.generate_error_message(inter, Strings.static_data_manager_modify_dt_item_component_component_not_found)
+      if (await dt_items_repo.get_dt_item(session, component_item)) is None:
+        return await message_utils.generate_error_message(inter, Strings.static_data_manager_modify_dt_item_component_component_not_found)
 
-    if amount == 0:
-      if await dt_items_repo.remove_component_mapping(target_item, component_item):
-        await message_utils.generate_success_message(inter, Strings.static_data_manager_modify_dt_item_component_removed(component_item=component_item, target_item=target_item))
+      if amount == 0:
+        if await dt_items_repo.remove_component_mapping(session, target_item, component_item):
+          await message_utils.generate_success_message(inter, Strings.static_data_manager_modify_dt_item_component_removed(component_item=component_item, target_item=target_item))
+        else:
+          await message_utils.generate_error_message(inter, Strings.static_data_manager_modify_dt_item_component_remove_failed(component_item=component_item, target_item=target_item))
       else:
-        await message_utils.generate_error_message(inter, Strings.static_data_manager_modify_dt_item_component_remove_failed(component_item=component_item, target_item=target_item))
-    else:
-      await dt_items_repo.set_component_mapping(target_item, component_item, amount)
-      await message_utils.generate_success_message(inter, Strings.static_data_manager_modify_dt_item_component_added(target_item=target_item, component_item=component_item, amount=amount))
+        await dt_items_repo.set_component_mapping(session, target_item, component_item, amount)
+        await message_utils.generate_success_message(inter, Strings.static_data_manager_modify_dt_item_component_added(target_item=target_item, component_item=component_item, amount=amount))
 
   @item_configuration_commands.sub_command(name="remove_components", description=Strings.static_data_manager_remove_dt_item_components_description)
   @cooldowns.short_cooldown
@@ -86,14 +90,15 @@ class DTStaticDataManager(Base_Cog):
                                       target_item: str = commands.Param(description=Strings.static_data_manager_remove_dt_item_components_target_item_param_description, autocomplete=dt_autocomplete.autocomplete_craftable_item)):
     await inter.response.defer(with_message=True, ephemeral=True)
 
-    target_item_ = await dt_items_repo.get_dt_item(target_item)
-    if target_item_ is None:
-      return await message_utils.generate_error_message(inter, Strings.dt_item_not_found)
+    with session_maker() as session:
+      target_item_ = await dt_items_repo.get_dt_item(session, target_item)
+      if target_item_ is None:
+        return await message_utils.generate_error_message(inter, Strings.dt_item_not_found)
 
-    if await dt_items_repo.remove_all_component_mappings(target_item):
-      await message_utils.generate_success_message(inter, Strings.static_data_manager_remove_dt_item_components_removed(target_item=target_item))
-    else:
-      await message_utils.generate_error_message(inter, Strings.static_data_manager_remove_dt_item_components_failed(target_item=target_item))
+      if await dt_items_repo.remove_all_component_mappings(session, target_item):
+        await message_utils.generate_success_message(inter, Strings.static_data_manager_remove_dt_item_components_removed(target_item=target_item))
+      else:
+        await message_utils.generate_error_message(inter, Strings.static_data_manager_remove_dt_item_components_failed(target_item=target_item))
 
 def setup(bot):
   bot.add_cog(DTStaticDataManager(bot))

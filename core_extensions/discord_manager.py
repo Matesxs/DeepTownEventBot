@@ -3,7 +3,7 @@ import disnake
 from disnake.ext import commands
 
 from features.base_cog import Base_Cog
-from database import discord_objects_repo
+from database import discord_objects_repo, session_maker, run_commit_in_thread
 from config import permissions, cooldowns, config
 from config.strings import Strings
 from utils import message_utils, string_manipulation
@@ -28,24 +28,27 @@ class DiscordManager(Base_Cog):
     logger.info("Starting discord data pull")
 
     discord_guild_object_ids = []
-    async for guild in self.bot.fetch_guilds(limit=None):
-      guild_object = await discord_objects_repo.get_or_create_discord_guild(guild)
-      discord_guild_object_ids.append(guild_object.id)
 
-      discord_member_object_ids = []
-      async for member in guild.fetch_members(limit=None):
-        await asyncio.sleep(0.05)
-        if member.bot or member.system: continue
+    with session_maker() as session:
+      async for guild in self.bot.fetch_guilds(limit=None):
+        guild_object = await discord_objects_repo.get_or_create_discord_guild(session, guild)
+        discord_guild_object_ids.append(guild_object.id)
 
-        member_object = await discord_objects_repo.get_or_create_discord_member(member, comit=False)
-        discord_member_object_ids.append(member_object.user_id)
+        discord_member_object_ids = []
+        async for member in guild.fetch_members(limit=None):
+          await asyncio.sleep(0.05)
+          if member.bot or member.system: continue
 
-      await discord_objects_repo.run_commit()
-      await discord_objects_repo.discord_member_cleanup(guild.id, discord_member_object_ids)
-      await asyncio.sleep(1)
+          member_object = await discord_objects_repo.get_or_create_discord_member(session, member, comit=False)
+          discord_member_object_ids.append(member_object.user_id)
 
-    await discord_objects_repo.discord_guild_cleanup(discord_guild_object_ids)
-    await discord_objects_repo.discord_user_cleanup()
+        await run_commit_in_thread(session)
+        await discord_objects_repo.discord_member_cleanup(session, guild.id, discord_member_object_ids)
+        await asyncio.sleep(1)
+
+      await discord_objects_repo.discord_guild_cleanup(session, discord_guild_object_ids)
+      await discord_objects_repo.discord_user_cleanup(session)
+
     logger.info("Discord data pull finished")
 
   @command_utils.master_only_slash_command(name="discord")
@@ -72,41 +75,52 @@ class DiscordManager(Base_Cog):
 
   @commands.Cog.listener()
   async def on_user_update(self, _, after: disnake.User):
-    await discord_objects_repo.get_or_create_discord_user(after)
+    with session_maker() as session:
+      await discord_objects_repo.get_or_create_discord_user(session, after)
 
 
   @commands.Cog.listener()
   async def on_guild_join(self, guild: disnake.Guild):
-    await discord_objects_repo.get_or_create_discord_guild(guild)
+    with session_maker() as session:
+      await discord_objects_repo.get_or_create_discord_guild(session, guild)
 
-    for member in guild.members:
-      if member.bot or member.system: continue
-      await discord_objects_repo.get_or_create_discord_member(member, comit=False)
-    await discord_objects_repo.run_commit()
+      for member in guild.members:
+        if member.bot or member.system: continue
+        await discord_objects_repo.get_or_create_discord_member(session, member, comit=False)
+
+      await run_commit_in_thread(session)
 
   @commands.Cog.listener()
   async def on_guild_remove(self, guild: disnake.Guild):
-    await discord_objects_repo.remove_discord_guild(guild.id)
+    with session_maker() as session:
+      await discord_objects_repo.remove_discord_guild(session, guild.id)
 
   @commands.Cog.listener()
   async def on_guild_update(self, _, after: disnake.Guild):
-    await discord_objects_repo.get_or_create_discord_guild(after)
+    with session_maker() as session:
+      await discord_objects_repo.get_or_create_discord_guild(session, after)
 
 
   @commands.Cog.listener()
   async def on_member_join(self, member: disnake.Member):
     if member.bot or member.system: return
-    await discord_objects_repo.get_or_create_discord_member(member)
+
+    with session_maker() as session:
+      await discord_objects_repo.get_or_create_discord_member(session, member)
 
   @commands.Cog.listener()
   async def on_member_remove(self, member: disnake.Member):
     if member.bot or member.system: return
-    await discord_objects_repo.remove_discord_member(member.guild.id, member.id)
+
+    with session_maker() as session:
+      await discord_objects_repo.remove_discord_member(session, member.guild.id, member.id)
 
   @commands.Cog.listener()
   async def on_member_update(self, _, after: disnake.Member):
     if after.bot or after.system: return
-    await discord_objects_repo.get_or_create_discord_member(after)
+
+    with session_maker() as session:
+      await discord_objects_repo.get_or_create_discord_member(session, after)
 
 def setup(bot):
   bot.add_cog(DiscordManager(bot))

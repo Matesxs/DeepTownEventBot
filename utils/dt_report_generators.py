@@ -11,7 +11,7 @@ import io
 from utils import string_manipulation, dt_helpers, message_utils
 from database.tables.event_participation import EventParticipation, EventSpecification
 from database.tables.dt_guild import DTGuild
-from database import event_participation_repo
+from database import event_participation_repo, session_maker
 
 def generate_participation_strings(participations: List[EventParticipation], colms: List[str], colm_padding: int=0) -> List[str]:
   current_time = datetime.datetime.utcnow()
@@ -185,11 +185,12 @@ async def generate_guild_event_participation_pages(author: disnake.Member | disn
   event_participations_data = []
   pages = []
 
-  raw_event_participation_data = await event_participation_repo.get_guild_event_participations_data(guild.id)
+  with session_maker() as session:
+    raw_event_participation_data = await event_participation_repo.get_guild_event_participations_data(session, guild.id)
 
-  for year, week, total, average in raw_event_participation_data:
-    best_participants = await event_participation_repo.get_event_participants_data(guild.id, year, week, limit=1) if total != 0 else None
-    event_participations_data.append((year, week, (f"{string_manipulation.truncate_string(best_participants[0][1], 10)} - {string_manipulation.format_number(best_participants[0][4])}" if best_participants is not None else "N/A"), string_manipulation.format_number(average)))
+    for year, week, total, average in raw_event_participation_data:
+      best_participants = await event_participation_repo.get_event_participants_data(session, guild.id, year, week, limit=1) if total != 0 else None
+      event_participations_data.append((year, week, (f"{string_manipulation.truncate_string(best_participants[0][1], 10)} - {string_manipulation.format_number(best_participants[0][4])}" if best_participants is not None else "N/A"), string_manipulation.format_number(average)))
 
   event_participations_strings = table2ascii(body=event_participations_data, header=["Year", "Week", "Top Donate", "Average"], alignments=[Alignment.RIGHT, Alignment.RIGHT, Alignment.LEFT, Alignment.RIGHT]).split("\n")
   while event_participations_strings:

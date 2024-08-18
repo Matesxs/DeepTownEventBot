@@ -9,7 +9,7 @@ from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
 from config import cooldowns, Strings
 from utils import dt_helpers, message_utils, dt_autocomplete, dt_report_generators, string_manipulation
-from database import dt_items_repo, event_participation_repo
+from database import dt_items_repo, event_participation_repo, session_maker
 from features.views.paginator import EmbedView
 
 logger = setup_custom_logger(__name__)
@@ -59,11 +59,13 @@ class DTEvents(Base_Cog):
 
     await inter.response.defer(with_message=True)
 
-    event_specification = await event_participation_repo.get_event_specification(event_identifier[0], event_identifier[1])
-    if event_specification is None:
-      return await message_utils.generate_error_message(inter, Strings.public_interface_event_help_no_items)
+    with session_maker() as session:
+      event_specification = await event_participation_repo.get_event_specification(session, event_identifier[0], event_identifier[1])
+      if event_specification is None:
+        return await message_utils.generate_error_message(inter, Strings.public_interface_event_help_no_items)
 
-    item_table = dt_report_generators.get_event_items_table(event_specification)
+      item_table = dt_report_generators.get_event_items_table(event_specification)
+
     if item_table is None:
       return await message_utils.generate_error_message(inter, Strings.public_interface_event_help_no_items)
 
@@ -87,8 +89,9 @@ class DTEvents(Base_Cog):
   async def event_items_history(self, inter: disnake.CommandInteraction):
     await inter.response.defer(with_message=True)
 
-    event_item_history_data = await dt_items_repo.get_event_items_history()
-    event_item_history_data = [(f"{item[0]} {item[1]}", item[2] if item[2] is not None else "N/A") for item in event_item_history_data]
+    with session_maker() as session:
+      event_item_history_data = await dt_items_repo.get_event_items_history(session)
+      event_item_history_data = [(f"{item[0]} {item[1]}", item[2] if item[2] is not None else "N/A") for item in event_item_history_data]
 
     table_strings = table2ascii(["Event", "Items"], event_item_history_data, alignments=[Alignment.LEFT, Alignment.LEFT]).split("\n")
     pages = []
@@ -112,9 +115,10 @@ class DTEvents(Base_Cog):
                        end_year: Optional[int] = commands.Param(default=None, description=Strings.public_interface_event_stats_end_year_param_description, autocomplete=dt_autocomplete.autocomplete_event_year)):
     await inter.response.defer(with_message=True)
 
-    data = await dt_items_repo.get_event_item_stats(start_year, end_year)
-    if not data:
-      return await message_utils.generate_error_message(inter, Strings.public_interface_event_stats_no_stats)
+    with session_maker() as session:
+      data = await dt_items_repo.get_event_item_stats(session, start_year, end_year)
+      if not data:
+        return await message_utils.generate_error_message(inter, Strings.public_interface_event_stats_no_stats)
 
     table_lines = table2ascii(["Item", "Count", "Last"], data, alignments=[Alignment.LEFT, Alignment.RIGHT, Alignment.LEFT]).split("\n")
 
@@ -159,9 +163,10 @@ class DTEvents(Base_Cog):
 
     await inter.response.defer(with_message=True)
 
-    global_best_participants = await event_participation_repo.get_users_leaderboard(year=event_identifier[0], week=event_identifier[1], limit=limit)
-    if not global_best_participants:
-      return await message_utils.generate_error_message(inter, Strings.dt_event_data_not_found(year=event_identifier[0], week=event_identifier[1]))
+    with session_maker() as session:
+      global_best_participants = await event_participation_repo.get_users_leaderboard(session, year=event_identifier[0], week=event_identifier[1], limit=limit)
+      if not global_best_participants:
+        return await message_utils.generate_error_message(inter, Strings.dt_event_data_not_found(year=event_identifier[0], week=event_identifier[1]))
 
     participant_data = [(idx + 1, string_manipulation.truncate_string(username, 20), string_manipulation.truncate_string(guild_name, 20), string_manipulation.format_number(total_contribution)) for idx, (username, guild_name, total_contribution) in enumerate(global_best_participants)]
     start_date, end_date = dt_helpers.event_index_to_date_range(int(event_identifier[0]), int(event_identifier[1]), with_timezone=True)
@@ -187,9 +192,10 @@ class DTEvents(Base_Cog):
 
     await inter.response.defer(with_message=True)
 
-    best_guilds = await event_participation_repo.get_guild_leaderbord(year=event_identifier[0], week=event_identifier[1], limit=limit)
-    if not best_guilds:
-      return await message_utils.generate_error_message(inter, Strings.dt_event_data_not_found(year=event_identifier[0], week=event_identifier[1]))
+    with session_maker() as session:
+      best_guilds = await event_participation_repo.get_guild_leaderbord(session, year=event_identifier[0], week=event_identifier[1], limit=limit)
+      if not best_guilds:
+        return await message_utils.generate_error_message(inter, Strings.dt_event_data_not_found(year=event_identifier[0], week=event_identifier[1]))
 
     participant_data = [(idx + 1, string_manipulation.truncate_string(guild_name, 20), string_manipulation.format_number(total_contribution), string_manipulation.format_number(max_contribution)) for idx, (guild_name, total_contribution, max_contribution) in enumerate(best_guilds)]
     start_date, end_date = dt_helpers.event_index_to_date_range(int(event_identifier[0]), int(event_identifier[1]), with_timezone=True)

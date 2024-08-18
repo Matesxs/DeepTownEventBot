@@ -1,7 +1,6 @@
 import asyncio
 from typing import Any
 from sqlalchemy import BigInteger, create_engine, event
-from sqlalchemy.engine import Result
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects import postgresql, sqlite
@@ -20,7 +19,7 @@ if config.base.database_connect_string is None or config.base.database_connect_s
 
 try:
   base = declarative_base()
-  engine = create_engine(config.base.database_connect_string, pool_pre_ping=True)
+  engine = create_engine(config.base.database_connect_string, pool_pre_ping=True, pool_use_lifo=True, pool_size=5, max_overflow=10)
 except Exception:
   logger.error(f"Failed to create database connection\n{traceback.format_exc()}")
   exit(-1)
@@ -28,45 +27,24 @@ except Exception:
 logger.info("Database opened")
 
 try:
-  session:Session = sessionmaker(engine, expire_on_commit=False)()
+  session_maker = sessionmaker(engine, expire_on_commit=False)
 except Exception:
-  logger.error(f"Failed to create database session\n{traceback.format_exc()}")
+  logger.error(f"Failed to create database session maker\n{traceback.format_exc()}")
   exit(-1)
 
-session_lock = asyncio.Lock()
-async def run_query(statement: Any, commit: bool=False) -> Result:
-  await session_lock.acquire()
+async def run_query_in_thread(session: Session, statement: Any, commit: bool=False):
   result = await asyncio.to_thread(session.execute, statement)
   if commit:
-    await asyncio.to_thread(session.commit)
-  session_lock.release()
+    await run_commit_in_thread(session)
   return result
 
-async def run_commit():
-  await session_lock.acquire()
+async def run_commit_in_thread(session: Session):
   await asyncio.to_thread(session.commit)
-  session_lock.release()
 
-async def add_item(item):
-  await session_lock.acquire()
-  session.add(item)
-  await asyncio.to_thread(session.commit)
-  session_lock.release()
-  return item
-
-async def remove_item(item):
-  await session_lock.acquire()
-  session.delete(item)
-  await asyncio.to_thread(session.commit)
-  session_lock.release()
-  return item
-
-async def add_items(items):
-  await session_lock.acquire()
+async def add_items(session: Session, items):
   for item in items:
     session.add(item)
-  await asyncio.to_thread(session.commit)
-  session_lock.release()
+  await run_commit_in_thread(session)
   return items
 
 BigIntegerType = BigInteger()
@@ -85,7 +63,8 @@ def load_sub_modules(module):
 def init_tables():
   load_sub_modules("database.tables")
 
-  base.metadata.create_all(engine)
-  session.commit()
+  with session_maker() as session:
+    base.metadata.create_all(engine)
+    session.commit()
 
   logger.info("Initializating all loaded tables")

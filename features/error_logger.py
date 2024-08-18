@@ -6,7 +6,6 @@ import traceback
 import sqlalchemy.exc
 from typing import Dict, Optional
 
-from database import session
 from utils import message_utils, command_utils, string_manipulation
 from utils.logger import setup_custom_logger
 from config import config, Strings
@@ -166,9 +165,5 @@ class ErrorLogger:
 
       output = "".join(traceback.format_exception(type(error), error, error.__traceback__))
       logger.error(output)
-
-      if isinstance(error, sqlalchemy.exc.InternalError) or isinstance(error, sqlalchemy.exc.IntegrityError):
-        logger.warning(f"Database rollback")
-        session.rollback()
 
       await self.handle_context_error(ctx, error, output)

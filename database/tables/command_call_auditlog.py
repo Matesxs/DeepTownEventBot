@@ -26,7 +26,7 @@ class CommandCallAuditlog(database.base):
   guild = relationship("DiscordGuild", uselist=False, back_populates="command_calls")
 
   @classmethod
-  async def create_from_context(cls, data: dict, failed: bool):
+  async def create_from_context(cls, session, data: dict, failed: bool):
     item = cls(created_at=data["created_at"],
                author_id=str(data["author"].id),
                guild_id=str(data["guild"].id) if data["guild"] is not None else None,
@@ -36,6 +36,7 @@ class CommandCallAuditlog(database.base):
                args=data["args"],
                failed=failed)
 
-    await database.add_item(item)
+    session.add(item)
+    await database.run_commit_in_thread(session)
 
     return item

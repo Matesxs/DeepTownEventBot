@@ -11,7 +11,7 @@ from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
 from config import config, Strings, cooldowns
 from utils import dt_helpers, command_utils, message_utils, dt_autocomplete, object_getters
-from database import dt_guild_repo, event_participation_repo, dt_blacklist_repo, tracking_settings_repo, dt_guild_member_repo
+from database import dt_guild_repo, event_participation_repo, dt_blacklist_repo, tracking_settings_repo, dt_guild_member_repo, session_maker
 from database import dt_statistics_repo
 
 logger = setup_custom_logger(__name__)
@@ -55,15 +55,16 @@ class DTDataDownloader(Base_Cog):
     if identifier is None:
       return await message_utils.generate_error_message(inter, Strings.dt_invalid_identifier)
 
-    guild_id = identifier[1]
-    if await dt_blacklist_repo.is_on_blacklist(dt_blacklist_repo.BlacklistType.GUILD, guild_id):
-      return await message_utils.generate_error_message(inter, Strings.data_manager_update_guild_guild_on_blacklist(guild_index=guild_id))
+    with session_maker() as session:
+      guild_id = identifier[1]
+      if await dt_blacklist_repo.is_on_blacklist(session, dt_blacklist_repo.BlacklistType.GUILD, guild_id):
+        return await message_utils.generate_error_message(inter, Strings.data_manager_update_guild_guild_on_blacklist(guild_index=guild_id))
 
-    data = await dt_helpers.get_dt_guild_data(guild_id, True)
-    if data is None:
-      return await message_utils.generate_error_message(inter, Strings.data_manager_update_guild_get_failed(identifier=guild_id))
+      data = await dt_helpers.get_dt_guild_data(guild_id, True)
+      if data is None:
+        return await message_utils.generate_error_message(inter, Strings.data_manager_update_guild_get_failed(identifier=guild_id))
 
-    await event_participation_repo.generate_or_update_event_participations(data)
+      await event_participation_repo.generate_or_update_event_participations(session, data)
 
     await message_utils.generate_success_message(inter, Strings.data_manager_update_guild_success(guild=data.name))
 
@@ -79,25 +80,26 @@ class DTDataDownloader(Base_Cog):
     last_update = datetime.datetime.utcnow()
 
     if guild_ids is not None or not guild_ids:
-      await inter.send("Starting data update...")
-      pulled_data = 0
+      with session_maker() as session:
+        await inter.send("Starting data update...")
+        pulled_data = 0
 
-      for idx, guild_id in enumerate(guild_ids):
-        if await dt_blacklist_repo.is_on_blacklist(dt_blacklist_repo.BlacklistType.GUILD, guild_id):
-          continue
+        for idx, guild_id in enumerate(guild_ids):
+          if await dt_blacklist_repo.is_on_blacklist(session, dt_blacklist_repo.BlacklistType.GUILD, guild_id):
+            continue
 
-        data = await dt_helpers.get_dt_guild_data(guild_id)
-        if datetime.datetime.utcnow() - last_update > datetime.timedelta(seconds=10):
-          await message.edit(f"Guilds `{idx + 1}/{len(guild_ids)}` updated")
-          last_update = datetime.datetime.utcnow()
+          data = await dt_helpers.get_dt_guild_data(guild_id)
+          if datetime.datetime.utcnow() - last_update > datetime.timedelta(seconds=10):
+            await message.edit(f"Guilds `{idx + 1}/{len(guild_ids)}` updated")
+            last_update = datetime.datetime.utcnow()
 
-        await asyncio.sleep(0.5)
-        if data is None: continue
+          await asyncio.sleep(0.5)
+          if data is None: continue
 
-        await event_participation_repo.generate_or_update_event_participations(data)
-        pulled_data += 1
+          await event_participation_repo.generate_or_update_event_participations(session, data)
+          pulled_data += 1
 
-      return await message_utils.generate_success_message(message, Strings.data_manager_update_all_guilds_success_without_periodic_update(guild_num=pulled_data))
+        return await message_utils.generate_success_message(message, Strings.data_manager_update_all_guilds_success_without_periodic_update(guild_num=pulled_data))
     await message_utils.generate_error_message(inter, Strings.data_manager_update_all_guilds_failed_without_periodic_update)
 
   @data_update_commands.sub_command(name="tracked_guilds", description=Strings.data_manager_update_tracked_guilds_description)
@@ -107,7 +109,8 @@ class DTDataDownloader(Base_Cog):
     await inter.response.defer(with_message=True)
     message = await object_getters.get_or_fetch_message(self.bot, inter.channel, (await inter.original_response()).id)
 
-    guild_ids = await tracking_settings_repo.get_tracked_guild_ids()
+    with session_maker() as session:
+      guild_ids = await tracking_settings_repo.get_tracked_guild_ids(session)
 
     if guild_ids is not None or not guild_ids:
       await inter.send("Starting data update...")
@@ -115,19 +118,20 @@ class DTDataDownloader(Base_Cog):
 
       last_update = datetime.datetime.utcnow()
 
-      for idx, guild_id in enumerate(guild_ids):
-        data = await dt_helpers.get_dt_guild_data(guild_id, True)
-        if datetime.datetime.utcnow() - last_update > datetime.timedelta(seconds=10):
-          await message.edit(f"Guilds `{idx + 1}/{len(guild_ids)}` updated")
-          last_update = datetime.datetime.utcnow()
+      with session_maker() as session:
+        for idx, guild_id in enumerate(guild_ids):
+          data = await dt_helpers.get_dt_guild_data(guild_id, True)
+          if datetime.datetime.utcnow() - last_update > datetime.timedelta(seconds=10):
+            await message.edit(f"Guilds `{idx + 1}/{len(guild_ids)}` updated")
+            last_update = datetime.datetime.utcnow()
 
-        await asyncio.sleep(0.5)
-        if data is None: continue
+          await asyncio.sleep(0.5)
+          if data is None: continue
 
-        await event_participation_repo.generate_or_update_event_participations(data)
-        pulled_data += 1
+          await event_participation_repo.generate_or_update_event_participations(session, data)
+          pulled_data += 1
 
-      return await message_utils.generate_success_message(message, Strings.data_manager_update_tracked_guilds_success(guild_num=pulled_data))
+        return await message_utils.generate_success_message(message, Strings.data_manager_update_tracked_guilds_success(guild_num=pulled_data))
     await message_utils.generate_error_message(inter, Strings.data_manager_update_tracked_guilds_failed)
 
   @command_utils.master_only_message_command(name="Load Event Data")
@@ -152,72 +156,74 @@ class DTDataDownloader(Base_Cog):
     if csv_files:
       await inter.send("Starting data update...")
       updated_rows = 0
-      for file_idx, file in enumerate(csv_files):
-        try:
-          data = io.BytesIO(await file.read())
-          dataframe = pd.read_csv(data, sep=";")
-        except:
-          continue
 
-        guild_id_results = guild_id_regex.findall(file.filename.lower())
-        if len(guild_id_results) != 1 or not str(guild_id_results[0]).isnumeric():
-          logger.warning(f"Failed to get guild id from file `{file.filename}`")
-          continue
-
-        guild_id = int(guild_id_results[0])
-        if await dt_blacklist_repo.is_on_blacklist(dt_blacklist_repo.BlacklistType.GUILD, guild_id):
-          continue
-
-        for row_idx, (_, row) in enumerate(dataframe.iterrows()):
+      with session_maker() as session:
+        for file_idx, file in enumerate(csv_files):
           try:
-            user_id = int(row["user_id"])
+            data = io.BytesIO(await file.read())
+            dataframe = pd.read_csv(data, sep=";")
+          except:
+            continue
 
-            if "amount" in row.keys():
-              ammount = int(row["amount"])
-            elif "donate" in row.keys():
-              ammount = int(row["donate"])
-            else:
-              logger.warning("Donate amount not found")
-              break
+          guild_id_results = guild_id_regex.findall(file.filename.lower())
+          if len(guild_id_results) != 1 or not str(guild_id_results[0]).isnumeric():
+            logger.warning(f"Failed to get guild id from file `{file.filename}`")
+            continue
 
-            if "week" in row.keys() and "year" in row.keys():
-              week = int(row["week"])
-              year = int(row["year"])
-            elif "date" in row.keys():
-              try:
-                date = datetime.datetime.fromisoformat(row["date"])
-                year, week = dt_helpers.get_event_index(date)
-              except:
+          guild_id = int(guild_id_results[0])
+          if await dt_blacklist_repo.is_on_blacklist(session, dt_blacklist_repo.BlacklistType.GUILD, guild_id):
+            continue
+
+          for row_idx, (_, row) in enumerate(dataframe.iterrows()):
+            try:
+              user_id = int(row["user_id"])
+
+              if "amount" in row.keys():
+                ammount = int(row["amount"])
+              elif "donate" in row.keys():
+                ammount = int(row["donate"])
+              else:
+                logger.warning("Donate amount not found")
+                break
+
+              if "week" in row.keys() and "year" in row.keys():
+                week = int(row["week"])
+                year = int(row["year"])
+              elif "date" in row.keys():
+                try:
+                  date = datetime.datetime.fromisoformat(row["date"])
+                  year, week = dt_helpers.get_event_index(date)
+                except:
+                  continue
+              elif "timestamp" in row.keys():
+                try:
+                  date = datetime.datetime.fromtimestamp(row["timestamp"])
+                  year, week = dt_helpers.get_event_index(date)
+                except:
+                  continue
+              else:
+                logger.warning("Invalid event identifier")
+                break
+
+              member = await dt_guild_member_repo.create_dummy_dt_guild_member(session, user_id, guild_id, year, week, ammount)
+              if member is None:
                 continue
-            elif "timestamp" in row.keys():
-              try:
-                date = datetime.datetime.fromtimestamp(row["timestamp"])
-                year, week = dt_helpers.get_event_index(date)
-              except:
-                continue
-            else:
-              logger.warning("Invalid event identifier")
-              break
 
-            member = await dt_guild_member_repo.create_dummy_dt_guild_member(user_id, guild_id, year, week, ammount)
-            if member is None:
-              continue
+              if "username" in row.keys():
+                member.user.username = row["username"]
 
-            if "username" in row.keys():
-              member.user.username = row["username"]
+              await event_participation_repo.get_and_update_event_participation(session, user_id, guild_id, year, week, ammount)
+              await asyncio.sleep(0.02)
 
-            await event_participation_repo.get_and_update_event_participation(user_id, guild_id, year, week, ammount)
-            await asyncio.sleep(0.02)
+              if datetime.datetime.utcnow() - last_sleep >= datetime.timedelta(seconds=10):
+                await message.edit(f"Files `{file_idx + 1}/{len(csv_files)}`\nData rows `{row_idx + 1}/{dataframe.shape[0]}`")
+                last_sleep = datetime.datetime.utcnow()
 
-            if datetime.datetime.utcnow() - last_sleep >= datetime.timedelta(seconds=10):
-              await message.edit(f"Files `{file_idx + 1}/{len(csv_files)}`\nData rows `{row_idx + 1}/{dataframe.shape[0]}`")
-              last_sleep = datetime.datetime.utcnow()
+              updated_rows += 1
+            except Exception:
+              logger.warning(traceback.format_exc())
 
-            updated_rows += 1
-          except Exception:
-            logger.warning(traceback.format_exc())
-
-      await event_participation_repo.run_commit()
+        await event_participation_repo.run_commit_in_thread(session)
 
       logger.info(f"Loaded {updated_rows} data rows")
       return await message_utils.generate_success_message(message, Strings.data_manager_load_data_loaded(count=updated_rows))
@@ -225,38 +231,41 @@ class DTDataDownloader(Base_Cog):
 
   @tasks.loop(hours=config.data_manager.cleanup_rate_days * 24)
   async def cleanup_task(self):
-    logger.info("Starting cleanup")
-    all_guild_ids = await dt_helpers.get_ids_of_all_guilds()
-    if all_guild_ids is None:
-      logger.error("Failed to get all ids of guilds")
-    else:
-      removed_guilds = await dt_guild_repo.remove_deleted_guilds(all_guild_ids)
-      logger.info(f"Remove {removed_guilds} deleted guilds from database")
-    logger.info("Cleanup finished")
+    with session_maker() as session:
+      logger.info("Starting cleanup")
+      all_guild_ids = await dt_helpers.get_ids_of_all_guilds()
+      if all_guild_ids is None:
+        logger.error("Failed to get all ids of guilds")
+      else:
+        removed_guilds = await dt_guild_repo.remove_deleted_guilds(session, all_guild_ids)
+        logger.info(f"Remove {removed_guilds} deleted guilds from database")
+      logger.info("Cleanup finished")
 
   @tasks.loop(hours=config.data_manager.inactive_guild_data_pull_rate_hours)
   async def inactive_guild_data_update_task(self):
-    inactive_guild_ids = await dt_guild_repo.get_inactive_guild_ids()
-
     logger.info("Inactive DT Guild data pull starting")
 
-    if inactive_guild_ids:
-      pulled_data = 0
+    with session_maker() as session:
+      inactive_guild_ids = await dt_guild_repo.get_inactive_guild_ids(session)
 
-      for idx, guild_id in enumerate(inactive_guild_ids):
-        data = await dt_helpers.get_dt_guild_data(guild_id)
+      if inactive_guild_ids:
+        pulled_data = 0
 
-        await asyncio.sleep(2)
-        if data is None:
-          continue
+        for idx, guild_id in enumerate(inactive_guild_ids):
+          data = await dt_helpers.get_dt_guild_data(guild_id)
 
-        await event_participation_repo.generate_or_update_event_participations(data)
-        pulled_data += 1
+          await asyncio.sleep(2)
+          if data is None:
+            continue
 
-      logger.info(f"Pulled data of {pulled_data} inactive DT guilds")
-      logger.info(f"New count of active guilds: {await dt_guild_repo.get_number_of_active_guilds()}")
+          await event_participation_repo.generate_or_update_event_participations(session, data)
+          pulled_data += 1
 
-      await dt_statistics_repo.generate_or_update_active_statistics()
+        logger.info(f"Pulled data of {pulled_data} inactive DT guilds")
+        logger.info(f"New count of active guilds: {await dt_guild_repo.get_number_of_active_guilds(session)}")
+
+        await dt_statistics_repo.generate_or_update_active_statistics(session)
+
     logger.info("Inactive DT Guild data pull finished")
 
   @tasks.loop(hours=max(config.data_manager.data_pull_rate_hours, 1))
@@ -277,56 +286,58 @@ class DTDataDownloader(Base_Cog):
       await self.bot.change_presence(activity=disnake.Game(name="Updating data..."), status=disnake.Status.dnd)
 
       number_of_guilds = len(guild_ids)
-      for idx, guild_id in enumerate(guild_ids):
-        if datetime.datetime.utcnow() - last_update >= datetime.timedelta(minutes=1):
-          progress_percent = (idx / number_of_guilds) * 100
-          await self.bot.change_presence(activity=disnake.Game(name=f"Updating data {progress_percent:.1f}%..."), status=disnake.Status.dnd)
-          last_update = datetime.datetime.utcnow()
 
-        if (await dt_blacklist_repo.is_on_blacklist(dt_blacklist_repo.BlacklistType.GUILD, guild_id)) or not (await dt_guild_repo.is_guild_active(guild_id)):
-          continue
-
-        data = await dt_helpers.get_dt_guild_data(guild_id)
-
-        await asyncio.sleep(1)
-        if data is None:
-          not_updated.append(guild_id)
-          continue
-
-        await event_participation_repo.generate_or_update_event_participations(data)
-        pulled_data += 1
-
-      number_of_not_updated_guilds = len(not_updated)
-      if number_of_not_updated_guilds > 0:
-        logger.info(f"{number_of_not_updated_guilds} guild not updated, retrying")
-
-        await asyncio.sleep(30)
-
-        last_update = datetime.datetime.utcnow()
-        await self.bot.change_presence(activity=disnake.Game(name="Updating data..."), status=disnake.Status.dnd)
-
-        for idx, guild_id in enumerate(not_updated.copy()):
+      with session_maker() as session:
+        for idx, guild_id in enumerate(guild_ids):
           if datetime.datetime.utcnow() - last_update >= datetime.timedelta(minutes=1):
-            progress_percent = (idx / number_of_not_updated_guilds) * 100
+            progress_percent = (idx / number_of_guilds) * 100
             await self.bot.change_presence(activity=disnake.Game(name=f"Updating data {progress_percent:.1f}%..."), status=disnake.Status.dnd)
             last_update = datetime.datetime.utcnow()
 
-          if (await dt_blacklist_repo.is_on_blacklist(dt_blacklist_repo.BlacklistType.GUILD, guild_id)) or not (await dt_guild_repo.is_guild_active(guild_id)):
+          if (await dt_blacklist_repo.is_on_blacklist(session, dt_blacklist_repo.BlacklistType.GUILD, guild_id)) or not (await dt_guild_repo.is_guild_active(session, guild_id)):
             continue
 
           data = await dt_helpers.get_dt_guild_data(guild_id)
 
           await asyncio.sleep(1)
           if data is None:
+            not_updated.append(guild_id)
             continue
 
-          not_updated.remove(guild_id)
-          await event_participation_repo.generate_or_update_event_participations(data)
+          await event_participation_repo.generate_or_update_event_participations(session, data)
           pulled_data += 1
 
-      logger.info(f"Pulled data of {pulled_data} DT guilds\n{not_updated} guilds not updated")
+        number_of_not_updated_guilds = len(not_updated)
+        if number_of_not_updated_guilds > 0:
+          logger.info(f"{number_of_not_updated_guilds} guild not updated, retrying")
 
-      await dt_statistics_repo.generate_or_update_active_statistics()
+          await asyncio.sleep(30)
+
+          last_update = datetime.datetime.utcnow()
+          await self.bot.change_presence(activity=disnake.Game(name="Updating data..."), status=disnake.Status.dnd)
+
+          for idx, guild_id in enumerate(not_updated.copy()):
+            if datetime.datetime.utcnow() - last_update >= datetime.timedelta(minutes=1):
+              progress_percent = (idx / number_of_not_updated_guilds) * 100
+              await self.bot.change_presence(activity=disnake.Game(name=f"Updating data {progress_percent:.1f}%..."), status=disnake.Status.dnd)
+              last_update = datetime.datetime.utcnow()
+
+            if (await dt_blacklist_repo.is_on_blacklist(session, dt_blacklist_repo.BlacklistType.GUILD, guild_id)) or not (await dt_guild_repo.is_guild_active(session, guild_id)):
+              continue
+
+            data = await dt_helpers.get_dt_guild_data(guild_id)
+
+            await asyncio.sleep(1)
+            if data is None:
+              continue
+
+            not_updated.remove(guild_id)
+            await event_participation_repo.generate_or_update_event_participations(session, data)
+            pulled_data += 1
+
+        logger.info(f"Pulled data of {pulled_data} DT guilds\n{not_updated} guilds not updated")
+
+        await dt_statistics_repo.generate_or_update_active_statistics(session)
     logger.info("DT Guild data pull finished")
 
     await asyncio.sleep(30)

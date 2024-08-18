@@ -5,7 +5,7 @@ import re
 from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
 from utils import object_getters, string_manipulation
-from database import discord_objects_repo
+from database import discord_objects_repo, session_maker
 from config import permissions, cooldowns
 from config.strings import Strings
 from utils import message_utils
@@ -24,8 +24,9 @@ class BetterMessageLinks(Base_Cog):
       # logger.info("Invalid message author or not in guild")
       return
 
-    if not (await discord_objects_repo.better_message_links_enabled(message.guild.id)):
-      return
+    with session_maker() as session:
+      if not (await discord_objects_repo.better_message_links_enabled(session, message.guild.id)):
+        return
 
     destination_channel_permissions = message.channel.permissions_for(message.guild.me)
     if not destination_channel_permissions.send_messages or not destination_channel_permissions.attach_files:
@@ -87,9 +88,9 @@ class BetterMessageLinks(Base_Cog):
   async def better_message_links_enable(self, inter: disnake.CommandInteraction):
     await inter.response.defer(with_message=True, ephemeral=True)
 
-    guild = await discord_objects_repo.get_or_create_discord_guild(inter.guild)
-    guild.enable_better_message_links = True
-    await discord_objects_repo.run_commit()
+    with session_maker() as session:
+      guild = await discord_objects_repo.get_or_create_discord_guild(session, inter.guild)
+      guild.enable_better_message_links = True
 
     await message_utils.generate_success_message(inter, Strings.settings_better_message_links_enable_success)
 
@@ -97,9 +98,9 @@ class BetterMessageLinks(Base_Cog):
   async def better_message_links_disable(self, inter: disnake.CommandInteraction):
     await inter.response.defer(with_message=True, ephemeral=True)
 
-    guild = await discord_objects_repo.get_or_create_discord_guild(inter.guild)
-    guild.enable_better_message_links = False
-    await discord_objects_repo.run_commit()
+    with session_maker() as session:
+      guild = await discord_objects_repo.get_or_create_discord_guild(session, inter.guild)
+      guild.enable_better_message_links = False
 
     await message_utils.generate_success_message(inter, Strings.settings_better_message_links_disabled_success)
 

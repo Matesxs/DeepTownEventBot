@@ -80,10 +80,10 @@ class DTDataDownloader(Base_Cog):
     last_update = datetime.datetime.utcnow()
 
     if guild_ids is not None or not guild_ids:
-      with session_maker() as session:
-        await inter.send("Starting data update...")
-        pulled_data = 0
+      await inter.send("Starting data update...")
+      pulled_data = 0
 
+      with session_maker() as session:
         for idx, guild_id in enumerate(guild_ids):
           if await dt_blacklist_repo.is_on_blacklist(session, dt_blacklist_repo.BlacklistType.GUILD, guild_id):
             continue
@@ -112,13 +112,12 @@ class DTDataDownloader(Base_Cog):
     with session_maker() as session:
       guild_ids = await tracking_settings_repo.get_tracked_guild_ids(session)
 
-    if guild_ids is not None or not guild_ids:
-      await inter.send("Starting data update...")
-      pulled_data = 0
+      if guild_ids is not None or not guild_ids:
+        await inter.send("Starting data update...")
+        pulled_data = 0
 
-      last_update = datetime.datetime.utcnow()
+        last_update = datetime.datetime.utcnow()
 
-      with session_maker() as session:
         for idx, guild_id in enumerate(guild_ids):
           data = await dt_helpers.get_dt_guild_data(guild_id, True)
           if datetime.datetime.utcnow() - last_update > datetime.timedelta(seconds=10):

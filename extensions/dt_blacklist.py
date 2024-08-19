@@ -163,20 +163,20 @@ class DTBlacklist(Base_Cog):
         if user is None:
           return await message_utils.generate_error_message(inter, Strings.blacklist_report_user_cheater_user_not_found)
 
-      embed = disnake.Embed(title="User cheater report", color=disnake.Color.orange(), description=f"```\n{reason}\n```" if reason is not None else None)
-      message_utils.add_author_footer(embed, inter.author)
-      embed.add_field(name="Username", value=user.username)
-      embed.add_field(name="ID", value=str(user.id))
+        embed = disnake.Embed(title="User cheater report", color=disnake.Color.orange(), description=f"```\n{reason}\n```" if reason is not None else None)
+        message_utils.add_author_footer(embed, inter.author)
+        embed.add_field(name="Username", value=user.username)
+        embed.add_field(name="ID", value=str(user.id))
     elif report_type == "GUILD":
       with session_maker() as session:
         guild = await dt_guild_repo.get_dt_guild(session, entity_id)
         if guild is None:
           return await message_utils.generate_error_message(inter, Strings.blacklist_report_guild_cheater_guild_not_found)
 
-      embed = disnake.Embed(title="Guild cheater report", color=disnake.Color.orange(), description=f"```\n{reason}\n```" if reason is not None else None)
-      message_utils.add_author_footer(embed, inter.author)
-      embed.add_field(name="Name", value=guild.name)
-      embed.add_field(name="ID", value=str(guild.id))
+        embed = disnake.Embed(title="Guild cheater report", color=disnake.Color.orange(), description=f"```\n{reason}\n```" if reason is not None else None)
+        message_utils.add_author_footer(embed, inter.author)
+        embed.add_field(name="Name", value=guild.name)
+        embed.add_field(name="ID", value=str(guild.id))
     else:
       return await message_utils.generate_error_message(inter, Strings.blacklist_report_cheater_invalid_report_type)
 

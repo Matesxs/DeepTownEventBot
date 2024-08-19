@@ -51,10 +51,6 @@ BigIntegerType = BigInteger()
 BigIntegerType = BigIntegerType.with_variant(postgresql.BIGINT(), 'postgresql')
 BigIntegerType = BigIntegerType.with_variant(sqlite.INTEGER(), 'sqlite')
 
-@event.listens_for(engine, 'close')
-def receive_close(dbapi_connection, connection_record):
-  logger.warning("Database connection closed")
-
 def load_sub_modules(module):
   package = importlib.import_module(module)
   for _, name, _ in pkgutil.iter_modules(package.__path__):

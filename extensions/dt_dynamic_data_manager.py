@@ -124,7 +124,7 @@ class DTDynamicDataManager(Base_Cog):
 
     with session_maker() as session:
       all_item_names = await dt_items_repo.get_all_item_names(session)
-      all_item_names = [(name, name.lower()) for name in all_item_names]
+      all_item_names_processes = [(name, name.lower()) for name in all_item_names]
 
     identifier = None
     level = 0
@@ -147,7 +147,7 @@ class DTDynamicDataManager(Base_Cog):
 
         max_score = 0
         guessed_item_name = None
-        for true_item_name, true_item_name_lower in all_item_names:
+        for true_item_name, true_item_name_lower in all_item_names_processes:
           score = ratio(item_name, true_item_name_lower)
           if score <= 0.1: continue
 

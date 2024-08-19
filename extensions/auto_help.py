@@ -15,27 +15,26 @@ from config.strings import Strings
 
 logger = setup_custom_logger(__name__)
 
-async def getApproximateAnswer(q):
+async def getApproximateAnswer(session, q):
   max_score = 0
   answer_id = None
   ref_question = None
 
-  with session_maker() as session:
-    all_questions = questions_and_answers_repo.all_questions_iterator(session)
+  all_questions = questions_and_answers_repo.all_questions_iterator(session)
 
-    async for ans_id, question in all_questions:
-      score = ratio(question, q)
-      if score <= 0.1:
-        continue
-      elif score >= 0.9:
-        return question, await questions_and_answers_repo.get_answer_by_id(session, ans_id), score
-      elif score > max_score:
-        max_score = score
-        answer_id = ans_id
-        ref_question = question
+  async for ans_id, question in all_questions:
+    score = ratio(question, q)
+    if score <= 0.1:
+      continue
+    elif score >= 0.9:
+      return question, await questions_and_answers_repo.get_answer_by_id(session, ans_id), score
+    elif score > max_score:
+      max_score = score
+      answer_id = ans_id
+      ref_question = question
 
-    if answer_id is not None and (max_score * 100) > config.questions_and_answers.score_limit:
-      return ref_question, await questions_and_answers_repo.get_answer_by_id(session, answer_id), max_score
+  if answer_id is not None and (max_score * 100) > config.questions_and_answers.score_limit:
+    return ref_question, await questions_and_answers_repo.get_answer_by_id(session, answer_id), max_score
 
   return None
 
@@ -54,8 +53,8 @@ class AutoHelp(Base_Cog):
     with session_maker() as session:
       if not (await questions_and_answers_repo.is_on_whitelist(session, message.guild.id, message.channel.id)): return
 
-    answer_object = await getApproximateAnswer(message.content)
-    if answer_object is None: return
+      answer_object = await getApproximateAnswer(session, message.content)
+      if answer_object is None: return
 
     ref_question, answer, score = answer_object
 

@@ -24,7 +24,7 @@ async def get_or_create_event_specification(session, year: int, week: int) -> Ev
     await run_commit_in_thread(session)
   return item
 
-async def get_event_participations(session, user_id: Optional[int] = None, guild_id: Optional[int] = None, year: Optional[int] = None, week: Optional[int] = None, order_by: Optional[List[Any]] = None, limit: int = 500) -> List[EventParticipation]:
+async def get_event_participations(session, user_id: Optional[int] = None, guild_id: Optional[int] = None, year: Optional[int] = None, week: Optional[int] = None, order_by: Optional[List[Any]] = None, limit: int = 730) -> List[EventParticipation]:
   filters = []
   if order_by is None:
     order_by = [EventSpecification.event_year.desc(), EventSpecification.event_week.desc()]
@@ -161,7 +161,7 @@ async def get_event_participation_stats(session, guild_id: Optional[int]=None, u
     return data[0], additional_data[0] if ignore_zero_participation_average else data[1], median if median is not None else 0
   return data[0], data[1], data[2] if data[2] is not None else 0
 
-async def get_guild_event_participations_data(session, guild_id: int, year: Optional[int] = None, week: Optional[int] = None, limit: int = 500, ignore_zero_participation_average: bool=False) -> List[Tuple[int, int, int, float]]:
+async def get_guild_event_participations_data(session, guild_id: int, year: Optional[int] = None, week: Optional[int] = None, limit: int = 730, ignore_zero_participation_average: bool=False) -> List[Tuple[int, int, int, float]]:
   """
   :param session: Database session
   :param guild_id: Deep Town Guild ID

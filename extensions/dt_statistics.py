@@ -157,7 +157,7 @@ class DTStatistics(Base_Cog):
 
   @activity_stats_commands.sub_command(name="users", description=Strings.public_interface_stats_activity_users_description)
   async def active_user_statistics(self, inter: disnake.CommandInteraction,
-                                   days_back: int = commands.Param(default=365, min_value=10, max_value=730)):
+                                   days_back: int = commands.Param(default=120, min_value=10, max_value=730)):
     with session_maker() as session:
       statistics_data = await dt_statistics_repo.get_active_user_statistics(session, (datetime.datetime.utcnow() - datetime.timedelta(days=days_back)).date())
       if not statistics_data:
@@ -167,7 +167,7 @@ class DTStatistics(Base_Cog):
 
   @activity_stats_commands.sub_command(name="guilds", description=Strings.public_interface_stats_activity_guilds_description)
   async def active_guild_statistics(self, inter: disnake.CommandInteraction,
-                                    days_back: int = commands.Param(default=365, min_value=10, max_value=730)):
+                                    days_back: int = commands.Param(default=120, min_value=10, max_value=730)):
     with session_maker() as session:
       statistics_data = await dt_statistics_repo.get_active_guild_statistics(session, (datetime.datetime.utcnow() - datetime.timedelta(days=days_back)).date())
       if not statistics_data:
@@ -177,7 +177,7 @@ class DTStatistics(Base_Cog):
 
   @activity_stats_commands.sub_command(name="both", description=Strings.public_interface_stats_activity_both_description)
   async def active_both_statistics(self, inter: disnake.CommandInteraction,
-                                   days_back: int = commands.Param(default=365, min_value=10, max_value=730)):
+                                   days_back: int = commands.Param(default=120, min_value=10, max_value=730)):
     with session_maker() as session:
       statistics_guild_data = await dt_statistics_repo.get_active_guild_statistics(session, (datetime.datetime.utcnow() - datetime.timedelta(days=days_back)).date())
       statistics_user_data = await dt_statistics_repo.get_active_user_statistics(session, (datetime.datetime.utcnow() - datetime.timedelta(days=days_back)).date())

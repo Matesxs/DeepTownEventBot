@@ -3,7 +3,6 @@ import datetime
 import disnake
 from disnake.ext import commands
 import traceback
-import sqlalchemy.exc
 from typing import Dict, Optional
 
 from utils import message_utils, command_utils, string_manipulation

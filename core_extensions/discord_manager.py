@@ -1,6 +1,7 @@
 import asyncio
 import disnake
 from disnake.ext import commands
+from sqlalchemy import exc
 
 from features.base_cog import Base_Cog
 from database import discord_objects_repo, session_maker, run_commit_in_thread
@@ -19,7 +20,7 @@ class DiscordManager(Base_Cog):
   def cog_load(self) -> None:
     if config.base.sync_discord:
       loop = asyncio.get_event_loop()
-      loop.create_task(self.pull_data_seq())
+      loop.create_task(self.pull_data_loop())
 
 
   async def pull_data_seq(self):
@@ -50,6 +51,19 @@ class DiscordManager(Base_Cog):
       await discord_objects_repo.discord_user_cleanup(session)
 
     logger.info("Discord data pull finished")
+
+  async def pull_data_loop(self):
+    while True:
+      try:
+        await self.pull_data_seq()
+        break
+      except exc.OperationalError as e:
+        if e.connection_invalidated:
+          logger.warning("Database connection failed, retrying later")
+          await asyncio.sleep(60)
+          logger.info("Retrying...")
+        else:
+          raise e
 
   @command_utils.master_only_slash_command(name="discord")
   async def discord_data_manager(self, inter: disnake.CommandInteraction):

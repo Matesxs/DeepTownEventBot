@@ -1,6 +1,6 @@
 import asyncio
 from typing import Any
-from sqlalchemy import BigInteger, create_engine, event
+from sqlalchemy import BigInteger, create_engine
 from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.dialects import postgresql, sqlite

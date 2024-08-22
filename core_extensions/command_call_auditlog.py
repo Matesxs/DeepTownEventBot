@@ -1,6 +1,7 @@
 import disnake
 from disnake.ext import commands, tasks
 import asyncio
+from sqlalchemy import exc
 
 from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
@@ -56,29 +57,37 @@ class CommandCallAuditlog(Base_Cog):
     if self.data_queue.empty():
       return
 
-    with session_maker() as session:
-      while not self.data_queue.empty():
-        item = await self.data_queue.get()
-        if item[0].author.bot or item[0].author.system: continue
+    try:
+      with session_maker() as session:
+        while not self.data_queue.empty():
+          item = await self.data_queue.get()
+          if item[0].author.bot or item[0].author.system: continue
 
-        context = await command_utils.parse_context(item[0])
+          context = await command_utils.parse_context(item[0])
 
-        if "system logout" in context["command"] or "system update" in context["command"]:
-          continue
+          if "system logout" in context["command"] or "system update" in context["command"]:
+            continue
 
-        guild = context["guild"]
-        if guild is not None:
-          await discord_objects_repo.get_or_create_discord_guild(session, context["guild"])
+          guild = context["guild"]
+          if guild is not None:
+            await discord_objects_repo.get_or_create_discord_guild(session, context["guild"])
 
-          member = disnake.utils.get(guild.members, id=context["author"].id)
-          if member is not None:
-            await discord_objects_repo.get_or_create_discord_member(session, member)
+            member = disnake.utils.get(guild.members, id=context["author"].id)
+            if member is not None:
+              await discord_objects_repo.get_or_create_discord_member(session, member)
+            else:
+              await discord_objects_repo.get_or_create_discord_user(session, context["author"])
           else:
             await discord_objects_repo.get_or_create_discord_user(session, context["author"])
-        else:
-          await discord_objects_repo.get_or_create_discord_user(session, context["author"])
 
-      await command_call_auditlog.CommandCallAuditlog.create_from_context(session, context, item[1])
+        await command_call_auditlog.CommandCallAuditlog.create_from_context(session, context, item[1])
+    except exc.OperationalError as e:
+      if e.connection_invalidated:
+        logger.warning("Database connection failed, retrying later")
+        await asyncio.sleep(30)
+        logger.info("Retrying...")
+      else:
+        raise e
 
 
 def setup(bot):

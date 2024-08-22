@@ -6,6 +6,7 @@ from disnake.ext import commands, tasks
 from Levenshtein import ratio
 import math
 from table2ascii import table2ascii, Alignment
+from sqlalchemy import exc
 
 from config import cooldowns, permissions
 from config.strings import Strings
@@ -533,15 +534,23 @@ class DTEventItemLottery(Base_Cog):
   async def delete_long_closed_lotteries_task(self):
     await self.bot.wait_until_ready()
 
-    with session_maker() as session:
-      lotteries_to_delete = await dt_event_item_lottery_repo.get_lotteries_closed_before_date(session, datetime.datetime.utcnow() - datetime.timedelta(days=config.lotteries.clean_lotteries_closed_for_more_than_days))
+    logger.info("Starting cleanup of old closed lotteries")
+    try:
+      with session_maker() as session:
+        lotteries_to_delete = await dt_event_item_lottery_repo.get_lotteries_closed_before_date(session, datetime.datetime.utcnow() - datetime.timedelta(days=config.lotteries.clean_lotteries_closed_for_more_than_days))
 
-      if lotteries_to_delete:
-        logger.info("Starting clearup of old closed lotteries")
-        for lottery in lotteries_to_delete:
-          await items_lottery.handle_delete_lottery(session, self.bot, lottery)
-          await asyncio.sleep(0.1)
-        logger.info(f"Cleared {len(lotteries_to_delete)} old closed lotteries")
+        if lotteries_to_delete:
+          for lottery in lotteries_to_delete:
+            await items_lottery.handle_delete_lottery(session, self.bot, lottery)
+            await asyncio.sleep(0.1)
+          logger.info(f"Cleared {len(lotteries_to_delete)} old closed lotteries")
+    except exc.OperationalError as e:
+      if e.connection_invalidated:
+        logger.warning("Database connection failed, retrying later")
+      else:
+        raise e
+
+    logger.info("Cleanup of old closed lotteries finished")
 
   @tasks.loop(time=datetime.time(hour=config.event_tracker.event_start_hour, minute=config.event_tracker.event_start_minute, second=1), count=None)
   async def notify_lottery_closed_task(self):
@@ -550,15 +559,27 @@ class DTEventItemLottery(Base_Cog):
 
     if current_datetime.weekday() == config.event_tracker.event_start_day:
       year, week = dt_helpers.get_event_index(current_datetime)
-      with session_maker() as session:
-        lotteries_to_notify = await dt_event_item_lottery_repo.get_active_lotteries(session, year, week)
 
-        if lotteries_to_notify:
-          logger.info("Notifying lotteries are closed")
-          for lottery in lotteries_to_notify:
-            await items_lottery.lottery_notify_closed_and_waiting(self.bot, lottery)
-            await asyncio.sleep(0.05)
-          logger.info(f"Notified {len(lotteries_to_notify)} lotteries")
+      logger.info("Notifying lotteries are closed")
+
+      while True:
+        try:
+          with session_maker() as session:
+            lotteries_to_notify = await dt_event_item_lottery_repo.get_active_lotteries(session, year, week)
+
+            if lotteries_to_notify:
+              for lottery in lotteries_to_notify:
+                await items_lottery.lottery_notify_closed_and_waiting(self.bot, lottery)
+                await asyncio.sleep(0.05)
+              logger.info(f"Notified {len(lotteries_to_notify)} lotteries")
+          break
+        except exc.OperationalError as e:
+          if e.connection_invalidated:
+            logger.warning("Database connection failed, retrying later")
+            await asyncio.sleep(60)
+            logger.info("Retrying...")
+          else:
+            raise e
 
 def setup(bot):
   bot.add_cog(DTEventItemLottery(bot))

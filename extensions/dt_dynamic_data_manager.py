@@ -10,7 +10,7 @@ from features.base_cog import Base_Cog
 from utils import message_utils, dt_autocomplete, items_lottery, command_utils, dt_helpers
 from utils.logger import setup_custom_logger
 from config import cooldowns, Strings, permissions, config
-from database import dt_items_repo, session_maker
+from database import dt_items_repo, session_maker, run_commit_in_thread
 from features.views import confirm_view
 
 logger = setup_custom_logger(__name__)
@@ -49,11 +49,11 @@ async def update_event_items(inter, bot,
       base_amount3 = math.ceil(base_amount3 / (0.9202166811 * math.exp((current_level + 1) / 8))) if base_amount3 is not None else None
       base_amount4 = math.ceil(base_amount4 / (0.9202166811 * math.exp((current_level + 1) / 8))) if base_amount4 is not None else None
 
-    futures = [dt_items_repo.set_event_item(session, event_identifier[0], event_identifier[1], item1, base_amount1, commit=False),
-               dt_items_repo.set_event_item(session, event_identifier[0], event_identifier[1], item2, base_amount2, commit=False),
-               dt_items_repo.set_event_item(session, event_identifier[0], event_identifier[1], item3, base_amount3, commit=False),
-               dt_items_repo.set_event_item(session, event_identifier[0], event_identifier[1], item4, base_amount4, commit=False)]
-    await asyncio.gather(*futures)
+    await dt_items_repo.set_event_item(session, event_identifier[0], event_identifier[1], item1, base_amount1, commit=False)
+    await dt_items_repo.set_event_item(session, event_identifier[0], event_identifier[1], item2, base_amount2, commit=False)
+    await dt_items_repo.set_event_item(session, event_identifier[0], event_identifier[1], item3, base_amount3, commit=False)
+    await dt_items_repo.set_event_item(session, event_identifier[0], event_identifier[1], item4, base_amount4, commit=False)
+    await run_commit_in_thread(session)
 
   await message_utils.generate_success_message(inter, Strings.data_manager_set_event_items_success(event_year=event_identifier[0],
                                                                                                    event_week=event_identifier[1],

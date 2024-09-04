@@ -1,6 +1,6 @@
 import datetime
 
-from sqlalchemy import Column, String, Integer, DateTime
+from sqlalchemy import Column, String, Integer, DateTime, func
 from sqlalchemy.orm import relationship
 
 import database
@@ -15,6 +15,7 @@ class DTUser(database.base):
   level = Column(Integer, default=-1)
   depth = Column(Integer, default=-1)
   last_online = Column(DateTime, nullable=True)
+  created_at = Column(DateTime, nullable=False, default=func.now())
 
   mines = Column(Integer, default=0)
   chem_mines = Column(Integer, default=0)

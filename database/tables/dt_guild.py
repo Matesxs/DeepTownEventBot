@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Integer, Boolean
+from sqlalchemy import Column, String, Integer, Boolean, DateTime, func
 from sqlalchemy.orm import relationship
 
 import database
@@ -10,6 +10,7 @@ class DTGuild(database.base):
   id = Column(database.BigIntegerType, primary_key=True)
   name = Column(String, index=True)
   level = Column(Integer)
+  created_at = Column(DateTime, nullable=False, default=func.now())
 
   is_active = Column(Boolean, index=True, default=True)
 

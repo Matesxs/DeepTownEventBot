@@ -25,7 +25,6 @@ RUN /usr/local/bin/python -m ensurepip --upgrade
 COPY . .
 
 # Install bot python dependencies
-RUN pip install --upgrade setuptools
 RUN pip install --no-cache-dir -r requirements.txt --user
 
 # Clean build tools

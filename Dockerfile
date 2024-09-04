@@ -19,12 +19,12 @@ RUN apt-get install build-essential libffi-dev libpq-dev git -y
 
 # Install pip
 RUN /usr/local/bin/python -m pip install --upgrade pip
+RUN /usr/local/bin/python -m ensurepip --upgrade
 
 # Copy the source code into the container.
 COPY . .
 
 # Install bot python dependencies
-RUN python -m ensurepip --upgrade
 RUN pip install --upgrade setuptools
 RUN pip install --no-cache-dir -r requirements.txt --user
 

@@ -20,7 +20,7 @@ class Common(Base_Cog):
   @cooldowns.default_cooldown
   async def uptime(self, inter: disnake.CommandInteraction):
     await inter.response.defer(with_message=True)
-    description = f"{humanize.naturaldelta(datetime.datetime.utcnow() - self.bot.start_time)}\nLast error: {humanize.naturaltime(datetime.datetime.utcnow() - self.bot.last_error) if self.bot.last_error is not None else 'Never'}"
+    description = f"{humanize.naturaldelta(datetime.datetime.now(datetime.UTC) - self.bot.start_time)}\nLast error: {humanize.naturaltime(datetime.datetime.now(datetime.UTC) - self.bot.last_error) if self.bot.last_error is not None else 'Never'}"
     embed = disnake.Embed(title="Uptime", description=description, color=disnake.Color.dark_blue())
     message_utils.add_author_footer(embed, inter.author)
     await inter.send(embed=embed)

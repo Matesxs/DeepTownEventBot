@@ -62,7 +62,7 @@ class DTUsers(Base_Cog):
       if not user:
         return await message_utils.generate_error_message(inter, Strings.dt_user_not_found(identifier=identifier[1]))
 
-      current_time = datetime.datetime.utcnow()
+      current_time = datetime.datetime.now(datetime.UTC)
       current_year, _ = dt_helpers.get_event_index(current_time)
 
       # Front page

@@ -37,7 +37,7 @@ async def generate_success_message(ctx: Union[commands.Context, disnake.abc.Mess
 def add_author_footer(embed: disnake.Embed, author: Union[disnake.User, disnake.Member],
                       set_timestamp=True, additional_text: Union[Iterable[str], None] = None):
   if set_timestamp:
-    embed.timestamp = datetime.datetime.now(tz=datetime.timezone.utc)
+    embed.timestamp = datetime.datetime.now(datetime.UTC)
 
   if additional_text is not None:
     embed.set_footer(icon_url=author.display_avatar.url, text=' | '.join((author.display_name, *additional_text)))

@@ -40,7 +40,7 @@ class DTUserData:
 
   @property
   def is_active(self):
-    return self.last_online + datetime.timedelta(days=config.data_manager.activity_days_threshold) > datetime.datetime.utcnow()
+    return self.last_online + datetime.timedelta(days=config.data_manager.activity_days_threshold) > datetime.datetime.now(datetime.UTC)
 
   def __repr__(self):
     return f"<{self.name}({self.id}),{self.level},{self.depth},'{self.last_online if self.last_online is not None else '*Never*'}',{self.last_event_contribution}, ({self.mines},{self.chem_mines},{self.oil_mines},{self.crafters},{self.smelters},{self.jewel_stations},{self.chem_stations},{self.green_houses})>"

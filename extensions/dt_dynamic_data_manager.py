@@ -22,7 +22,7 @@ async def update_event_items(inter, bot,
                              current_level: int = 0,
                              update_loterries: bool = True):
   if event_identifier is None:
-    event_identifier = dt_helpers.get_event_index(datetime.datetime.utcnow())
+    event_identifier = dt_helpers.get_event_index(datetime.datetime.now(datetime.UTC))
 
   with session_maker() as session:
     if (await dt_items_repo.get_dt_item(session, item1)) is None:

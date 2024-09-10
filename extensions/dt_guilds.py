@@ -93,7 +93,7 @@ class DTGuilds(Base_Cog):
       if not guild:
         return await message_utils.generate_error_message(inter, Strings.dt_guild_not_found(identifier=identifier[1]))
 
-      current_time = datetime.datetime.utcnow()
+      current_time = datetime.datetime.now(datetime.UTC)
       current_year, _ = dt_helpers.get_event_index(current_time)
 
       # Front page

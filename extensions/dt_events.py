@@ -27,7 +27,7 @@ class DTEvents(Base_Cog):
   async def current_event(self, inter: disnake.CommandInteraction):
     await inter.response.defer(with_message=True)
 
-    year, week = dt_helpers.get_event_index(datetime.datetime.utcnow())
+    year, week = dt_helpers.get_event_index(datetime.datetime.now(datetime.UTC))
     start_date, end_date = dt_helpers.event_index_to_date_range(year, week, with_timezone=True)
 
     embed_description = f"`{year} {week}`\n<t:{int(start_date.timestamp())}> - <t:{int(end_date.timestamp())}>"
@@ -36,7 +36,7 @@ class DTEvents(Base_Cog):
     elif datetime.datetime.now(tz.tzlocal()) < end_date:
       embed_description += f"\nThis Event Ends <t:{int(end_date.timestamp())}:R>"
     else:
-      nyear, nweek = dt_helpers.get_event_index(datetime.datetime.utcnow() + datetime.timedelta(days=7))
+      nyear, nweek = dt_helpers.get_event_index(datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=7))
       next_start_date, _ = dt_helpers.event_index_to_date_range(nyear, nweek, with_timezone=True)
       embed_description += f"\n*This Event Ended*\nNext Event Starts <t:{int(next_start_date.timestamp())}:R>"
 

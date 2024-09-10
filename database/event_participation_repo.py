@@ -236,8 +236,8 @@ async def get_and_update_event_participation(session, user_id: int, guild_id: in
   return item
 
 async def generate_or_update_event_participations(session, guild_data: dt_helpers.DTGuildData) -> Optional[List[EventParticipation]]:
-  event_year, event_week = dt_helpers.get_event_index(datetime.datetime.utcnow())
-  prev_event_year, prev_event_week = dt_helpers.get_event_index(datetime.datetime.utcnow() - datetime.timedelta(days=7))
+  event_year, event_week = dt_helpers.get_event_index(datetime.datetime.now(datetime.UTC))
+  prev_event_year, prev_event_week = dt_helpers.get_event_index(datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=7))
 
   if (await get_and_update_dt_guild_members(session, guild_data, event_year, event_week)) is None:
     return None

@@ -103,16 +103,16 @@ class DTEventItemLottery(database.base):
     return author
 
   async def close(self, session):
-    self.closed_at = datetime.datetime.utcnow()
+    self.closed_at = datetime.datetime.now(datetime.UTC)
     await database.run_commit_in_thread(session)
 
   async def repeat(self, session):
-    next_year, next_week = dt_helpers.get_event_index(datetime.datetime.utcnow() + datetime.timedelta(days=7))
+    next_year, next_week = dt_helpers.get_event_index(datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=7))
     event_specification = await event_participation_repo.get_or_create_event_specification(session, next_year, next_week)
 
     self.event_id = event_specification.event_id
 
-    self.created_at = datetime.datetime.utcnow()
+    self.created_at = datetime.datetime.now(datetime.UTC)
     self.closed_at = None
 
     await database.run_commit_in_thread(session)

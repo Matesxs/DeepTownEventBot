@@ -132,7 +132,7 @@ async def parse_context(ctx: Union[disnake.ApplicationCommandInteraction, comman
       "url": getattr(ctx.message, "jump_url", None),
       "author": ctx.author,
       "guild": ctx.guild,
-      "created_at": datetime.datetime.utcnow()
+      "created_at": datetime.datetime.now(datetime.UTC)
     }
   else:
     raise NotImplementedError

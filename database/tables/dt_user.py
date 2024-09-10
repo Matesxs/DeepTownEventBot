@@ -31,7 +31,7 @@ class DTUser(database.base):
 
   @property
   def is_active(self) -> bool:
-    return self.last_online + datetime.timedelta(days=config.data_manager.activity_days_threshold) > datetime.datetime.utcnow()
+    return self.last_online + datetime.timedelta(days=config.data_manager.activity_days_threshold) > datetime.datetime.now(datetime.UTC)
 
   @classmethod
   def from_DTUserData(cls, data: DTUserData):

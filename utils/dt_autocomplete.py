@@ -80,12 +80,12 @@ async def autocomplete_event_identifier(_, string: str):
 
 def event_identifier_converter(_, string: str) -> Tuple[int, int]:
   if string is None:
-    return dt_helpers.get_event_index(datetime.datetime.utcnow())
+    return dt_helpers.get_event_index(datetime.datetime.now(datetime.UTC))
 
   splits = string.split(" ")
   if len(splits) != 2 or not splits[0].isnumeric() or not splits[1].isnumeric() or \
     int(splits[0]) < 1 or int(splits[1]) < 1:
-    return dt_helpers.get_event_index(datetime.datetime.utcnow())
+    return dt_helpers.get_event_index(datetime.datetime.now(datetime.UTC))
   return int(splits[0]), int(splits[1])
 
 async def autocomplete_event_year(_, string: str):

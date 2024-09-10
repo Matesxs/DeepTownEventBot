@@ -53,7 +53,7 @@ async def get_and_update_dt_user(session, user_data: DTUserData) -> Optional[DTU
   return item
 
 async def get_number_of_active_users(session) -> int:
-  result = await run_query_in_thread(session, select(func.count(DTUser.id)).filter((DTUser.last_online + datetime.timedelta(days=config.data_manager.activity_days_threshold)) > datetime.datetime.utcnow()))
+  result = await run_query_in_thread(session, select(func.count(DTUser.id)).filter((DTUser.last_online + datetime.timedelta(days=config.data_manager.activity_days_threshold)) > datetime.datetime.now(datetime.UTC)))
   return result.scalar_one()
 
 async def get_number_of_all_users(session) -> int:

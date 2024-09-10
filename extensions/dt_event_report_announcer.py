@@ -149,7 +149,7 @@ class DTEventReportAnnouncer(Base_Cog):
 
     logger.info("Starting Announcement")
 
-    year, week = dt_helpers.get_event_index(datetime.datetime.utcnow())
+    year, week = dt_helpers.get_event_index(datetime.datetime.now(datetime.UTC))
 
     while True:
       try:
@@ -219,7 +219,7 @@ class DTEventReportAnnouncer(Base_Cog):
   async def result_announce_task(self):
     await self.bot.wait_until_ready()
 
-    current_datetime = datetime.datetime.utcnow()
+    current_datetime = datetime.datetime.now(datetime.UTC)
     previous_week_date = current_datetime - datetime.timedelta(days=7)
     prev_year, prev_week = dt_helpers.get_event_index(previous_week_date)
     _, prev_event_end = dt_helpers.event_index_to_date_range(prev_year, prev_week)

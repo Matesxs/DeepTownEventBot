@@ -14,7 +14,7 @@ from database.tables.dt_guild import DTGuild
 from database import event_participation_repo, session_maker
 
 def generate_participation_strings(participations: List[EventParticipation], colms: List[str], colm_padding: int=0) -> List[str]:
-  current_time = datetime.datetime.utcnow()
+  current_time = datetime.datetime.now(datetime.UTC)
   data_list = []
   alligments = []
   sorted_colms = []

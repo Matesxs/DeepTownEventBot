@@ -58,8 +58,7 @@ async def make_guess(session, inter: disnake.CommandInteraction | commands.Conte
   guessed_item_names_string = ", ".join([i.name for i in items])
   await message_utils.generate_success_message(inter, Strings.lottery_guess_registered(event_year=guess.event_specification.event_year, event_week=guess.event_specification.event_week, items=guessed_item_names_string))
 
-
-async def handle_guess_message(message: disnake.Message) -> bool:
+async def handle_quess_data(message: disnake.Message, guess_data_list: list[str]) -> bool:
   async def already_guessed(session, event_spec):
     already_existing_guess = await dt_event_item_lottery_repo.get_guess(session, message.guild.id, message.author.id, event_spec.event_id)
 
@@ -70,26 +69,18 @@ async def handle_guess_message(message: disnake.Message) -> bool:
 
     return False
 
-  if message.guild is None: return False
-  if message.author.bot or message.author.system: return False
-  if message.content == "" or message.content.startswith(config.base.command_prefix): return False
-  if not message.channel.permissions_for(message.guild.me).send_messages: return False
-
-  message_lines = message.content.split("\n")
-  if len(message_lines) > 4: return False
-
   guessed_items_data = []
   with session_maker() as session:
     all_item_names = await dt_items_repo.get_all_item_names(session)
     all_item_names = [(name, name.lower()) for name in all_item_names]
 
-    for message_line in message_lines:
-      message_line = message_line.lower()
+    for guess_data_item in guess_data_list:
+      guess_data_item = guess_data_item.lower()
 
       max_score = 0
       guessed_item_name = None
       for item_name, item_name_lower in all_item_names:
-        score = ratio(message_line, item_name_lower)
+        score = ratio(guess_data_item, item_name_lower)
         if score <= 0.1: continue
 
         if score > max_score:
@@ -117,7 +108,7 @@ async def handle_guess_message(message: disnake.Message) -> bool:
       item_names.append(data[0])
       deduplicated_data.append(data)
 
-  year, week = dt_helpers.get_event_index(datetime.datetime.utcnow() + datetime.timedelta(days=7))
+  year, week = dt_helpers.get_event_index(datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=7))
 
   with session_maker() as session:
     event_spec = await event_participation_repo.get_or_create_event_specification(session, year, week)
@@ -128,6 +119,8 @@ async def handle_guess_message(message: disnake.Message) -> bool:
     with session_maker() as session:
       await make_guess(session, message, message.author, *item_names)
     return True
+  elif len(item_names) > 4:
+    return False
   else:
     items_list_string = "\n".join([f"`{item_name}` - {confidence:.1f}% confidence" for item_name, confidence in deduplicated_data])
     prompt_string = f"Detected lottery guess\nAre these items correct and do you want to add them as a guess to lottery?\n\n**Guessed items:**\n{items_list_string}"
@@ -141,7 +134,26 @@ async def handle_guess_message(message: disnake.Message) -> bool:
           event_spec = await event_participation_repo.get_or_create_event_specification(session, year, week)
           if not (await already_guessed(session, event_spec)):
             await make_guess(session, message, message.author, *item_names)
-          return True
+      return True
+    return False
+
+async def handle_guess_message(message: disnake.Message) -> bool:
+  if message.guild is None: return False
+  if message.author.bot or message.author.system: return False
+  if message.content == "" or message.content.startswith(config.base.command_prefix): return False
+  if not message.channel.permissions_for(message.guild.me).send_messages: return False
+
+  message_data = message.content.split("\n")
+  message_data_size = len(message_data)
+
+  if message_data_size == 1:
+    message_data = message_data[0].split(",")
+    message_data = [d.strip() for d in message_data]
+    message_data_size = len(message_data)
+
+  if message_data_size > 4: return False
+
+  return await handle_quess_data(message, message_data)
 
 class DTEventItemLottery(Base_Cog):
   def __init__(self, bot):
@@ -259,7 +271,7 @@ class DTEventItemLottery(Base_Cog):
 
         embed.add_field(name="Created", value=f"{lottery.created_at.day}.{lottery.created_at.month}.{lottery.created_at.year}")
         embed.add_field(name="Resolved", value=f"{lottery.closed_at.day}.{lottery.closed_at.month}.{lottery.closed_at.year}" if lottery.closed_at is not None else "Never")
-        embed.add_field(name="Closed", value="Yes" if start_date < datetime.datetime.utcnow() else "No")
+        embed.add_field(name="Closed", value="Yes" if start_date < datetime.datetime.now(datetime.UTC) else "No")
 
         embed.add_field(name="For Event", value=f"{lottery.event_specification.event_year} {lottery.event_specification.event_week}")
         embed.add_field(name="\u200b", value="\u200b")
@@ -307,7 +319,7 @@ class DTEventItemLottery(Base_Cog):
     await inter.response.defer(with_message=True, ephemeral=True)
 
     with session_maker() as session:
-      year, week = dt_helpers.get_event_index(datetime.datetime.utcnow() + datetime.timedelta(days=7))
+      year, week = dt_helpers.get_event_index(datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=7))
       event_specification = await event_participation_repo.get_or_create_event_specification(session, year, week)
 
       if await dt_event_item_lottery_repo.remove_guess(session, inter.guild_id, inter.author.id, event_specification.event_id):
@@ -340,7 +352,7 @@ class DTEventItemLottery(Base_Cog):
     await inter.response.defer(with_message=True, ephemeral=True)
 
     with session_maker() as session:
-      year, week = dt_helpers.get_event_index(datetime.datetime.utcnow() + datetime.timedelta(days=7))
+      year, week = dt_helpers.get_event_index(datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=7))
       event_specification = await event_participation_repo.get_or_create_event_specification(session, year, week)
 
       if await dt_event_item_lottery_repo.remove_guess(session, inter.guild_id, author.id, event_specification.event_id):
@@ -537,7 +549,7 @@ class DTEventItemLottery(Base_Cog):
     logger.info("Starting cleanup of old closed lotteries")
     try:
       with session_maker() as session:
-        lotteries_to_delete = await dt_event_item_lottery_repo.get_lotteries_closed_before_date(session, datetime.datetime.utcnow() - datetime.timedelta(days=config.lotteries.clean_lotteries_closed_for_more_than_days))
+        lotteries_to_delete = await dt_event_item_lottery_repo.get_lotteries_closed_before_date(session, datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=config.lotteries.clean_lotteries_closed_for_more_than_days))
 
         if lotteries_to_delete:
           for lottery in lotteries_to_delete:
@@ -555,7 +567,7 @@ class DTEventItemLottery(Base_Cog):
   @tasks.loop(time=datetime.time(hour=config.event_tracker.event_start_hour, minute=config.event_tracker.event_start_minute, second=1), count=None)
   async def notify_lottery_closed_task(self):
     await self.bot.wait_until_ready()
-    current_datetime = datetime.datetime.utcnow()
+    current_datetime = datetime.datetime.now(datetime.UTC)
 
     if current_datetime.weekday() == config.event_tracker.event_start_day:
       year, week = dt_helpers.get_event_index(current_datetime)

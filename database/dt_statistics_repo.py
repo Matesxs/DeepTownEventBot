@@ -10,7 +10,7 @@ async def get_day_active_statistics(session, date: datetime.date) -> Optional[DT
   return result.scalar_one_or_none()
 
 async def generate_or_update_active_statistics(session) -> DTActiveEntitiesData:
-  today = datetime.datetime.now(datetime.UTC).date()
+  today = datetime.datetime.now(datetime.UTC).replace(tzinfo=None).date()
   item = await get_day_active_statistics(session, today)
   if item is None:
     item = await DTActiveEntitiesData.generate(session, today)
@@ -20,7 +20,7 @@ async def generate_or_update_active_statistics(session) -> DTActiveEntitiesData:
 
 async def get_active_user_statistics(session, date_threshold: Optional[datetime.date] = None) -> List[Tuple[datetime.datetime, int, int]]:
   if date_threshold is None:
-    date_threshold = (datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=365)).date()
+    date_threshold = (datetime.datetime.now(datetime.UTC).replace(tzinfo=None) - datetime.timedelta(days=365)).date()
 
   result = await run_query_in_thread(session, select(DTActiveEntitiesData.date, DTActiveEntitiesData.active_users, DTActiveEntitiesData.all_users)
                                               .where(DTActiveEntitiesData.date >= date_threshold)
@@ -30,7 +30,7 @@ async def get_active_user_statistics(session, date_threshold: Optional[datetime.
 
 async def get_active_guild_statistics(session, date_threshold: Optional[datetime.date] = None) -> List[Tuple[datetime.datetime, int, int]]:
   if date_threshold is None:
-    date_threshold = (datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=365)).date()
+    date_threshold = (datetime.datetime.now(datetime.UTC).replace(tzinfo=None) - datetime.timedelta(days=365)).date()
 
   result = await run_query_in_thread(session, select(DTActiveEntitiesData.date, DTActiveEntitiesData.active_guilds, DTActiveEntitiesData.all_guilds)
                                               .where(DTActiveEntitiesData.date >= date_threshold)

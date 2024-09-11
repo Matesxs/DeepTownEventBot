@@ -26,7 +26,7 @@ class BaseAutoshardedBot(commands.AutoShardedBot):
     self.initialized = False
 
     self.last_error = None
-    self.start_time = datetime.datetime.now(datetime.UTC)
+    self.start_time = datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
 
     self.core_extensions_folder = core_extensions_folder
     self.extensions_folder = extensions_folder

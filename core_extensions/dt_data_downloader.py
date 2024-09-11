@@ -78,7 +78,7 @@ class DTDataDownloader(Base_Cog):
 
     guild_ids = await dt_helpers.get_ids_of_all_guilds()
 
-    last_update = datetime.datetime.now(datetime.UTC)
+    last_update = datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
 
     if guild_ids is not None or not guild_ids:
       await inter.send("Starting data update...")
@@ -90,9 +90,9 @@ class DTDataDownloader(Base_Cog):
             continue
 
           data = await dt_helpers.get_dt_guild_data(guild_id)
-          if datetime.datetime.now(datetime.UTC) - last_update > datetime.timedelta(seconds=10):
+          if datetime.datetime.now(datetime.UTC).replace(tzinfo=None) - last_update > datetime.timedelta(seconds=10):
             await message.edit(f"Guilds `{idx + 1}/{len(guild_ids)}` updated")
-            last_update = datetime.datetime.now(datetime.UTC)
+            last_update = datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
 
           await asyncio.sleep(0.5)
           if data is None: continue
@@ -117,13 +117,13 @@ class DTDataDownloader(Base_Cog):
         await inter.send("Starting data update...")
         pulled_data = 0
 
-        last_update = datetime.datetime.now(datetime.UTC)
+        last_update = datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
 
         for idx, guild_id in enumerate(guild_ids):
           data = await dt_helpers.get_dt_guild_data(guild_id, True)
-          if datetime.datetime.now(datetime.UTC) - last_update > datetime.timedelta(seconds=10):
+          if datetime.datetime.now(datetime.UTC).replace(tzinfo=None) - last_update > datetime.timedelta(seconds=10):
             await message.edit(f"Guilds `{idx + 1}/{len(guild_ids)}` updated")
-            last_update = datetime.datetime.now(datetime.UTC)
+            last_update = datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
 
           await asyncio.sleep(0.5)
           if data is None: continue
@@ -151,7 +151,7 @@ class DTDataDownloader(Base_Cog):
       if attachment.filename.lower().endswith(".csv"):
         csv_files.append(attachment)
 
-    last_sleep = datetime.datetime.now(datetime.UTC)
+    last_sleep = datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
 
     if csv_files:
       await inter.send("Starting data update...")
@@ -215,9 +215,9 @@ class DTDataDownloader(Base_Cog):
               await event_participation_repo.get_and_update_event_participation(session, user_id, guild_id, year, week, ammount)
               await asyncio.sleep(0.02)
 
-              if datetime.datetime.now(datetime.UTC) - last_sleep >= datetime.timedelta(seconds=10):
+              if datetime.datetime.now(datetime.UTC).replace(tzinfo=None) - last_sleep >= datetime.timedelta(seconds=10):
                 await message.edit(f"Files `{file_idx + 1}/{len(csv_files)}`\nData rows `{row_idx + 1}/{dataframe.shape[0]}`")
-                last_sleep = datetime.datetime.now(datetime.UTC)
+                last_sleep = datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
 
               updated_rows += 1
             except Exception:
@@ -300,7 +300,7 @@ class DTDataDownloader(Base_Cog):
 
       self.bot.presence_handler.stop()
 
-      last_update = datetime.datetime.now(datetime.UTC)
+      last_update = datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
       await self.bot.change_presence(activity=disnake.Game(name="Updating data..."), status=disnake.Status.dnd)
 
       number_of_guilds = len(guild_ids)
@@ -309,10 +309,10 @@ class DTDataDownloader(Base_Cog):
         try:
           with session_maker() as session:
             for idx, guild_id in enumerate(guild_ids):
-              if datetime.datetime.now(datetime.UTC) - last_update >= datetime.timedelta(minutes=1):
+              if datetime.datetime.now(datetime.UTC).replace(tzinfo=None) - last_update >= datetime.timedelta(minutes=1):
                 progress_percent = (idx / number_of_guilds) * 100
                 await self.bot.change_presence(activity=disnake.Game(name=f"Updating data {progress_percent:.1f}%..."), status=disnake.Status.dnd)
-                last_update = datetime.datetime.now(datetime.UTC)
+                last_update = datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
 
               if guild_id in updated:
                 continue
@@ -338,14 +338,14 @@ class DTDataDownloader(Base_Cog):
 
               await asyncio.sleep(30)
 
-              last_update = datetime.datetime.now(datetime.UTC)
+              last_update = datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
               await self.bot.change_presence(activity=disnake.Game(name="Updating data..."), status=disnake.Status.dnd)
 
               for idx, guild_id in enumerate(not_updated.copy()):
-                if datetime.datetime.now(datetime.UTC) - last_update >= datetime.timedelta(minutes=1):
+                if datetime.datetime.now(datetime.UTC).replace(tzinfo=None) - last_update >= datetime.timedelta(minutes=1):
                   progress_percent = (idx / number_of_not_updated_guilds) * 100
                   await self.bot.change_presence(activity=disnake.Game(name=f"Updating data {progress_percent:.1f}%..."), status=disnake.Status.dnd)
-                  last_update = datetime.datetime.now(datetime.UTC)
+                  last_update = datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
 
                 if guild_id in updated:
                   continue

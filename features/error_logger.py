@@ -160,7 +160,7 @@ class ErrorLogger:
       error = error.original
 
     if not await common_error_handling(ctx, error):
-      self.bot.last_error = datetime.datetime.now(datetime.UTC)
+      self.bot.last_error = datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
 
       output = "".join(traceback.format_exception(type(error), error, error.__traceback__))
       logger.error(output)

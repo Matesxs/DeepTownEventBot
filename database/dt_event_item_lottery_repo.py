@@ -16,7 +16,7 @@ async def get_event_item_lottery_by_constrained(session, author_id: int, guild_i
   return result.scalar_one_or_none()
 
 async def get_next_event_item_lottery_by_constrained(session, author_id: int, guild_id: int) -> Optional[DTEventItemLottery]:
-  next_year, next_week = dt_helpers.get_event_index(datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=7))
+  next_year, next_week = dt_helpers.get_event_index(datetime.datetime.now(datetime.UTC).replace(tzinfo=None) + datetime.timedelta(days=7))
   event_specification = await event_participation_repo.get_or_create_event_specification(session, next_year, next_week)
   return await get_event_item_lottery_by_constrained(session, author_id, guild_id, event_specification.event_id)
 
@@ -29,7 +29,7 @@ async def create_event_item_lottery(session, author: disnake.Member, channel: Un
                                     reward_item_g3: Optional[dt_items_repo.DTItem]=None, item_g3_amount: int=0,
                                     reward_item_g2: Optional[dt_items_repo.DTItem]=None, item_g2_amount: int=0,
                                     reward_item_g1: Optional[dt_items_repo.DTItem]=None, item_g1_amount: int=0) -> Optional[DTEventItemLottery]:
-  year, week = dt_helpers.get_event_index(datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=7))
+  year, week = dt_helpers.get_event_index(datetime.datetime.now(datetime.UTC).replace(tzinfo=None) + datetime.timedelta(days=7))
   event_specification = await event_participation_repo.get_or_create_event_specification(session, year, week)
 
   if await event_lotery_exist(session, author.guild.id, author.id, event_specification.event_id):
@@ -49,7 +49,7 @@ async def create_event_item_lottery(session, author: disnake.Member, channel: Un
 
 async def get_active_lotteries(session, year: Optional[int] = None, week: Optional[int] = None) -> List[DTEventItemLottery]:
   if year is None or week is None:
-    nyear, nweek = dt_helpers.get_event_index(datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=7))
+    nyear, nweek = dt_helpers.get_event_index(datetime.datetime.now(datetime.UTC).replace(tzinfo=None) + datetime.timedelta(days=7))
     result = await run_query_in_thread(session, select(DTEventItemLottery).join(event_participation_repo.EventSpecification).filter(and_(DTEventItemLottery.closed_at == None, or_(event_participation_repo.EventSpecification.event_year != nyear, event_participation_repo.EventSpecification.event_week != nweek))))
   else:
     result = await run_query_in_thread(session, select(DTEventItemLottery).join(event_participation_repo.EventSpecification).filter(and_(DTEventItemLottery.closed_at == None, or_(event_participation_repo.EventSpecification.event_year == year, event_participation_repo.EventSpecification.event_week == week))))
@@ -80,7 +80,7 @@ async def make_next_event_guess(session, author: disnake.Member, items: List[dt_
   if len(unique_item_names) != len(items):
     return None
 
-  year, week = dt_helpers.get_event_index(datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=7))
+  year, week = dt_helpers.get_event_index(datetime.datetime.now(datetime.UTC).replace(tzinfo=None) + datetime.timedelta(days=7))
   event_specification = await event_participation_repo.get_or_create_event_specification(session, year, week)
 
   guess = await get_guess(session, author.guild.id, author.id, event_specification.event_id)

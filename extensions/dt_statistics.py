@@ -159,7 +159,7 @@ class DTStatistics(Base_Cog):
   async def active_user_statistics(self, inter: disnake.CommandInteraction,
                                    days_back: int = commands.Param(default=120, min_value=10, max_value=730)):
     with session_maker() as session:
-      statistics_data = await dt_statistics_repo.get_active_user_statistics(session, (datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=days_back)).date())
+      statistics_data = await dt_statistics_repo.get_active_user_statistics(session, (datetime.datetime.now(datetime.UTC).replace(tzinfo=None) - datetime.timedelta(days=days_back)).date())
       if not statistics_data:
         return await message_utils.generate_error_message(inter, Strings.public_interface_stats_no_data_found)
 
@@ -169,7 +169,7 @@ class DTStatistics(Base_Cog):
   async def active_guild_statistics(self, inter: disnake.CommandInteraction,
                                     days_back: int = commands.Param(default=120, min_value=10, max_value=730)):
     with session_maker() as session:
-      statistics_data = await dt_statistics_repo.get_active_guild_statistics(session, (datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=days_back)).date())
+      statistics_data = await dt_statistics_repo.get_active_guild_statistics(session, (datetime.datetime.now(datetime.UTC).replace(tzinfo=None) - datetime.timedelta(days=days_back)).date())
       if not statistics_data:
         return await message_utils.generate_error_message(inter, Strings.public_interface_stats_no_data_found)
 
@@ -179,8 +179,8 @@ class DTStatistics(Base_Cog):
   async def active_both_statistics(self, inter: disnake.CommandInteraction,
                                    days_back: int = commands.Param(default=120, min_value=10, max_value=730)):
     with session_maker() as session:
-      statistics_guild_data = await dt_statistics_repo.get_active_guild_statistics(session, (datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=days_back)).date())
-      statistics_user_data = await dt_statistics_repo.get_active_user_statistics(session, (datetime.datetime.now(datetime.UTC) - datetime.timedelta(days=days_back)).date())
+      statistics_guild_data = await dt_statistics_repo.get_active_guild_statistics(session, (datetime.datetime.now(datetime.UTC).replace(tzinfo=None) - datetime.timedelta(days=days_back)).date())
+      statistics_user_data = await dt_statistics_repo.get_active_user_statistics(session, (datetime.datetime.now(datetime.UTC).replace(tzinfo=None) - datetime.timedelta(days=days_back)).date())
 
       if not statistics_guild_data or not statistics_user_data:
         return await message_utils.generate_error_message(inter, Strings.public_interface_stats_no_data_found)

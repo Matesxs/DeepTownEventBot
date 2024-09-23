@@ -3,10 +3,12 @@ from disnake.ext import commands
 import datetime
 import time
 import humanize
+from sqlalchemy import text
 
 from config import cooldowns, Strings, config
 from features.base_cog import Base_Cog
 from utils import message_utils
+from database import session_maker, run_query_in_thread
 
 class Common(Base_Cog):
   def __init__(self, bot):
@@ -37,7 +39,17 @@ class Common(Base_Cog):
     await inter.send(embed=em)
     end_time = time.time()
 
-    em.description = f'Bot: {round(self.bot.latency * 1000)} ms\nAPI: {round((end_time - start_time) * 1000)}ms'
+    try:
+      with session_maker() as session:
+        query_start_time = time.time()
+        await run_query_in_thread(session, text("""
+          SELECT 1;
+        """))
+        query_time = time.time() - query_start_time
+    except:
+      query_time = None
+
+    em.description = f'Bot: {round(self.bot.latency * 1000)} ms\nAPI: {round((end_time - start_time) * 1000)}ms\nDatabase: {round(query_time * 1000) if query_time is not None else None}ms'
     await inter.edit_original_response(embed=em)
 
   @common_commands.sub_command(name="invite", description=Strings.common_invite_description)

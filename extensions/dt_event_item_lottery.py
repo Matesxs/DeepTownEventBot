@@ -535,6 +535,9 @@ class DTEventItemLottery(Base_Cog):
           await message_utils.generate_error_message(inter, Strings.lottery_button_listener_not_author)
       elif command == "refresh":
         if is_author or (await permissions.has_guild_administrator_role(inter)):
+          if (await inter.original_response()).edited_at > (datetime.datetime.now(datetime.UTC) - datetime.timedelta(minutes=10)):
+            return await message_utils.generate_error_message(inter, "You can refresh lottery one time every 10 minutes")
+
           embed = items_lottery.create_lottery_embed(await lottery.get_author(self.bot), lottery)
           await inter.edit_original_response(embed=embed, components=items_lottery.get_lottery_buttons(lottery))
         else:

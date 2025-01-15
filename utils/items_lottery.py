@@ -224,7 +224,7 @@ def get_lottery_buttons(lottery):
                disnake.ui.Button(label="Auto Show Guesses at End", emoji="📜", custom_id=f"event_item_lottery:auto_show_guesses:{lottery.id}", style=disnake.ButtonStyle.success if lottery.autoshow_guesses else disnake.ButtonStyle.danger)),
              disnake.ui.ActionRow(
                disnake.ui.Button(label="Show participants", emoji="🧾", custom_id=f"event_item_lottery:show:{lottery.id}", style=disnake.ButtonStyle.blurple),
-               disnake.ui.Button(label="Refresh", emoji="⟳", custom_id=f"event_item_lottery:refresh:{lottery.id}", style=disnake.ButtonStyle.green),
+               disnake.ui.Button(label="Refresh", emoji="🌀", custom_id=f"event_item_lottery:refresh:{lottery.id}", style=disnake.ButtonStyle.green),
              )]
   return buttons
 

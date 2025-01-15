@@ -222,7 +222,10 @@ def get_lottery_buttons(lottery):
                disnake.ui.Button(label="Auto Repeat", emoji="🔁", custom_id=f"event_item_lottery:auto_repeat:{lottery.id}", style=disnake.ButtonStyle.success if lottery.auto_repeat else disnake.ButtonStyle.danger),
                disnake.ui.Button(label="Auto Ping", emoji="📯", custom_id=f"event_item_lottery:auto_ping:{lottery.id}", style=disnake.ButtonStyle.success if lottery.autoping_winners else disnake.ButtonStyle.danger),
                disnake.ui.Button(label="Auto Show Guesses at End", emoji="📜", custom_id=f"event_item_lottery:auto_show_guesses:{lottery.id}", style=disnake.ButtonStyle.success if lottery.autoshow_guesses else disnake.ButtonStyle.danger)),
-             disnake.ui.Button(label="Show participants", emoji="🧾", custom_id=f"event_item_lottery:show:{lottery.id}", style=disnake.ButtonStyle.blurple)]
+             disnake.ui.ActionRow(
+               disnake.ui.Button(label="Show participants", emoji="🧾", custom_id=f"event_item_lottery:show:{lottery.id}", style=disnake.ButtonStyle.blurple),
+               disnake.ui.Button(label="Refresh", emoji="⟳", custom_id=f"event_item_lottery:refresh:{lottery.id}", style=disnake.ButtonStyle.green),
+             )]
   return buttons
 
 async def create_lottery(session, author: disnake.Member | disnake.User, source_message: disnake.Message, lottery: dt_event_item_lottery_repo.DTEventItemLottery, replace_message: bool=False):

@@ -81,6 +81,10 @@ def get_event_index(date:datetime.datetime):
   return event_year, week_number
 
 def event_index_to_date_range(year: int, week: int, with_timezone: bool=False) -> Tuple[datetime.datetime, datetime.datetime]:
+  # Week started in previous year but event started in new year
+  if datetime.datetime.strptime(f"{year}-1-{(config.event_tracker.event_start_day + 1) % 7}", "%Y-%W-%w").replace(hour=config.event_tracker.event_start_hour, minute=config.event_tracker.event_start_minute).day > 7:
+    week -= 1
+
   date_string = f"{year}-{week}-{(config.event_tracker.event_start_day + 1) % 7}"
   start_date = datetime.datetime.strptime(date_string, "%Y-%W-%w").replace(hour=config.event_tracker.event_start_hour, minute=config.event_tracker.event_start_minute)
 

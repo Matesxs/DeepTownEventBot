@@ -366,10 +366,10 @@ class DTEventItemLottery(Base_Cog):
     target_message = inter.target
 
     if not (await permissions.has_guild_administrator_role(inter)) and target_message.author != inter.author:
-      return await message_utils.generate_error_message(inter, "You are not author of that message")
+      return await message_utils.generate_error_message(inter, Strings.lottery_create_guess_from_message_not_author)
 
     if not (await handle_guess_message(target_message)):
-      await message_utils.generate_error_message(inter, "Failed to create lottery guess")
+      await message_utils.generate_error_message(inter, Strings.lottery_create_guess_from_message_failed)
 
   @lottery_command.sub_command_group(name="auto_guess_whitelist")
   @commands.guild_only()

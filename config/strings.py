@@ -337,6 +337,8 @@ class Strings(metaclass=Formatable):
   lottery_guess_no_items = "You provided no items"
   lottery_guess_item_duplicates = "Detected item duplicates"
   lottery_guess_registered = "Guess registered for event `{event_year} {event_week}`\n`{items}`"
+  lottery_create_guess_from_message_not_author = "You are not author of that message"
+  lottery_create_guess_from_message_failed = "Failed to create lottery guess"
 
   lottery_guess_removed_sucessfully = "Guess removed"
   lottery_guess_no_guess_to_remove = "No guess to remove"

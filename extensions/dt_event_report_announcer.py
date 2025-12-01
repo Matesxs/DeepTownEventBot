@@ -1,3 +1,6 @@
+import collections
+import copy
+
 import disnake
 from disnake.ext import commands, tasks
 import math
@@ -154,10 +157,16 @@ class DTEventReportAnnouncer(Base_Cog):
     while True:
       try:
         with session_maker() as session:
-          guild_ids = await tracking_settings_repo.get_tracked_guild_ids(session)
+          not_updated_guilds_queue = collections.deque(await tracking_settings_repo.get_tracked_guild_ids(session))
 
-          if guild_ids is not None:
-            for guild_id in guild_ids:
+          number_of_failed_updates = 0
+          while not_updated_guilds_queue:
+            working_copy_of_not_updated_guilds = copy.deepcopy(not_updated_guilds_queue)
+            not_updated_guilds_queue.clear()
+
+            while working_copy_of_not_updated_guilds:
+              guild_id = working_copy_of_not_updated_guilds.popleft()
+
               if guild_id in updated_guilds:
                 continue
 
@@ -169,10 +178,20 @@ class DTEventReportAnnouncer(Base_Cog):
 
               await asyncio.sleep(0.5)
               if data is None:
-                continue
+                await asyncio.sleep(20)
+                not_updated_guilds_queue.append(guild_id)
 
               await event_participation_repo.generate_or_update_event_participations(session, data)
               updated_guilds.append(guild_id)
+
+            if not_updated_guilds_queue:
+              if number_of_failed_updates >= 60:
+                # Give up after 60 attempts
+                logger.warning(f"{len(not_updated_guilds_queue)} guilds not updated for report (already failed {number_of_failed_updates}x), giving up")
+              else:
+                logger.warning(f"{len(not_updated_guilds_queue)} guilds not updated for report (already failed {number_of_failed_updates}x), retrying")
+                number_of_failed_updates += 1
+                await asyncio.sleep(120)
 
           trackers = tracking_settings_repo.get_all_trackers(session)
           async for tracker in trackers:

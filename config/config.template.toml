@@ -47,7 +47,7 @@ tracker_limit_per_guild = 5
 
 # Dont change if you dont know what you are doing
 event_start_day = 3 # 0 - monday, 6 - sunday
-event_start_hour = 7
+event_start_hour = 8
 event_start_minute = 0
 
 # Dont change if you dont know what you are doing
@@ -55,7 +55,7 @@ event_length_days = 4
 event_length_hours = 0
 event_length_minutes = 0
 
-event_announce_offset_minutes = 15
+event_announce_offset_minutes = 30
 
 [lotteries]
 clean_old_lotteries_period_days = 10

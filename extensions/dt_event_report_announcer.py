@@ -143,7 +143,7 @@ class DTEventReportAnnouncer(Base_Cog):
   @cooldowns.long_cooldown
   @permissions.bot_developer()
   async def manual_announcement(self, inter: disnake.CommandInteraction):
-    await inter.response.defer(with_message=True, ephemeral=True)
+    await inter.response.defer(with_message=True)
     message = await object_getters.get_or_fetch_message(self.bot, inter.channel, (await inter.original_response()).id)
     await inter.send("Starting announcement...")
     await self.make_announcement()

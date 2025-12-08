@@ -95,14 +95,15 @@ def event_index_to_date_range(year: int, week: int, with_timezone: bool=False) -
 
 async def get_dt_guild_data(guild_id:int, update: bool=False) -> Optional[DTGuildData]:
   async with ClientSession(timeout=ClientTimeout(total=60)) as session:
-    if update:
-      async with session.get(f"http://dtat.hampl.space/data/donations/current/guild/id/{guild_id}") as response:
-        if response.status != 200:
-          return None
+# Not functioning URL
+#    if update:
+#      async with session.get(f"http://dtat.hampl.space/data/donations/current/guild/id/{guild_id}") as response:
+#        if response.status != 200:
+#          return None
 
-    await asyncio.sleep(0.1)
+#    await asyncio.sleep(0.1)
 
-    async with session.get(f"http://dtat.hampl.space/data/guild/id/{guild_id}/data") as response:
+    async with session.get(f"http://dtat.hampl.space/data/guild/{guild_id}") as response:
       if response.status != 200:
         return None
 
@@ -124,7 +125,7 @@ async def get_dt_guild_data(guild_id:int, update: bool=False) -> Optional[DTGuil
 
 async def get_ids_of_all_guilds() -> Optional[List[int]]:
   async with ClientSession(timeout=ClientTimeout(total=30)) as session:
-    async with session.get("http://dtat.hampl.space/data/guild/name") as response:
+    async with session.get("http://dtat.hampl.space/data/guilds") as response:
       if response.status != 200:
         return None
 

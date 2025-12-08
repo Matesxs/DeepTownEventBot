@@ -36,7 +36,7 @@ clean_none_existing_guilds = true
 cleanup_rate_days = 7
 
 periodically_pull_data = true
-data_pull_rate_hours = 6
+data_pull_rate_hours = 8
 pull_data_startup_delay_seconds = 60
 
 inactive_guild_data_pull_rate_hours = 168 # Disable by setting it to value 0 or less

@@ -180,6 +180,7 @@ class DTEventReportAnnouncer(Base_Cog):
               if data is None:
                 await asyncio.sleep(20)
                 not_updated_guilds_queue.append(guild_id)
+                continue
 
               await event_participation_repo.generate_or_update_event_participations(session, data)
               updated_guilds.append(guild_id)

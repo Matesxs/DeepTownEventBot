@@ -6,7 +6,7 @@ import datetime
 from config import config
 from utils import string_manipulation
 
-async def generate_error_message(ctx: Union[commands.Context, disnake.abc.Messageable, disnake.Message, disnake.MessageInteraction, disnake.ModalInteraction, disnake.ApplicationCommandInteraction], text: str):
+async def generate_error_message(ctx: Union[commands.Context, disnake.abc.Messageable, disnake.Message, disnake.MessageInteraction, disnake.ModalInteraction, disnake.ApplicationCommandInteraction], text: str, replace: bool=False):
   if hasattr(ctx, "channel") and hasattr(ctx, "guild"):
     if isinstance(ctx.channel, disnake.abc.GuildChannel):
       if not ctx.channel.permissions_for(ctx.guild.me).send_messages:
@@ -16,11 +16,14 @@ async def generate_error_message(ctx: Union[commands.Context, disnake.abc.Messag
   if isinstance(ctx, (disnake.ModalInteraction, disnake.ApplicationCommandInteraction, disnake.MessageInteraction)):
     return await ctx.send(embed=response_embed, ephemeral=True)
   elif isinstance(ctx, disnake.Message):
-    return await ctx.reply(embed=response_embed)
+    if replace:
+      return await ctx.edit(content=None, embed=response_embed)
+    else:
+      return await ctx.reply(embed=response_embed)
   else:
     return await ctx.send(embed=response_embed, delete_after=config.base.error_duration)
 
-async def generate_success_message(ctx: Union[commands.Context, disnake.abc.Messageable, disnake.Message, disnake.MessageInteraction, disnake.ModalInteraction, disnake.ApplicationCommandInteraction], text: str):
+async def generate_success_message(ctx: Union[commands.Context, disnake.abc.Messageable, disnake.Message, disnake.MessageInteraction, disnake.ModalInteraction, disnake.ApplicationCommandInteraction], text: str, replace: bool=False):
   if hasattr(ctx, "channel") and hasattr(ctx, "guild"):
     if isinstance(ctx.channel, disnake.abc.GuildChannel):
       if not ctx.channel.permissions_for(ctx.guild.me).send_messages:
@@ -30,7 +33,10 @@ async def generate_success_message(ctx: Union[commands.Context, disnake.abc.Mess
   if isinstance(ctx, (disnake.ModalInteraction, disnake.ApplicationCommandInteraction, disnake.MessageInteraction)):
     return await ctx.send(embed=response_embed, ephemeral=True)
   elif isinstance(ctx, disnake.Message):
-    return await ctx.reply(embed=response_embed)
+    if replace:
+      return await ctx.edit(content=None, embed=response_embed)
+    else:
+      return await ctx.reply(embed=response_embed)
   else:
     return await ctx.send(embed=response_embed, delete_after=config.base.success_duration)
 

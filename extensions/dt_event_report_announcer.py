@@ -10,7 +10,7 @@ from sqlalchemy import exc
 
 from features.base_cog import Base_Cog
 from utils.logger import setup_custom_logger
-from utils import dt_helpers, dt_report_generators, message_utils, dt_autocomplete, command_utils
+from utils import dt_helpers, dt_report_generators, message_utils, dt_autocomplete, command_utils, object_getters
 from database import event_participation_repo, tracking_settings_repo, session_maker
 from config import Strings, cooldowns, config, permissions
 from features.views.paginator import EmbedView
@@ -82,6 +82,7 @@ class DTEventReportAnnouncer(Base_Cog):
       await message_utils.generate_success_message(inter, Strings.event_report_announcer_add_or_modify_tracker_success_with_channel(guild=existing_tracker.dt_guild.name,
                                                                                                                                     channel1=text_announce_channel.name if text_announce_channel is not None else None,
                                                                                                                                     channel2=csv_announce_channel.name if csv_announce_channel is not None else None))
+    return None
 
   @report_announcer.sub_command(name="remove", description=Strings.event_report_announcer_remove_tracker_description)
   @cooldowns.default_cooldown
@@ -103,6 +104,7 @@ class DTEventReportAnnouncer(Base_Cog):
         await message_utils.generate_success_message(inter, Strings.event_report_announcer_remove_tracker_success(guild=guild_name))
       else:
         await message_utils.generate_error_message(inter, Strings.event_report_announcer_remove_tracker_failed(identifier=identifier[1]))
+      return None
 
   @report_announcer.sub_command(name="list", description=Strings.event_report_announcer_list_trackers_description)
   @cooldowns.default_cooldown
@@ -135,14 +137,17 @@ class DTEventReportAnnouncer(Base_Cog):
 
     embed_view = EmbedView(inter.author, pages, invisible=True)
     await embed_view.run(inter)
+    return None
 
   @command_utils.master_only_slash_command(description=Strings.event_report_announcer_manual_announcement_description)
   @cooldowns.long_cooldown
   @permissions.bot_developer()
   async def manual_announcement(self, inter: disnake.CommandInteraction):
     await inter.response.defer(with_message=True, ephemeral=True)
+    message = await object_getters.get_or_fetch_message(self.bot, inter.channel, (await inter.original_response()).id)
+    await inter.send("Starting announcement...")
     await self.make_announcement()
-    await message_utils.generate_success_message(inter, Strings.event_report_announcer_manual_announcement_success)
+    await message_utils.generate_success_message(message, Strings.event_report_announcer_manual_announcement_success, replace=True)
 
   async def make_announcement(self):
     text_announced = []

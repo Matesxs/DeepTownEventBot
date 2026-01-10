@@ -116,7 +116,7 @@ class DTDynamicDataManager(Base_Cog):
       if message.channel.id not in config.data_manager.automatic_set_event_items_channel_ids: return
       if not message.channel.permissions_for(message.guild.me).send_messages: return
     if not ((await self.bot.is_owner(message.author)) or message.author.id in config.base.developer_ids): return
-    if not message.content.lower().startswith("event items"): return
+    if not message.content.lower().strip(" \r\n\t\u200b").startswith("event items"): return
 
     message_lines = message.content.strip().split("\n")[1:]
     number_of_lines = len(message_lines)

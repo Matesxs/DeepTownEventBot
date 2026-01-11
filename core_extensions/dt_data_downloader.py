@@ -1,3 +1,4 @@
+import collections
 import io
 import re
 import pandas as pd
@@ -6,6 +7,7 @@ from disnake.ext import tasks, commands
 import asyncio
 import datetime
 import traceback
+import copy
 from sqlalchemy import exc
 
 from features.base_cog import Base_Cog
@@ -253,23 +255,38 @@ class DTDataDownloader(Base_Cog):
   async def inactive_guild_data_update_task(self):
     logger.info("Inactive DT Guild data pull starting")
 
-    for i in range(10):
+    for i in range(20):
       try:
         with session_maker() as session:
-          inactive_guild_ids = await dt_guild_repo.get_inactive_guild_ids(session)
+          not_updated_guild_ids_queue = collections.deque(await dt_guild_repo.get_inactive_guild_ids(session))
 
-          if inactive_guild_ids:
+          if not_updated_guild_ids_queue:
             pulled_data = 0
+            number_of_failed_updates = 0
 
-            for idx, guild_id in enumerate(inactive_guild_ids):
-              data = await dt_helpers.get_dt_guild_data(guild_id)
+            while not_updated_guild_ids_queue:
+              not_updated_guild_ids_working = copy.deepcopy(not_updated_guild_ids_queue)
+              not_updated_guild_ids_queue.clear()
 
-              await asyncio.sleep(2)
-              if data is None:
-                continue
+              for idx, guild_id in enumerate(not_updated_guild_ids_working):
+                data = await dt_helpers.get_dt_guild_data(guild_id)
 
-              await event_participation_repo.generate_or_update_event_participations(session, data)
-              pulled_data += 1
+                await asyncio.sleep(2)
+                if data is None:
+                  not_updated_guild_ids_queue.append(guild_id)
+                  continue
+
+                await event_participation_repo.generate_or_update_event_participations(session, data)
+                pulled_data += 1
+
+              if not_updated_guild_ids_queue:
+                if number_of_failed_updates >= 10:
+                  logger.warning(f"{list(not_updated_guild_ids_queue)} inactive guilds not updated (already failed {number_of_failed_updates}x), giving up")
+                  break
+                else:
+                  logger.warning(f"{list(not_updated_guild_ids_queue)} inactive guilds not updated (already failed {number_of_failed_updates}x), retrying")
+                  number_of_failed_updates += 1
+                  await asyncio.sleep(120)
 
             logger.info(f"Pulled data of {pulled_data} inactive DT guilds")
             logger.info(f"New count of active guilds: {await dt_guild_repo.get_number_of_active_guilds(session)}")
@@ -294,9 +311,8 @@ class DTDataDownloader(Base_Cog):
     await asyncio.sleep(0.1)
 
     if guild_ids is not None and guild_ids:
-      pulled_data = 0
-      not_updated = []
-      updated = []
+      not_updated_guild_ids_queue = collections.deque(guild_ids)
+      updated_guild_ids = []
 
       self.bot.presence_handler.stop()
 
@@ -308,64 +324,44 @@ class DTDataDownloader(Base_Cog):
       while True:
         try:
           with session_maker() as session:
-            for idx, guild_id in enumerate(guild_ids):
-              if datetime.datetime.now(datetime.UTC).replace(tzinfo=None) - last_update >= datetime.timedelta(minutes=1):
-                progress_percent = (idx / number_of_guilds) * 100
-                await self.bot.change_presence(activity=disnake.Game(name=f"Updating data {progress_percent:.1f}%..."), status=disnake.Status.dnd)
-                last_update = datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
+            number_of_failed_updates = 0
+            while not_updated_guild_ids_queue:
+              not_updated_guild_ids_working = copy.deepcopy(not_updated_guild_ids_queue)
+              not_updated_guild_ids_queue.clear()
 
-              if guild_id in updated:
-                continue
-
-              if (await dt_blacklist_repo.is_on_blacklist(session, dt_blacklist_repo.BlacklistType.GUILD, guild_id)) or not (await dt_guild_repo.is_guild_active(session, guild_id)):
-                updated.append(guild_id)
-                continue
-
-              data = await dt_helpers.get_dt_guild_data(guild_id)
-
-              await asyncio.sleep(1)
-              if data is None:
-                not_updated.append(guild_id)
-                continue
-
-              await event_participation_repo.generate_or_update_event_participations(session, data)
-              updated.append(guild_id)
-              pulled_data += 1
-
-            number_of_not_updated_guilds = len(not_updated)
-            if number_of_not_updated_guilds > 0:
-              logger.info(f"{number_of_not_updated_guilds} guild not updated, retrying")
-
-              await asyncio.sleep(30)
-
-              last_update = datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
-              await self.bot.change_presence(activity=disnake.Game(name="Updating data..."), status=disnake.Status.dnd)
-
-              for idx, guild_id in enumerate(not_updated.copy()):
+              for idx, guild_id in enumerate(not_updated_guild_ids_working):
                 if datetime.datetime.now(datetime.UTC).replace(tzinfo=None) - last_update >= datetime.timedelta(minutes=1):
-                  progress_percent = (idx / number_of_not_updated_guilds) * 100
+                  progress_percent = (idx / number_of_guilds) * 100
                   await self.bot.change_presence(activity=disnake.Game(name=f"Updating data {progress_percent:.1f}%..."), status=disnake.Status.dnd)
                   last_update = datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
 
-                if guild_id in updated:
+                if guild_id in updated_guild_ids:
                   continue
 
                 if (await dt_blacklist_repo.is_on_blacklist(session, dt_blacklist_repo.BlacklistType.GUILD, guild_id)) or not (await dt_guild_repo.is_guild_active(session, guild_id)):
-                  updated.append(guild_id)
+                  updated_guild_ids.append(guild_id)
                   continue
 
                 data = await dt_helpers.get_dt_guild_data(guild_id)
 
                 await asyncio.sleep(1)
                 if data is None:
+                  not_updated_guild_ids_queue.append(guild_id)
                   continue
 
-                not_updated.remove(guild_id)
                 await event_participation_repo.generate_or_update_event_participations(session, data)
-                updated.append(guild_id)
-                pulled_data += 1
+                updated_guild_ids.append(guild_id)
 
-            logger.info(f"Pulled data of {pulled_data} DT guilds\n{not_updated} guilds not updated")
+              if not_updated_guild_ids_queue:
+                if number_of_failed_updates >= 10:
+                  logger.warning(f"{list(not_updated_guild_ids_queue)} guilds not updated (already failed {number_of_failed_updates}x), giving up")
+                  break
+                else:
+                  logger.warning(f"{list(not_updated_guild_ids_queue)} guilds not updated (already failed {number_of_failed_updates}x), retrying")
+                  number_of_failed_updates += 1
+                  await asyncio.sleep(120)
+
+            logger.info(f"Pulled data of {len(updated_guild_ids)} DT guilds")
 
             await dt_statistics_repo.generate_or_update_active_statistics(session)
 

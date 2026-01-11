@@ -194,6 +194,7 @@ class DTEventReportAnnouncer(Base_Cog):
               if number_of_failed_updates >= 60:
                 # Give up after 60 attempts
                 logger.warning(f"{list(not_updated_guilds_queue)} guilds not updated for report (already failed {number_of_failed_updates}x), giving up")
+                break
               else:
                 logger.warning(f"{list(not_updated_guilds_queue)} guilds not updated for report (already failed {number_of_failed_updates}x), retrying")
                 number_of_failed_updates += 1

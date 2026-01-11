@@ -339,7 +339,6 @@ class DTDataDownloader(Base_Cog):
                   continue
 
                 if (await dt_blacklist_repo.is_on_blacklist(session, dt_blacklist_repo.BlacklistType.GUILD, guild_id)) or not (await dt_guild_repo.is_guild_active(session, guild_id)):
-                  updated_guild_ids.append(guild_id)
                   continue
 
                 data = await dt_helpers.get_dt_guild_data(guild_id)

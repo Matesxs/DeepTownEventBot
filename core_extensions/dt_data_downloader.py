@@ -269,6 +269,9 @@ class DTDataDownloader(Base_Cog):
               not_updated_guild_ids_queue.clear()
 
               for idx, guild_id in enumerate(not_updated_guild_ids_working):
+                if await dt_blacklist_repo.is_on_blacklist(session, dt_blacklist_repo.BlacklistType.GUILD, guild_id):
+                  continue
+
                 data = await dt_helpers.get_dt_guild_data(guild_id)
 
                 await asyncio.sleep(2)

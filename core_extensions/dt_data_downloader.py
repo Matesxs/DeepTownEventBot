@@ -334,7 +334,7 @@ class DTDataDownloader(Base_Cog):
 
               for idx, guild_id in enumerate(not_updated_guild_ids_working):
                 if datetime.datetime.now(datetime.UTC).replace(tzinfo=None) - last_update >= datetime.timedelta(minutes=1):
-                  progress_percent = (idx / number_of_guilds) * 100
+                  progress_percent = (len(updated_guild_ids) / number_of_guilds) * 100
                   await self.bot.change_presence(activity=disnake.Game(name=f"Updating data {progress_percent:.1f}%..."), status=disnake.Status.dnd)
                   last_update = datetime.datetime.now(datetime.UTC).replace(tzinfo=None)
 
